@@ -21,13 +21,13 @@ struct Product: Codable, Identifiable {
     }
 }
 
-struct ProductVariant: Codable, Identifiable {
+struct ProductVariant: Codable, Identifiable, Hashable {
     let id: String
     let type: VariantType
     let value: String
     let priceAdjustment: Double?
     
-    enum VariantType: String, Codable {
+    enum VariantType: String, Codable, Hashable {
         case size
         case color
         case style
