@@ -1,14 +1,19 @@
 import SwiftUI
+import EmbraceIO
 
 struct CartView: View {
     @EnvironmentObject private var navigationCoordinator: NavigationCoordinator
     @EnvironmentObject private var cartManager: CartManager
     @State private var showingClearCartAlert = false
+    @State private var isLoading = false
+    @State private var showingSavedForLaterSection = false
     
     var body: some View {
         NavigationStack(path: $navigationCoordinator.navigationPath) {
             VStack(spacing: 0) {
-                if cartManager.isEmpty {
+                if isLoading {
+                    loadingView
+                } else if cartManager.isEmpty {
                     emptyCartView
                 } else {
                     cartContentView
@@ -31,10 +36,14 @@ struct CartView: View {
             .alert("Clear Cart", isPresented: $showingClearCartAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Clear", role: .destructive) {
+                    trackClearCartAction()
                     cartManager.clearCart()
                 }
             } message: {
                 Text("Are you sure you want to remove all items from your cart?")
+            }
+            .onAppear {
+                trackCartView()
             }
         }
     }
@@ -58,6 +67,7 @@ struct CartView: View {
             }
             
             Button("Start Shopping") {
+                trackEmptyCartAction()
                 navigationCoordinator.switchTab(to: .home)
             }
             .font(.headline)
@@ -76,12 +86,51 @@ struct CartView: View {
         VStack(spacing: 0) {
             cartItemsList
             
+            if showingSavedForLaterSection {
+                savedForLaterSection
+            }
+            
             Divider()
             
             cartSummary
             
             checkoutButton
         }
+    }
+    
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            ProgressView()
+                .scaleEffect(1.5)
+            Text("Loading cart...")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+            Spacer()
+        }
+    }
+    
+    private var savedForLaterSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Saved for Later")
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                Spacer()
+                Button("Show All") {
+                    // Placeholder for saved items functionality
+                }
+                .font(.subheadline)
+                .foregroundColor(.blue)
+            }
+            
+            Text("No saved items")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .padding(.vertical, 8)
+        }
+        .padding()
+        .background(Color(.systemGray6).opacity(0.5))
     }
     
     private var cartItemsList: some View {
@@ -151,6 +200,7 @@ struct CartView: View {
     
     private var checkoutButton: some View {
         Button("Proceed to Checkout") {
+            trackCheckoutAction()
             navigationCoordinator.navigate(to: .checkout)
         }
         .font(.headline)
@@ -174,6 +224,70 @@ struct CartView: View {
                 .navigationTitle("Coming Soon")
         }
     }
+    
+    // MARK: - Telemetry Methods
+    private func trackCartView() {
+        let span = Embrace.client?.buildSpan(
+            name: "view_cart",
+            type: .performance
+        ).startSpan()
+        
+        span?.setAttribute(key: "cart_item_count", value: String(cartManager.totalItems))
+        span?.setAttribute(key: "cart_subtotal", value: String(cartManager.subtotal))
+        span?.setAttribute(key: "is_empty", value: String(cartManager.isEmpty))
+        
+        span?.end()
+        
+        Embrace.client?.log(
+            "Cart view opened",
+            severity: .info,
+            attributes: [
+                "cart_item_count": String(cartManager.totalItems),
+                "cart_subtotal": String(cartManager.subtotal),
+                "is_empty": String(cartManager.isEmpty)
+            ]
+        )
+    }
+    
+    private func trackEmptyCartAction() {
+        Embrace.client?.log(
+            "Empty cart - start shopping clicked",
+            severity: .info
+        )
+    }
+    
+    private func trackCheckoutAction() {
+        let span = Embrace.client?.buildSpan(
+            name: "initiate_checkout",
+            type: .performance
+        ).startSpan()
+        
+        span?.setAttribute(key: "cart_item_count", value: String(cartManager.totalItems))
+        span?.setAttribute(key: "cart_subtotal", value: String(cartManager.subtotal))
+        span?.setAttribute(key: "unique_products", value: String(cartManager.cart.items.count))
+        
+        span?.end()
+        
+        Embrace.client?.log(
+            "Checkout initiated from cart",
+            severity: .info,
+            attributes: [
+                "cart_item_count": String(cartManager.totalItems),
+                "cart_subtotal": String(cartManager.subtotal)
+            ]
+        )
+    }
+    
+    private func trackClearCartAction() {
+        Embrace.client?.log(
+            "Clear cart action initiated",
+            severity: .info,
+            attributes: [
+                "items_to_clear": String(cartManager.totalItems),
+                "subtotal_to_clear": String(cartManager.subtotal)
+            ]
+        )
+    }
 }
 
 struct CartItemRow: View {
@@ -182,6 +296,7 @@ struct CartItemRow: View {
     let onRemove: () -> Void
     
     @State private var product: Product?
+    @State private var showingRemoveAlert = false
     
     var body: some View {
         HStack(spacing: 12) {
@@ -213,23 +328,41 @@ struct CartItemRow: View {
                         .foregroundColor(.secondary)
                 }
                 
-                Text("$\(String(format: "%.2f", item.unitPrice))")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.blue)
+                HStack {
+                    Text("$\(String(format: "%.2f", item.unitPrice))")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.blue)
+                    
+                    if item.quantity > 1 {
+                        Text("x\(item.quantity)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Text("Total: $\(String(format: "%.2f", item.totalPrice))")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
                 
                 Spacer()
             }
             
             Spacer()
             
-            VStack(alignment: .trailing, spacing: 8) {
+            VStack(alignment: .trailing, spacing: 12) {
                 QuantitySelector(
                     quantity: item.quantity,
-                    onQuantityChange: onQuantityChange
+                    onQuantityChange: { newQuantity in
+                        trackQuantityChange(from: item.quantity, to: newQuantity)
+                        onQuantityChange(newQuantity)
+                    }
                 )
                 
-                Button(action: onRemove) {
+                Button(action: {
+                    showingRemoveAlert = true
+                }) {
                     Image(systemName: "trash")
                         .foregroundColor(.red)
                 }
@@ -240,6 +373,15 @@ struct CartItemRow: View {
         .onAppear {
             loadProduct()
         }
+        .alert("Remove Item", isPresented: $showingRemoveAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Remove", role: .destructive) {
+                trackItemRemoval()
+                onRemove()
+            }
+        } message: {
+            Text("Are you sure you want to remove this item from your cart?")
+        }
     }
     
     private var variantsText: String {
@@ -248,6 +390,32 @@ struct CartItemRow: View {
     
     private func loadProduct() {
         product = MockDataService.shared.getProduct(by: item.productId)
+    }
+    
+    private func trackQuantityChange(from oldQuantity: Int, to newQuantity: Int) {
+        Embrace.client?.log(
+            "Cart item quantity changed",
+            severity: .info,
+            attributes: [
+                "item.id": item.id,
+                "product.id": item.productId,
+                "old_quantity": String(oldQuantity),
+                "new_quantity": String(newQuantity)
+            ]
+        )
+    }
+    
+    private func trackItemRemoval() {
+        Embrace.client?.log(
+            "Cart item removal initiated",
+            severity: .info,
+            attributes: [
+                "item.id": item.id,
+                "product.id": item.productId,
+                "quantity": String(item.quantity),
+                "unit_price": String(item.unitPrice)
+            ]
+        )
     }
 }
 
@@ -258,7 +426,7 @@ struct QuantitySelector: View {
     var body: some View {
         HStack(spacing: 8) {
             Button(action: {
-                onQuantityChange(max(0, quantity - 1))
+                onQuantityChange(max(1, quantity - 1))
             }) {
                 Image(systemName: "minus.circle.fill")
                     .foregroundColor(quantity > 1 ? .blue : .gray)
@@ -271,11 +439,12 @@ struct QuantitySelector: View {
                 .frame(minWidth: 20)
             
             Button(action: {
-                onQuantityChange(quantity + 1)
+                onQuantityChange(min(10, quantity + 1))
             }) {
                 Image(systemName: "plus.circle.fill")
-                    .foregroundColor(.blue)
+                    .foregroundColor(quantity < 10 ? .blue : .gray)
             }
+            .disabled(quantity >= 10)
         }
     }
 }
