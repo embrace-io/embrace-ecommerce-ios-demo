@@ -36,7 +36,7 @@ struct BiometricSettingsView: View {
                             Toggle("", isOn: $isBiometricEnabled)
                                 .labelsHidden()
                                 .disabled(isLoading)
-                                .onChange(of: isBiometricEnabled) { newValue in
+                                .onChange(of: isBiometricEnabled) { oldValue, newValue in
                                     if newValue {
                                         showingEnableAlert = true
                                     } else {

@@ -74,6 +74,8 @@ class BiometricAuthenticationManager: ObservableObject {
                 return .touchID
             case .faceID:
                 return .faceID
+            case .opticID:
+                return .opticID
             @unknown default:
                 return .none
             }

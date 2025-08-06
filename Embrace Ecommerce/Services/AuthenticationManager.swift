@@ -19,7 +19,7 @@ class AuthenticationManager: ObservableObject {
     private let mockAuthConfig = MockAuthConfiguration()
     
     init() {
-        loadSavedUser()
+        _ = loadSavedUser()
         setupBindings()
     }
     
@@ -255,20 +255,18 @@ class AuthenticationManager: ObservableObject {
         case .success(_):
             // Load the user associated with this biometric authentication
             if let savedUser = loadUserById(userId) {
-                var updatedUser = savedUser
-                // Update last sign-in time
-                let encoder = JSONEncoder()
-                let decoder = JSONDecoder()
-                
-                if let userData = try? encoder.encode(savedUser),
-                   var userDict = try? JSONSerialization.jsonObject(with: userData) as? [String: Any] {
-                    userDict["lastSignInAt"] = ISO8601DateFormatter().string(from: Date())
-                    
-                    if let updatedData = try? JSONSerialization.data(withJSONObject: userDict),
-                       let decodedUser = try? decoder.decode(AuthenticatedUser.self, from: updatedData) {
-                        updatedUser = decodedUser
-                    }
-                }
+                // Create updated user with new sign-in time
+                let updatedUser = AuthenticatedUser(
+                    id: savedUser.id,
+                    email: savedUser.email,
+                    displayName: savedUser.displayName,
+                    photoURL: savedUser.photoURL,
+                    authMethod: savedUser.authMethod,
+                    createdAt: savedUser.createdAt,
+                    lastSignInAt: Date(),
+                    isGuest: savedUser.isGuest,
+                    biometricEnabled: savedUser.biometricEnabled
+                )
                 
                 await handleSuccessfulAuthentication(user: updatedUser, span: span)
             } else {
@@ -401,10 +399,10 @@ class AuthenticationManager: ObservableObject {
         }
     }
     
-    private func loadSavedUser() {
+    private func loadSavedUser() -> AuthenticatedUser? {
         guard let userData = UserDefaults.standard.data(forKey: "authenticated_user"),
               let user = try? JSONDecoder().decode(AuthenticatedUser.self, from: userData) else {
-            return
+            return nil
         }
         
         // Check if session is still valid (for demo, let's say 30 days)
@@ -412,9 +410,11 @@ class AuthenticationManager: ObservableObject {
         if user.lastSignInAt > thirtyDaysAgo {
             authState = .authenticated(user)
             currentUser = user
+            return user
         } else {
             // Session expired
             UserDefaults.standard.removeObject(forKey: "authenticated_user")
+            return nil
         }
     }
     
@@ -424,7 +424,7 @@ class AuthenticationManager: ObservableObject {
         if let savedUser = currentUser, savedUser.id == userId {
             return savedUser
         }
-        return loadSavedUser() as? AuthenticatedUser
+        return loadSavedUser()
     }
     
     // MARK: - Configuration Methods
@@ -432,10 +432,21 @@ class AuthenticationManager: ObservableObject {
     func enableBiometric(for user: AuthenticatedUser) {
         biometricManager.enableBiometric(for: user.id)
         
-        var updatedUser = user
-        // Update user with biometric enabled flag
-        // In a real implementation, this would update the server
+        let updatedUser = AuthenticatedUser(
+            id: user.id,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            authMethod: user.authMethod,
+            createdAt: user.createdAt,
+            lastSignInAt: user.lastSignInAt,
+            isGuest: user.isGuest,
+            biometricEnabled: true
+        )
+        
         saveUser(updatedUser)
+        currentUser = updatedUser
+        authState = .authenticated(updatedUser)
     }
     
     // MARK: - State Queries
