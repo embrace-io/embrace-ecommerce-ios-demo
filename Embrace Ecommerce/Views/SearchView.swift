@@ -179,7 +179,7 @@ struct SearchView: View {
                 } else {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
                         ForEach(searchResults) { product in
-                            ProductCard(product: product) {
+                            EnhancedProductCard(product: product, style: .grid) {
                                 navigationCoordinator.navigate(to: .productDetail(productId: product.id))
                             }
                         }
