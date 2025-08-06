@@ -6,6 +6,21 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		7014670C2E43D0D6000ECF98 /* EmbraceCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7014670B2E43D0D6000ECF98 /* EmbraceCore */; };
+		7014670E2E43D0D6000ECF98 /* EmbraceCrash in Frameworks */ = {isa = PBXBuildFile; productRef = 7014670D2E43D0D6000ECF98 /* EmbraceCrash */; };
+		701467102E43D0D6000ECF98 /* EmbraceCrashlyticsSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 7014670F2E43D0D6000ECF98 /* EmbraceCrashlyticsSupport */; };
+		701467122E43D0D6000ECF98 /* EmbraceIO in Frameworks */ = {isa = PBXBuildFile; productRef = 701467112E43D0D6000ECF98 /* EmbraceIO */; };
+		701467142E43D0D6000ECF98 /* EmbraceMacros in Frameworks */ = {isa = PBXBuildFile; productRef = 701467132E43D0D6000ECF98 /* EmbraceMacros */; };
+		701467172E43D148000ECF98 /* FirebaseAI in Frameworks */ = {isa = PBXBuildFile; productRef = 701467162E43D148000ECF98 /* FirebaseAI */; };
+		701467192E43D148000ECF98 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 701467182E43D148000ECF98 /* FirebaseAnalytics */; };
+		7014671B2E43D148000ECF98 /* FirebaseAnalyticsCore in Frameworks */ = {isa = PBXBuildFile; productRef = 7014671A2E43D148000ECF98 /* FirebaseAnalyticsCore */; };
+		7014671D2E43D148000ECF98 /* FirebaseAnalyticsIdentitySupport in Frameworks */ = {isa = PBXBuildFile; productRef = 7014671C2E43D148000ECF98 /* FirebaseAnalyticsIdentitySupport */; };
+		7014671F2E43D148000ECF98 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 7014671E2E43D148000ECF98 /* FirebaseAppCheck */; };
+		701467222E43D278000ECF98 /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = 701467212E43D278000ECF98 /* Mixpanel */; };
+		701467252E43D40E000ECF98 /* Stripe in Frameworks */ = {isa = PBXBuildFile; productRef = 701467242E43D40E000ECF98 /* Stripe */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		701466F42E43C509000ECF98 /* Embrace Ecommerce.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Embrace Ecommerce.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +38,18 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				701467192E43D148000ECF98 /* FirebaseAnalytics in Frameworks */,
+				701467122E43D0D6000ECF98 /* EmbraceIO in Frameworks */,
+				7014671D2E43D148000ECF98 /* FirebaseAnalyticsIdentitySupport in Frameworks */,
+				701467142E43D0D6000ECF98 /* EmbraceMacros in Frameworks */,
+				7014670E2E43D0D6000ECF98 /* EmbraceCrash in Frameworks */,
+				701467252E43D40E000ECF98 /* Stripe in Frameworks */,
+				7014670C2E43D0D6000ECF98 /* EmbraceCore in Frameworks */,
+				701467102E43D0D6000ECF98 /* EmbraceCrashlyticsSupport in Frameworks */,
+				701467172E43D148000ECF98 /* FirebaseAI in Frameworks */,
+				7014671F2E43D148000ECF98 /* FirebaseAppCheck in Frameworks */,
+				7014671B2E43D148000ECF98 /* FirebaseAnalyticsCore in Frameworks */,
+				701467222E43D278000ECF98 /* Mixpanel in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +92,18 @@
 			);
 			name = "Embrace Ecommerce";
 			packageProductDependencies = (
+				7014670B2E43D0D6000ECF98 /* EmbraceCore */,
+				7014670D2E43D0D6000ECF98 /* EmbraceCrash */,
+				7014670F2E43D0D6000ECF98 /* EmbraceCrashlyticsSupport */,
+				701467112E43D0D6000ECF98 /* EmbraceIO */,
+				701467132E43D0D6000ECF98 /* EmbraceMacros */,
+				701467162E43D148000ECF98 /* FirebaseAI */,
+				701467182E43D148000ECF98 /* FirebaseAnalytics */,
+				7014671A2E43D148000ECF98 /* FirebaseAnalyticsCore */,
+				7014671C2E43D148000ECF98 /* FirebaseAnalyticsIdentitySupport */,
+				7014671E2E43D148000ECF98 /* FirebaseAppCheck */,
+				701467212E43D278000ECF98 /* Mixpanel */,
+				701467242E43D40E000ECF98 /* Stripe */,
 			);
 			productName = "Embrace Ecommerce";
 			productReference = 701466F42E43C509000ECF98 /* Embrace Ecommerce.app */;
@@ -94,6 +133,12 @@
 			);
 			mainGroup = 701466EB2E43C509000ECF98;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */,
+				701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				701467202E43D278000ECF98 /* XCRemoteSwiftPackageReference "mixpanel-swift" */,
+				701467232E43D40E000ECF98 /* XCRemoteSwiftPackageReference "stripe-ios" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 701466F52E43C509000ECF98 /* Products */;
 			projectDirPath = "";
@@ -320,6 +365,104 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/embrace-io/embrace-apple-sdk/";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.13.0;
+			};
+		};
+		701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.1.0;
+			};
+		};
+		701467202E43D278000ECF98 /* XCRemoteSwiftPackageReference "mixpanel-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/mixpanel/mixpanel-swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+		701467232E43D40E000ECF98 /* XCRemoteSwiftPackageReference "stripe-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 24.19.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		7014670B2E43D0D6000ECF98 /* EmbraceCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */;
+			productName = EmbraceCore;
+		};
+		7014670D2E43D0D6000ECF98 /* EmbraceCrash */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */;
+			productName = EmbraceCrash;
+		};
+		7014670F2E43D0D6000ECF98 /* EmbraceCrashlyticsSupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */;
+			productName = EmbraceCrashlyticsSupport;
+		};
+		701467112E43D0D6000ECF98 /* EmbraceIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */;
+			productName = EmbraceIO;
+		};
+		701467132E43D0D6000ECF98 /* EmbraceMacros */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */;
+			productName = EmbraceMacros;
+		};
+		701467162E43D148000ECF98 /* FirebaseAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAI;
+		};
+		701467182E43D148000ECF98 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		7014671A2E43D148000ECF98 /* FirebaseAnalyticsCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalyticsCore;
+		};
+		7014671C2E43D148000ECF98 /* FirebaseAnalyticsIdentitySupport */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalyticsIdentitySupport;
+		};
+		7014671E2E43D148000ECF98 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+		701467212E43D278000ECF98 /* Mixpanel */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 701467202E43D278000ECF98 /* XCRemoteSwiftPackageReference "mixpanel-swift" */;
+			productName = Mixpanel;
+		};
+		701467242E43D40E000ECF98 /* Stripe */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 701467232E43D40E000ECF98 /* XCRemoteSwiftPackageReference "stripe-ios" */;
+			productName = Stripe;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 701466EC2E43C509000ECF98 /* Project object */;
 }
