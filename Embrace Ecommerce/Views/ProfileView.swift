@@ -189,17 +189,14 @@ struct ProfileView: View {
         case .profile:
             ProfileView()
         case .editProfile:
-            Text("Edit Profile")
-                .navigationTitle("Edit Profile")
+            EditProfileView()
+                .environmentObject(authManager)
         case .addressBook:
-            Text("Address Book")
-                .navigationTitle("Address Book")
+            AddressBookView()
         case .paymentMethods:
-            Text("Payment Methods")
-                .navigationTitle("Payment Methods")
+            PaymentMethodsView()
         case .orderHistory:
-            Text("Order History")
-                .navigationTitle("Order History")
+            OrderHistoryView()
         case .networkSettings:
             NetworkSettingsView()
         case .networkDebug:
