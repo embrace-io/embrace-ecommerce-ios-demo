@@ -49,7 +49,7 @@ class NavigationCoordinator: ObservableObject {
             switchTab(to: .profile)
         case "search":
             switchTab(to: .search)
-            if let query = components.queryItems?.first(where: { $0.name == "q" })?.value {
+            if let _ = components.queryItems?.first(where: { $0.name == "q" })?.value {
                 // Will implement search functionality later
             }
         default:
@@ -78,6 +78,7 @@ enum NavigationDestination: Hashable {
     case paymentMethods
     case orderHistory
     case networkSettings
+    case networkDebug
 }
 
 extension Notification.Name {

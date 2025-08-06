@@ -133,6 +133,14 @@ struct ProfileView: View {
                 )
                 
                 ProfileMenuRow(
+                    icon: "chart.line.uptrend.xyaxis",
+                    title: "Network Debug",
+                    action: {
+                        navigationCoordinator.navigate(to: .networkDebug)
+                    }
+                )
+                
+                ProfileMenuRow(
                     icon: "questionmark.circle",
                     title: "Help & Support",
                     action: { }
@@ -214,6 +222,8 @@ struct ProfileView: View {
                 .navigationTitle("Order History")
         case .networkSettings:
             NetworkSettingsView()
+        case .networkDebug:
+            NetworkDebugView()
         default:
             Text("Coming Soon")
                 .navigationTitle("Coming Soon")
