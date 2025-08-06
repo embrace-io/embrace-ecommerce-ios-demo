@@ -1,131 +1,123 @@
 import Foundation
 
-class MockDataService {
+struct Category: Codable, Identifiable {
+    let id: String
+    let name: String
+    let description: String
+    let imageUrl: String?
+    let subcategories: [String]
+    
+    enum CodingKeys: String, CodingKey {
+        case id, name, description, subcategories
+        case imageUrl = "image_url"
+    }
+}
+
+enum AuthState {
+    case guest
+    case loggedIn(User)
+    case anonymous
+}
+
+@MainActor
+class MockDataService: ObservableObject {
     static let shared = MockDataService()
     
-    private let mockProducts: [Product] = [
-        Product(
-            id: "1",
-            name: "iPhone 15 Pro",
-            description: "The latest iPhone with titanium design and powerful A17 Pro chip.",
-            price: 999.99,
-            currency: "USD",
-            imageUrls: ["https://example.com/iphone15pro.jpg"],
-            category: "Electronics",
-            brand: "Apple",
-            variants: [
-                ProductVariant(id: "1a", type: .color, value: "Natural Titanium", priceAdjustment: 0),
-                ProductVariant(id: "1b", type: .color, value: "Blue Titanium", priceAdjustment: 0),
-                ProductVariant(id: "1c", type: .size, value: "128GB", priceAdjustment: 0),
-                ProductVariant(id: "1d", type: .size, value: "256GB", priceAdjustment: 100)
-            ],
-            inStock: true,
-            stockCount: 50
-        ),
-        Product(
-            id: "2",
-            name: "AirPods Pro (2nd gen)",
-            description: "Active Noise Cancellation with up to 2x more noise cancelling power.",
-            price: 249.99,
-            currency: "USD",
-            imageUrls: ["https://example.com/airpods-pro.jpg"],
-            category: "Electronics",
-            brand: "Apple",
-            variants: [],
-            inStock: true,
-            stockCount: 25
-        ),
-        Product(
-            id: "3",
-            name: "Nike Air Force 1",
-            description: "The classic basketball shoe that never goes out of style.",
-            price: 110.00,
-            currency: "USD",
-            imageUrls: ["https://example.com/nike-air-force-1.jpg"],
-            category: "Clothing",
-            brand: "Nike",
-            variants: [
-                ProductVariant(id: "3a", type: .size, value: "8", priceAdjustment: 0),
-                ProductVariant(id: "3b", type: .size, value: "9", priceAdjustment: 0),
-                ProductVariant(id: "3c", type: .size, value: "10", priceAdjustment: 0),
-                ProductVariant(id: "3d", type: .color, value: "White", priceAdjustment: 0),
-                ProductVariant(id: "3e", type: .color, value: "Black", priceAdjustment: 0)
-            ],
-            inStock: true,
-            stockCount: 15
-        ),
-        Product(
-            id: "4",
-            name: "MacBook Air M2",
-            description: "Supercharged by M2 chip. Incredibly thin and light laptop.",
-            price: 1199.99,
-            currency: "USD",
-            imageUrls: ["https://example.com/macbook-air-m2.jpg"],
-            category: "Electronics",
-            brand: "Apple",
-            variants: [
-                ProductVariant(id: "4a", type: .color, value: "Space Gray", priceAdjustment: 0),
-                ProductVariant(id: "4b", type: .color, value: "Silver", priceAdjustment: 0),
-                ProductVariant(id: "4c", type: .size, value: "256GB", priceAdjustment: 0),
-                ProductVariant(id: "4d", type: .size, value: "512GB", priceAdjustment: 200)
-            ],
-            inStock: true,
-            stockCount: 10
-        ),
-        Product(
-            id: "5",
-            name: "Levi's 501 Original Jeans",
-            description: "The original blue jean since 1873. A vintage-inspired fit.",
-            price: 89.99,
-            currency: "USD",
-            imageUrls: ["https://example.com/levis-501.jpg"],
-            category: "Clothing",
-            brand: "Levi's",
-            variants: [
-                ProductVariant(id: "5a", type: .size, value: "30", priceAdjustment: 0),
-                ProductVariant(id: "5b", type: .size, value: "32", priceAdjustment: 0),
-                ProductVariant(id: "5c", type: .size, value: "34", priceAdjustment: 0),
-                ProductVariant(id: "5d", type: .color, value: "Dark Blue", priceAdjustment: 0),
-                ProductVariant(id: "5e", type: .color, value: "Light Blue", priceAdjustment: 0)
-            ],
-            inStock: true,
-            stockCount: 30
-        ),
-        Product(
-            id: "6",
-            name: "Coffee Maker Pro",
-            description: "Programmable coffee maker with thermal carafe.",
-            price: 79.99,
-            currency: "USD",
-            imageUrls: ["https://example.com/coffee-maker.jpg"],
-            category: "Home & Garden",
-            brand: "KitchenAid",
-            variants: [],
-            inStock: true,
-            stockCount: 20
-        )
-    ]
+    @Published var authState: AuthState = .anonymous
+    @Published var isLoading = false
     
-    private init() {}
+    private var cachedProducts: [Product] = []
+    private var cachedCategories: [Category] = []
+    
+    private init() {
+        loadLocalData()
+    }
+    
+    private func loadLocalData() {
+        loadProductsFromJSON()
+        loadCategoriesFromJSON()
+    }
+    
+    private func loadProductsFromJSON() {
+        guard let url = Bundle.main.url(forResource: "products", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            loadFallbackProducts()
+            return
+        }
+        
+        do {
+            cachedProducts = try JSONDecoder().decode([Product].self, from: data)
+        } catch {
+            print("Failed to decode products.json: \(error)")
+            loadFallbackProducts()
+        }
+    }
+    
+    private func loadCategoriesFromJSON() {
+        guard let url = Bundle.main.url(forResource: "categories", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            loadFallbackCategories()
+            return
+        }
+        
+        do {
+            cachedCategories = try JSONDecoder().decode([Category].self, from: data)
+        } catch {
+            print("Failed to decode categories.json: \(error)")
+            loadFallbackCategories()
+        }
+    }
+    
+    private func loadFallbackProducts() {
+        cachedProducts = [
+            Product(
+                id: "fallback_1",
+                name: "Sample Product",
+                description: "This is a fallback product when JSON loading fails",
+                price: 99.99,
+                currency: "USD",
+                imageUrls: [],
+                category: "Electronics",
+                brand: "Sample Brand",
+                variants: [],
+                inStock: true,
+                stockCount: 10
+            )
+        ]
+    }
+    
+    private func loadFallbackCategories() {
+        cachedCategories = [
+            Category(
+                id: "fallback_1",
+                name: "Electronics",
+                description: "Electronic devices",
+                imageUrl: nil,
+                subcategories: ["Smartphones", "Laptops"]
+            )
+        ]
+    }
     
     func getFeaturedProducts() -> [Product] {
-        Array(mockProducts.prefix(4))
+        Array(cachedProducts.shuffled().prefix(6))
     }
     
     func getProducts(for category: String?) -> [Product] {
         if let category = category {
-            return mockProducts.filter { $0.category.lowercased() == category.lowercased() }
+            return cachedProducts.filter { 
+                $0.category.lowercased() == category.lowercased() 
+            }
         }
-        return mockProducts
+        return cachedProducts
     }
     
     func getProduct(by id: String) -> Product? {
-        mockProducts.first { $0.id == id }
+        cachedProducts.first { $0.id == id }
     }
     
     func searchProducts(query: String) -> [Product] {
         let lowercasedQuery = query.lowercased()
-        return mockProducts.filter { product in
+        return cachedProducts.filter { product in
             product.name.lowercased().contains(lowercasedQuery) ||
             product.description.lowercased().contains(lowercasedQuery) ||
             product.category.lowercased().contains(lowercasedQuery) ||
@@ -133,7 +125,100 @@ class MockDataService {
         }
     }
     
-    func getCategories() -> [String] {
-        Array(Set(mockProducts.map { $0.category })).sorted()
+    func getCategories() -> [Category] {
+        cachedCategories
+    }
+    
+    func getCategoryNames() -> [String] {
+        cachedCategories.map { $0.name }
+    }
+    
+    func mockLogin(email: String = "user@example.com", password: String = "password") -> User {
+        let user = User(
+            id: UUID().uuidString,
+            email: email,
+            firstName: "John",
+            lastName: "Doe",
+            phoneNumber: "+1 555-0123",
+            dateJoined: Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date(),
+            isGuest: false,
+            preferences: UserPreferences(
+                newsletter: true,
+                pushNotifications: true,
+                biometricAuth: true,
+                preferredCurrency: "USD"
+            )
+        )
+        
+        authState = .loggedIn(user)
+        saveCurrentUser(user)
+        return user
+    }
+    
+    func mockGuestLogin() -> User {
+        let guestUser = User(
+            id: "guest_\(UUID().uuidString)",
+            email: "guest@example.com",
+            firstName: "Guest",
+            lastName: "User",
+            phoneNumber: nil,
+            dateJoined: Date(),
+            isGuest: true,
+            preferences: nil
+        )
+        
+        authState = .guest
+        saveCurrentUser(guestUser)
+        return guestUser
+    }
+    
+    func getCurrentUser() -> User? {
+        switch authState {
+        case .loggedIn(let user):
+            return user
+        case .guest:
+            return loadCurrentUser()
+        case .anonymous:
+            return nil
+        }
+    }
+    
+    func logout() {
+        authState = .anonymous
+        UserDefaults.standard.removeObject(forKey: "current_user")
+    }
+    
+    private func saveCurrentUser(_ user: User) {
+        if let encoded = try? JSONEncoder().encode(user) {
+            UserDefaults.standard.set(encoded, forKey: "current_user")
+        }
+    }
+    
+    private func loadCurrentUser() -> User? {
+        guard let userData = UserDefaults.standard.data(forKey: "current_user"),
+              let user = try? JSONDecoder().decode(User.self, from: userData) else {
+            return nil
+        }
+        return user
+    }
+    
+    func simulateNetworkError() -> MockNetworkError {
+        let errors: [MockNetworkError] = [
+            .noConnection,
+            .timeout,
+            .serverError(code: 500),
+            .serverError(code: 503),
+            .invalidData,
+            .notFound
+        ]
+        return errors.randomElement() ?? .timeout
+    }
+    
+    func getRandomDelay(fast: Bool = false) -> TimeInterval {
+        if fast {
+            return Double.random(in: 0.1...0.5)
+        } else {
+            return Double.random(in: 0.5...2.0)
+        }
     }
 }

@@ -1,0 +1,213 @@
+[
+  {
+    "id": "prod_001",
+    "name": "iPhone 15 Pro Max",
+    "description": "The ultimate iPhone with titanium design, A17 Pro chip, and the most advanced Pro camera system ever. Features a 6.7-inch Super Retina XDR display with ProMotion technology.",
+    "price": 1199.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-7inch-naturaltitanium?wid=5120&hei=2880&fmt=p-jpg&qlt=80&.v=1692895395658"
+    ],
+    "category": "Electronics",
+    "brand": "Apple",
+    "variants": [
+      {"id": "v1", "type": "color", "value": "Natural Titanium", "price_adjustment": 0},
+      {"id": "v2", "type": "color", "value": "Blue Titanium", "price_adjustment": 0},
+      {"id": "v3", "type": "color", "value": "White Titanium", "price_adjustment": 0},
+      {"id": "v4", "type": "size", "value": "256GB", "price_adjustment": 0},
+      {"id": "v5", "type": "size", "value": "512GB", "price_adjustment": 200},
+      {"id": "v6", "type": "size", "value": "1TB", "price_adjustment": 400}
+    ],
+    "in_stock": true,
+    "stock_count": 45
+  },
+  {
+    "id": "prod_002",
+    "name": "MacBook Air 15-inch M3",
+    "description": "Supercharged by the M3 chip, the 15-inch MacBook Air delivers incredible performance in an impossibly thin and light design. Perfect for productivity and creativity.",
+    "price": 1299.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/mba15-midnight-select-202306?wid=904&hei=840&fmt=jpeg&qlt=90&.v=1684340990893"
+    ],
+    "category": "Electronics",
+    "brand": "Apple",
+    "variants": [
+      {"id": "v7", "type": "color", "value": "Midnight", "price_adjustment": 0},
+      {"id": "v8", "type": "color", "value": "Silver", "price_adjustment": 0},
+      {"id": "v9", "type": "color", "value": "Space Gray", "price_adjustment": 0},
+      {"id": "v10", "type": "size", "value": "256GB", "price_adjustment": 0},
+      {"id": "v11", "type": "size", "value": "512GB", "price_adjustment": 200}
+    ],
+    "in_stock": true,
+    "stock_count": 32
+  },
+  {
+    "id": "prod_003",
+    "name": "AirPods Pro (2nd generation)",
+    "description": "AirPods Pro feature up to 2x more Active Noise Cancellation, Adaptive Transparency, and Personalized Spatial Audio with dynamic head tracking.",
+    "price": 249.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQD83?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1660803972361"
+    ],
+    "category": "Electronics",
+    "brand": "Apple",
+    "variants": [],
+    "in_stock": true,
+    "stock_count": 128
+  },
+  {
+    "id": "prod_004",
+    "name": "Nike Air Force 1 '07",
+    "description": "The radiance lives on in the Nike Air Force 1 '07, the basketball original that puts a fresh spin on what you know best: durably stitched overlays, clean finishes and the perfect amount of flash.",
+    "price": 110.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://static.nike.com/a/images/t_PDP_1280_v1/f_auto,q_auto:eco/b7d9211c-26e7-431a-ac24-b0540fb3c00f/air-force-1-07-mens-shoes-jBrhbr.png"
+    ],
+    "category": "Clothing",
+    "brand": "Nike",
+    "variants": [
+      {"id": "v12", "type": "color", "value": "White", "price_adjustment": 0},
+      {"id": "v13", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v14", "type": "color", "value": "Triple White", "price_adjustment": 10},
+      {"id": "v15", "type": "size", "value": "8", "price_adjustment": 0},
+      {"id": "v16", "type": "size", "value": "8.5", "price_adjustment": 0},
+      {"id": "v17", "type": "size", "value": "9", "price_adjustment": 0},
+      {"id": "v18", "type": "size", "value": "9.5", "price_adjustment": 0},
+      {"id": "v19", "type": "size", "value": "10", "price_adjustment": 0},
+      {"id": "v20", "type": "size", "value": "10.5", "price_adjustment": 0},
+      {"id": "v21", "type": "size", "value": "11", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 67
+  },
+  {
+    "id": "prod_005",
+    "name": "Levi's 501 Original Fit Jeans",
+    "description": "The original blue jean since 1873. With a classic straight leg and iconic styling, they're literally the blueprint for every pair of jeans in existence.",
+    "price": 89.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://lsco.scene7.com/is/image/lsco/005012114-front-pdp-lse?fmt=jpeg&qlt=70&resMode=bisharp&fit=crop,1&op_usm=0.6,0.6,8&wid=750&hei=1000"
+    ],
+    "category": "Clothing",
+    "brand": "Levi's",
+    "variants": [
+      {"id": "v22", "type": "size", "value": "30x30", "price_adjustment": 0},
+      {"id": "v23", "type": "size", "value": "32x30", "price_adjustment": 0},
+      {"id": "v24", "type": "size", "value": "32x32", "price_adjustment": 0},
+      {"id": "v25", "type": "size", "value": "34x30", "price_adjustment": 0},
+      {"id": "v26", "type": "size", "value": "34x32", "price_adjustment": 0},
+      {"id": "v27", "type": "color", "value": "Dark Stonewash", "price_adjustment": 0},
+      {"id": "v28", "type": "color", "value": "Medium Stonewash", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 89
+  },
+  {
+    "id": "prod_006",
+    "name": "KitchenAid Artisan Stand Mixer",
+    "description": "The KitchenAid Artisan Series 5-Quart Tilt-Head Stand Mixer is perfect for heavy mixtures and kneading bread dough. Includes flat beater, dough hook, and wire whisk.",
+    "price": 349.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://kitchenaid-h.assetsadobe.com/is/image/content/dam/business-unit/kitchenaid/en-us/marketing-content/site-content/blog/how-to-use-kitchenaid-stand-mixer-attachments/how-to-use-kitchenaid-stand-mixer-attachments_FB.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "KitchenAid",
+    "variants": [
+      {"id": "v29", "type": "color", "value": "Empire Red", "price_adjustment": 0},
+      {"id": "v30", "type": "color", "value": "Onyx Black", "price_adjustment": 0},
+      {"id": "v31", "type": "color", "value": "White", "price_adjustment": 0},
+      {"id": "v32", "type": "color", "value": "Silver", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 23
+  },
+  {
+    "id": "prod_007",
+    "name": "Wilson Pro Staff Tennis Racket",
+    "description": "The Wilson Pro Staff v13 delivers the precision and feel that advanced players demand. Features Braided Graphite construction for enhanced stability and control.",
+    "price": 189.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.wilson.com/dw/image/v2/BBDG_PRD/on/demandware.static/-/Sites-wilson-master-catalog/default/dw91c3f8b0/images/hi-res/WR043711U3_ProStaff_v13_0.jpg"
+    ],
+    "category": "Sports",
+    "brand": "Wilson",
+    "variants": [
+      {"id": "v33", "type": "size", "value": "Grip 1", "price_adjustment": 0},
+      {"id": "v34", "type": "size", "value": "Grip 2", "price_adjustment": 0},
+      {"id": "v35", "type": "size", "value": "Grip 3", "price_adjustment": 0},
+      {"id": "v36", "type": "size", "value": "Grip 4", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 15
+  },
+  {
+    "id": "prod_008",
+    "name": "Samsung 55\" 4K QLED Smart TV",
+    "description": "Experience brilliant picture quality with Quantum Dot technology. Features AI-powered 4K upscaling, HDR10+, and built-in smart TV platform with voice control.",
+    "price": 799.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://images.samsung.com/is/image/samsung/p6pim/us/qn55q60cauxxs/gallery/us-qled-4k-q60c-qn55q60cauxxs-536677395"
+    ],
+    "category": "Electronics",
+    "brand": "Samsung",
+    "variants": [
+      {"id": "v37", "type": "size", "value": "55\"", "price_adjustment": 0},
+      {"id": "v38", "type": "size", "value": "65\"", "price_adjustment": 300},
+      {"id": "v39", "type": "size", "value": "75\"", "price_adjustment": 700}
+    ],
+    "in_stock": true,
+    "stock_count": 8
+  },
+  {
+    "id": "prod_009",
+    "name": "Dyson V15 Detect Cordless Vacuum",
+    "description": "Dyson's most powerful, intelligent cordless vacuum. Features laser dust detection, advanced filtration, and up to 60 minutes of run time.",
+    "price": 649.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://dyson-h.assetsadobe2.com/is/image/content/dam/dyson/images/products/primary/447823-01.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "Dyson",
+    "variants": [],
+    "in_stock": true,
+    "stock_count": 12
+  },
+  {
+    "id": "prod_010",
+    "name": "Adidas Ultraboost 23 Running Shoes",
+    "description": "The Adidas Ultraboost 23 features responsive BOOST midsole cushioning and a Primeknit+ upper for ultimate comfort during your runs.",
+    "price": 190.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://assets.adidas.com/images/h_840,f_auto,q_auto,fl_lossy,c_fill,g_auto/fbaf991a8e9e4c9f9d37af7c0179d100_9366/Ultraboost_23_Shoes_Black_ID8825_01_standard.jpg"
+    ],
+    "category": "Sports",
+    "brand": "Adidas",
+    "variants": [
+      {"id": "v40", "type": "color", "value": "Core Black", "price_adjustment": 0},
+      {"id": "v41", "type": "color", "value": "Cloud White", "price_adjustment": 0},
+      {"id": "v42", "type": "color", "value": "Solar Red", "price_adjustment": 0},
+      {"id": "v43", "type": "size", "value": "7", "price_adjustment": 0},
+      {"id": "v44", "type": "size", "value": "7.5", "price_adjustment": 0},
+      {"id": "v45", "type": "size", "value": "8", "price_adjustment": 0},
+      {"id": "v46", "type": "size", "value": "8.5", "price_adjustment": 0},
+      {"id": "v47", "type": "size", "value": "9", "price_adjustment": 0},
+      {"id": "v48", "type": "size", "value": "9.5", "price_adjustment": 0},
+      {"id": "v49", "type": "size", "value": "10", "price_adjustment": 0},
+      {"id": "v50", "type": "size", "value": "10.5", "price_adjustment": 0},
+      {"id": "v51", "type": "size", "value": "11", "price_adjustment": 0},
+      {"id": "v52", "type": "size", "value": "11.5", "price_adjustment": 0},
+      {"id": "v53", "type": "size", "value": "12", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 34
+  }
+]

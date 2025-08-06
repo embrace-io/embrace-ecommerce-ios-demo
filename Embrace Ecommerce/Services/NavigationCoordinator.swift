@@ -77,6 +77,7 @@ enum NavigationDestination: Hashable {
     case addressBook
     case paymentMethods
     case orderHistory
+    case networkSettings
 }
 
 extension Notification.Name {

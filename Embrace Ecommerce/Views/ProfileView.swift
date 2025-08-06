@@ -125,6 +125,14 @@ struct ProfileView: View {
                 )
                 
                 ProfileMenuRow(
+                    icon: "network",
+                    title: "Network Settings",
+                    action: {
+                        navigationCoordinator.navigate(to: .networkSettings)
+                    }
+                )
+                
+                ProfileMenuRow(
                     icon: "questionmark.circle",
                     title: "Help & Support",
                     action: { }
@@ -204,6 +212,8 @@ struct ProfileView: View {
         case .orderHistory:
             Text("Order History")
                 .navigationTitle("Order History")
+        case .networkSettings:
+            NetworkSettingsView()
         default:
             Text("Coming Soon")
                 .navigationTitle("Coming Soon")
@@ -221,27 +231,8 @@ struct ProfileView: View {
     }
     
     private func showSignIn() {
-        let mockUser = User(
-            id: UUID().uuidString,
-            email: "user@example.com",
-            firstName: "John",
-            lastName: "Doe",
-            phoneNumber: "+1 555-0123",
-            dateJoined: Date(),
-            isGuest: false,
-            preferences: UserPreferences(
-                newsletter: true,
-                pushNotifications: true,
-                biometricAuth: false,
-                preferredCurrency: "USD"
-            )
-        )
-        
-        if let encoded = try? JSONEncoder().encode(mockUser) {
-            UserDefaults.standard.set(encoded, forKey: "current_user")
-            user = mockUser
-            isLoggedIn = true
-        }
+        user = MockDataService.shared.mockLogin()
+        isLoggedIn = true
     }
     
     private func showSignUp() {
@@ -249,26 +240,12 @@ struct ProfileView: View {
     }
     
     private func continueAsGuest() {
-        let guestUser = User(
-            id: UUID().uuidString,
-            email: "guest@example.com",
-            firstName: "Guest",
-            lastName: "User",
-            phoneNumber: nil,
-            dateJoined: Date(),
-            isGuest: true,
-            preferences: nil
-        )
-        
-        if let encoded = try? JSONEncoder().encode(guestUser) {
-            UserDefaults.standard.set(encoded, forKey: "current_user")
-            user = guestUser
-            isLoggedIn = true
-        }
+        user = MockDataService.shared.mockGuestLogin()
+        isLoggedIn = true
     }
     
     private func signOut() {
-        UserDefaults.standard.removeObject(forKey: "current_user")
+        MockDataService.shared.logout()
         user = nil
         isLoggedIn = false
     }
