@@ -2,84 +2,28 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject private var navigationCoordinator: NavigationCoordinator
-    @State private var user: User?
-    @State private var isLoggedIn = false
+    @EnvironmentObject private var authManager: AuthenticationManager
+    @State private var showingBiometricSettings = false
     
     var body: some View {
         NavigationStack(path: $navigationCoordinator.navigationPath) {
             VStack(spacing: 0) {
-                if isLoggedIn, let user = user {
+                if let user = authManager.currentUser {
                     loggedInView(user: user)
                 } else {
-                    guestView
+                    // This should not show since authentication is handled at app level
+                    EmptyView()
                 }
             }
             .navigationTitle("Profile")
             .navigationDestination(for: NavigationDestination.self) { destination in
                 destinationView(for: destination)
             }
-            .onAppear {
-                loadUserData()
-            }
         }
     }
     
-    private var guestView: some View {
-        VStack(spacing: 32) {
-            Spacer()
-            
-            VStack(spacing: 16) {
-                Image(systemName: "person.circle")
-                    .font(.system(size: 80))
-                    .foregroundColor(.gray)
-                
-                VStack(spacing: 8) {
-                    Text("Welcome to Embrace Store")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                    
-                    Text("Sign in to access your account and get personalized recommendations")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-            }
-            
-            VStack(spacing: 12) {
-                Button("Sign In") {
-                    showSignIn()
-                }
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .cornerRadius(10)
-                
-                Button("Create Account") {
-                    showSignUp()
-                }
-                .font(.headline)
-                .foregroundColor(.blue)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue.opacity(0.1))
-                .cornerRadius(10)
-                
-                Button("Continue as Guest") {
-                    continueAsGuest()
-                }
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-            }
-            .padding(.horizontal, 32)
-            
-            Spacer()
-        }
-    }
     
-    private func loggedInView(user: User) -> some View {
+    private func loggedInView(user: AuthenticatedUser) -> some View {
         List {
             userInfoSection(user: user)
             
@@ -125,6 +69,14 @@ struct ProfileView: View {
                 )
                 
                 ProfileMenuRow(
+                    icon: "faceid",
+                    title: "Biometric Authentication",
+                    action: {
+                        showingBiometricSettings = true
+                    }
+                )
+                
+                ProfileMenuRow(
                     icon: "network",
                     title: "Network Settings",
                     action: {
@@ -166,32 +118,60 @@ struct ProfileView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingBiometricSettings) {
+            BiometricSettingsView()
+                .environmentObject(authManager)
+        }
     }
     
-    private func userInfoSection(user: User) -> some View {
+    private func userInfoSection(user: AuthenticatedUser) -> some View {
         Section {
             HStack(spacing: 16) {
-                Circle()
-                    .fill(Color.blue.opacity(0.2))
-                    .frame(width: 60, height: 60)
-                    .overlay(
-                        Text("\(user.firstName.first?.uppercased() ?? "")\(user.lastName.first?.uppercased() ?? "")")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.blue)
-                    )
+                // Profile Image
+                AsyncImage(url: URL(string: user.photoURL ?? "")) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    Circle()
+                        .fill(Color.blue.opacity(0.2))
+                        .overlay(
+                            Text(user.displayName.prefix(2).uppercased())
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.blue)
+                        )
+                }
+                .frame(width: 60, height: 60)
+                .clipShape(Circle())
                 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("\(user.firstName) \(user.lastName)")
-                        .font(.headline)
-                        .fontWeight(.semibold)
+                    HStack {
+                        Text(user.displayName)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        if user.isGuest {
+                            Text("Guest")
+                                .font(.caption)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 2)
+                                .background(Color.orange.opacity(0.2))
+                                .foregroundColor(.orange)
+                                .cornerRadius(4)
+                        }
+                    }
                     
                     Text(user.email)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
-                    if !user.isGuest {
-                        Text("Member since \(DateFormatter.monthYear.string(from: user.dateJoined))")
+                    HStack {
+                        Text("Signed in with \(user.authMethod.displayName)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Image(systemName: user.authMethod.iconName)
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -230,34 +210,8 @@ struct ProfileView: View {
         }
     }
     
-    private func loadUserData() {
-        if let userData = UserDefaults.standard.data(forKey: "current_user"),
-           let decodedUser = try? JSONDecoder().decode(User.self, from: userData) {
-            user = decodedUser
-            isLoggedIn = true
-        } else {
-            isLoggedIn = false
-        }
-    }
-    
-    private func showSignIn() {
-        user = MockDataService.shared.mockLogin()
-        isLoggedIn = true
-    }
-    
-    private func showSignUp() {
-        showSignIn()
-    }
-    
-    private func continueAsGuest() {
-        user = MockDataService.shared.mockGuestLogin()
-        isLoggedIn = true
-    }
-    
     private func signOut() {
-        MockDataService.shared.logout()
-        user = nil
-        isLoggedIn = false
+        authManager.signOut()
     }
 }
 

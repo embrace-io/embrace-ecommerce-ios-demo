@@ -8,8 +8,25 @@
 import SwiftUI
 
 struct ContentView: View {
+    @EnvironmentObject private var authManager: AuthenticationManager
+    
     var body: some View {
-        MainTabView()
+        Group {
+            if authManager.isAuthenticated {
+                MainTabView()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .trailing),
+                        removal: .move(edge: .leading)
+                    ))
+            } else {
+                AuthenticationView()
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .leading),
+                        removal: .move(edge: .trailing)
+                    ))
+            }
+        }
+        .animation(.easeInOut(duration: 0.5), value: authManager.isAuthenticated)
     }
 }
 

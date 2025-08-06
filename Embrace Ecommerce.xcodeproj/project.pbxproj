@@ -19,6 +19,8 @@
 		7014671F2E43D148000ECF98 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = 7014671E2E43D148000ECF98 /* FirebaseAppCheck */; };
 		701467222E43D278000ECF98 /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = 701467212E43D278000ECF98 /* Mixpanel */; };
 		701467252E43D40E000ECF98 /* Stripe in Frameworks */ = {isa = PBXBuildFile; productRef = 701467242E43D40E000ECF98 /* Stripe */; };
+		70DFC7E82E44082700585111 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 70DFC7E72E44082700585111 /* GoogleSignIn */; };
+		70DFC7EA2E44082700585111 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 70DFC7E92E44082700585111 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,11 +43,13 @@
 				701467192E43D148000ECF98 /* FirebaseAnalytics in Frameworks */,
 				701467122E43D0D6000ECF98 /* EmbraceIO in Frameworks */,
 				7014671D2E43D148000ECF98 /* FirebaseAnalyticsIdentitySupport in Frameworks */,
+				70DFC7E82E44082700585111 /* GoogleSignIn in Frameworks */,
 				701467142E43D0D6000ECF98 /* EmbraceMacros in Frameworks */,
 				7014670E2E43D0D6000ECF98 /* EmbraceCrash in Frameworks */,
 				701467252E43D40E000ECF98 /* Stripe in Frameworks */,
 				7014670C2E43D0D6000ECF98 /* EmbraceCore in Frameworks */,
 				701467102E43D0D6000ECF98 /* EmbraceCrashlyticsSupport in Frameworks */,
+				70DFC7EA2E44082700585111 /* GoogleSignInSwift in Frameworks */,
 				701467172E43D148000ECF98 /* FirebaseAI in Frameworks */,
 				7014671F2E43D148000ECF98 /* FirebaseAppCheck in Frameworks */,
 				7014671B2E43D148000ECF98 /* FirebaseAnalyticsCore in Frameworks */,
@@ -104,6 +108,8 @@
 				7014671E2E43D148000ECF98 /* FirebaseAppCheck */,
 				701467212E43D278000ECF98 /* Mixpanel */,
 				701467242E43D40E000ECF98 /* Stripe */,
+				70DFC7E72E44082700585111 /* GoogleSignIn */,
+				70DFC7E92E44082700585111 /* GoogleSignInSwift */,
 			);
 			productName = "Embrace Ecommerce";
 			productReference = 701466F42E43C509000ECF98 /* Embrace Ecommerce.app */;
@@ -138,6 +144,7 @@
 				701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				701467202E43D278000ECF98 /* XCRemoteSwiftPackageReference "mixpanel-swift" */,
 				701467232E43D40E000ECF98 /* XCRemoteSwiftPackageReference "stripe-ios" */,
+				70DFC7E62E44082700585111 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 701466F52E43C509000ECF98 /* Products */;
@@ -399,6 +406,14 @@
 				minimumVersion = 24.19.0;
 			};
 		};
+		70DFC7E62E44082700585111 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -461,6 +476,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 701467232E43D40E000ECF98 /* XCRemoteSwiftPackageReference "stripe-ios" */;
 			productName = Stripe;
+		};
+		70DFC7E72E44082700585111 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 70DFC7E62E44082700585111 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		70DFC7E92E44082700585111 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 70DFC7E62E44082700585111 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
