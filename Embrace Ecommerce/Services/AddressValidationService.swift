@@ -300,6 +300,7 @@ class AddressValidationService: ObservableObject {
     }
 }
 
+@MainActor
 class EmbraceManager {
     static let shared = EmbraceManager()
     private init() {}
