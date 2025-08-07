@@ -19,7 +19,13 @@
       {"id": "v6", "type": "size", "value": "1TB", "price_adjustment": 400}
     ],
     "in_stock": true,
-    "stock_count": 45
+    "stock_count": 45,
+    "weight": 0.49,
+    "dimensions": {
+      "width": 3.02,
+      "height": 6.29,
+      "depth": 0.32
+    }
   },
   {
     "id": "prod_002",
@@ -40,7 +46,13 @@
       {"id": "v11", "type": "size", "value": "512GB", "price_adjustment": 200}
     ],
     "in_stock": true,
-    "stock_count": 32
+    "stock_count": 32,
+    "weight": 3.3,
+    "dimensions": {
+      "width": 13.4,
+      "height": 9.35,
+      "depth": 0.45
+    }
   },
   {
     "id": "prod_003",
@@ -55,7 +67,13 @@
     "brand": "Apple",
     "variants": [],
     "in_stock": true,
-    "stock_count": 128
+    "stock_count": 128,
+    "weight": 0.12,
+    "dimensions": {
+      "width": 1.78,
+      "height": 2.39,
+      "depth": 0.85
+    }
   },
   {
     "id": "prod_004",
@@ -81,7 +99,13 @@
       {"id": "v21", "type": "size", "value": "11", "price_adjustment": 0}
     ],
     "in_stock": true,
-    "stock_count": 67
+    "stock_count": 67,
+    "weight": 1.1,
+    "dimensions": {
+      "width": 4.5,
+      "height": 12.2,
+      "depth": 8.3
+    }
   },
   {
     "id": "prod_005",
@@ -104,7 +128,13 @@
       {"id": "v28", "type": "color", "value": "Medium Stonewash", "price_adjustment": 0}
     ],
     "in_stock": true,
-    "stock_count": 89
+    "stock_count": 89,
+    "weight": 1.5,
+    "dimensions": {
+      "width": 8.0,
+      "height": 12.0,
+      "depth": 2.0
+    }
   },
   {
     "id": "prod_006",
@@ -124,7 +154,13 @@
       {"id": "v32", "type": "color", "value": "Silver", "price_adjustment": 0}
     ],
     "in_stock": true,
-    "stock_count": 23
+    "stock_count": 23,
+    "weight": 22.0,
+    "dimensions": {
+      "width": 14.17,
+      "height": 13.9,
+      "depth": 8.7
+    }
   },
   {
     "id": "prod_007",
@@ -144,7 +180,13 @@
       {"id": "v36", "type": "size", "value": "Grip 4", "price_adjustment": 0}
     ],
     "in_stock": true,
-    "stock_count": 15
+    "stock_count": 15,
+    "weight": 0.69,
+    "dimensions": {
+      "width": 11.0,
+      "height": 27.0,
+      "depth": 1.2
+    }
   },
   {
     "id": "prod_008",
@@ -163,7 +205,13 @@
       {"id": "v39", "type": "size", "value": "75\"", "price_adjustment": 700}
     ],
     "in_stock": true,
-    "stock_count": 8
+    "stock_count": 8,
+    "weight": 36.4,
+    "dimensions": {
+      "width": 48.4,
+      "height": 27.8,
+      "depth": 2.3
+    }
   },
   {
     "id": "prod_009",
@@ -178,7 +226,13 @@
     "brand": "Dyson",
     "variants": [],
     "in_stock": true,
-    "stock_count": 12
+    "stock_count": 12,
+    "weight": 6.8,
+    "dimensions": {
+      "width": 9.8,
+      "height": 49.6,
+      "depth": 8.6
+    }
   },
   {
     "id": "prod_010",
@@ -208,6 +262,12 @@
       {"id": "v53", "type": "size", "value": "12", "price_adjustment": 0}
     ],
     "in_stock": true,
-    "stock_count": 34
+    "stock_count": 34,
+    "weight": 0.75,
+    "dimensions": {
+      "width": 4.2,
+      "height": 12.0,
+      "depth": 7.8
+    }
   }
 ]

@@ -7,13 +7,14 @@ struct CartItem: Codable, Identifiable {
     let selectedVariants: [String: String]
     let addedAt: Date
     let unitPrice: Double
+    let product: Product
     
     var totalPrice: Double {
         return unitPrice * Double(quantity)
     }
     
     enum CodingKeys: String, CodingKey {
-        case id, quantity
+        case id, quantity, product
         case productId = "product_id"
         case selectedVariants = "selected_variants"
         case addedAt = "added_at"

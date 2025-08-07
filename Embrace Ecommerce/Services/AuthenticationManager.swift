@@ -154,7 +154,7 @@ class AuthenticationManager: ObservableObject {
         span?.setAttribute(key: "auth.method", value: "google")
         span?.setAttribute(key: "auth.provider", value: "google")
         
-        guard let presentingViewController = await UIApplication.shared.connectedScenes
+        guard let presentingViewController = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .first?.windows.first?.rootViewController else {
             await handleAuthenticationError(.unknownError("No presenting view controller"), span: span)

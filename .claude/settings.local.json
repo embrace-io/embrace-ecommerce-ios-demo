@@ -5,7 +5,9 @@
       "Bash(mv:*)",
       "Bash(xcodebuild:*)",
       "Bash(swiftc:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(swift build:*)",
+      "Bash(find:*)"
     ],
     "deny": []
   }

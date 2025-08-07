@@ -59,7 +59,8 @@ class CartManager: ObservableObject {
                 quantity: quantity,
                 selectedVariants: selectedVariants,
                 addedAt: Date(),
-                unitPrice: product.price
+                unitPrice: product.price,
+                product: product
             )
             cart.items.append(newItem)
         }
@@ -139,7 +140,8 @@ class CartManager: ObservableObject {
                 quantity: quantity,
                 selectedVariants: cart.items[index].selectedVariants,
                 addedAt: cart.items[index].addedAt,
-                unitPrice: cart.items[index].unitPrice
+                unitPrice: cart.items[index].unitPrice,
+                product: cart.items[index].product
             )
             cart.items[index] = updatedItem
         }

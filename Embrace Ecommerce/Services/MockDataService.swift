@@ -81,7 +81,9 @@ class MockDataService: ObservableObject {
                 brand: "Sample Brand",
                 variants: [],
                 inStock: true,
-                stockCount: 10
+                stockCount: 10,
+                weight: 2.5,
+                dimensions: ProductDimensions(width: 12, height: 8, depth: 4)
             )
         ]
     }

@@ -163,20 +163,6 @@ struct OrderData {
     }
 }
 
-struct ShippingMethod: Identifiable {
-    let id: String
-    let name: String
-    let description: String
-    let cost: Double
-    let estimatedDays: Int
-    
-    var displayName: String {
-        if cost == 0 {
-            return "\(name) - FREE"
-        }
-        return "\(name) - $\(String(format: "%.2f", cost))"
-    }
-}
 
 enum CheckoutError: Error, LocalizedError {
     case missingRequiredData

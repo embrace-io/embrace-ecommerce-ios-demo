@@ -314,9 +314,9 @@ class ShippingMethodSelectionView: UIView {
     weak var delegate: ShippingMethodSelectionDelegate?
     private var selectedMethod: ShippingMethod?
     private let shippingMethods = [
-        ShippingMethod(id: "standard", name: "Standard Shipping", description: "5-7 business days", cost: 0.0, estimatedDays: 7),
-        ShippingMethod(id: "express", name: "Express Shipping", description: "2-3 business days", cost: 9.99, estimatedDays: 3),
-        ShippingMethod(id: "overnight", name: "Overnight Shipping", description: "1 business day", cost: 24.99, estimatedDays: 1)
+        ShippingMethod(id: "standard", name: "Standard Shipping", description: "5-7 business days", cost: 0.0, estimatedDays: 7, isAvailable: true, trackingIncluded: true, insuranceIncluded: false),
+        ShippingMethod(id: "express", name: "Express Shipping", description: "2-3 business days", cost: 9.99, estimatedDays: 3, isAvailable: true, trackingIncluded: true, insuranceIncluded: false),
+        ShippingMethod(id: "overnight", name: "Overnight Shipping", description: "1 business day", cost: 24.99, estimatedDays: 1, isAvailable: true, trackingIncluded: true, insuranceIncluded: true)
     ]
     
     private var titleLabel: UILabel!
