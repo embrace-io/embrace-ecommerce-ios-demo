@@ -517,6 +517,8 @@ struct OrderDetailView: View {
             return "applelogo"
         case .paypal:
             return "globe"
+        case .stripe:
+            return "creditcard"
         }
     }
 }

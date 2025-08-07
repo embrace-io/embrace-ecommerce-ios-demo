@@ -40,7 +40,11 @@ struct CheckoutView: View {
         case .shipping:
             ShippingInformationViewControllerWrapper(coordinator: coordinator)
         case .payment:
-            PaymentSelectionView(coordinator: coordinator)
+            if coordinator.selectedPaymentMethod?.type == .stripe {
+                StripePaymentView(coordinator: coordinator)
+            } else {
+                PaymentSelectionView(coordinator: coordinator)
+            }
         case .confirmation:
             OrderConfirmationViewControllerWrapper(
                 coordinator: coordinator,

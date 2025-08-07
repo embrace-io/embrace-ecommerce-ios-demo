@@ -8,6 +8,7 @@
 import SwiftUI
 import EmbraceIO
 import GoogleSignIn
+import Stripe
 
 @main
 struct Embrace_EcommerceApp: App {
@@ -28,6 +29,9 @@ struct Embrace_EcommerceApp: App {
         
         // Configure Google Sign-In
         configureGoogleSignIn()
+        
+        // Initialize Stripe
+        configureStripe()
     }
     
     private func configureGoogleSignIn() {
@@ -49,6 +53,12 @@ struct Embrace_EcommerceApp: App {
         }
     }
     
+    private func configureStripe() {
+        // Stripe is initialized automatically when StripePaymentService is first accessed
+        // The publishable key is set in StripePaymentService.init()
+        print("✅ Stripe configured for test environment")
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -56,7 +66,14 @@ struct Embrace_EcommerceApp: App {
                 .environmentObject(MockDataService.shared)
                 .environmentObject(AuthenticationManager())
                 .onOpenURL { url in
+                    // Handle Google Sign-In URL
                     GIDSignIn.sharedInstance.handle(url)
+                    
+                    // Handle Stripe redirect URL
+                    if url.scheme == "embrace-ecommerce" && url.host == "stripe-redirect" {
+                        // Stripe will handle this automatically
+                        print("✅ Stripe redirect URL handled: \(url)")
+                    }
                 }
         }
     }

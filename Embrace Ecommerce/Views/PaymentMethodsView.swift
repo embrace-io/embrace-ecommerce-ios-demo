@@ -147,6 +147,8 @@ struct PaymentMethodRowView: View {
             return "applelogo"
         case .paypal:
             return "globe"
+        case .stripe:
+            return "creditcard.and.123"
         }
     }
     
@@ -158,6 +160,8 @@ struct PaymentMethodRowView: View {
             return .black
         case .paypal:
             return .indigo
+        case .stripe:
+            return .purple
         }
     }
     
@@ -200,6 +204,7 @@ struct AddPaymentMethodView: View {
                         Text("Debit Card").tag(PaymentMethod.PaymentType.debitCard)
                         Text("Apple Pay").tag(PaymentMethod.PaymentType.applePay)
                         Text("PayPal").tag(PaymentMethod.PaymentType.paypal)
+                        Text("Stripe").tag(PaymentMethod.PaymentType.stripe)
                     }
                     .pickerStyle(.segmented)
                 }
@@ -297,7 +302,7 @@ struct AddPaymentMethodView: View {
                         .font(.body)
                 }
                 
-                Text("You'll be redirected to authenticate with \(paymentType.rawValue.replacingOccurrences(of: "_", with: " ").capitalized)")
+                Text(paymentType == .stripe ? "Stripe provides secure payment processing" : "You'll be redirected to authenticate with \(paymentType.rawValue.replacingOccurrences(of: "_", with: " ").capitalized)")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

@@ -160,7 +160,8 @@ struct PaymentSelectionView: View {
                     type: .applePay,
                     isDefault: false,
                     cardInfo: nil,
-                    digitalWalletInfo: DigitalWalletInfo(email: nil, displayName: "Apple Pay")
+                    digitalWalletInfo: DigitalWalletInfo(email: nil, displayName: "Apple Pay"),
+                    stripePaymentMethodId: nil
                 )
                 coordinator.selectedPaymentMethod = applePayMethod
             }
@@ -177,9 +178,28 @@ struct PaymentSelectionView: View {
                     type: .paypal,
                     isDefault: false,
                     cardInfo: nil,
-                    digitalWalletInfo: DigitalWalletInfo(email: "user@example.com", displayName: "PayPal")
+                    digitalWalletInfo: DigitalWalletInfo(email: "user@example.com", displayName: "PayPal"),
+                    stripePaymentMethodId: nil
                 )
                 coordinator.selectedPaymentMethod = paypalMethod
+            }
+            
+            PaymentOptionRow(
+                type: .stripe,
+                title: "Stripe Payment",
+                icon: "creditcard.and.123",
+                isSelected: selectedPaymentType == .stripe
+            ) {
+                selectedPaymentType = .stripe
+                let stripeMethod = PaymentMethod(
+                    id: UUID().uuidString,
+                    type: .stripe,
+                    isDefault: false,
+                    cardInfo: nil,
+                    digitalWalletInfo: DigitalWalletInfo(email: nil, displayName: "Stripe"),
+                    stripePaymentMethodId: nil
+                )
+                coordinator.selectedPaymentMethod = stripeMethod
             }
         }
     }
@@ -216,7 +236,8 @@ struct PaymentSelectionView: View {
                     type: .creditCard,
                     isDefault: false,
                     cardInfo: cardInfo,
-                    digitalWalletInfo: nil
+                    digitalWalletInfo: nil,
+                    stripePaymentMethodId: nil
                 )
                 coordinator.selectedPaymentMethod = paymentMethod
             }
@@ -270,7 +291,8 @@ struct PaymentSelectionView: View {
                     expiryYear: 2027,
                     holderName: "John Doe"
                 ),
-                digitalWalletInfo: nil
+                digitalWalletInfo: nil,
+                stripePaymentMethodId: nil
             ),
             PaymentMethod(
                 id: "2",
@@ -283,7 +305,8 @@ struct PaymentSelectionView: View {
                     expiryYear: 2026,
                     holderName: "John Doe"
                 ),
-                digitalWalletInfo: nil
+                digitalWalletInfo: nil,
+                stripePaymentMethodId: nil
             )
         ]
         
@@ -475,7 +498,8 @@ struct AddNewCardView: View {
                         type: .creditCard,
                         isDefault: false,
                         cardInfo: cardInfo,
-                        digitalWalletInfo: nil
+                        digitalWalletInfo: nil,
+                        stripePaymentMethodId: nil
                     )
                     onCardAdded(paymentMethod)
                 }

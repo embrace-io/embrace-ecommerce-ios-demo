@@ -119,26 +119,41 @@ class CheckoutCoordinator: ObservableObject {
             return .failure(CheckoutError.missingRequiredData)
         }
         
-        let order = Order(
-            id: UUID().uuidString,
-            userId: nil,
-            orderNumber: generateOrderNumber(),
-            items: orderData.items,
-            shippingAddress: shippingAddress,
-            billingAddress: selectedBillingAddress ?? shippingAddress,
-            paymentMethod: paymentMethod,
-            status: .pending,
-            subtotal: orderData.subtotal,
-            tax: orderData.tax,
-            shipping: orderData.shipping,
-            total: orderData.total,
-            createdAt: Date(),
-            updatedAt: Date(),
-            estimatedDelivery: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
-            trackingNumber: nil
-        )
-        
-        return .success(order)
+        do {
+            if paymentMethod.type == .stripe {
+                try await processStripePayment()
+            }
+            
+            let order = Order(
+                id: UUID().uuidString,
+                userId: nil,
+                orderNumber: generateOrderNumber(),
+                items: orderData.items,
+                shippingAddress: shippingAddress,
+                billingAddress: selectedBillingAddress ?? shippingAddress,
+                paymentMethod: paymentMethod,
+                status: paymentMethod.type == .stripe ? .processing : .pending,
+                subtotal: orderData.subtotal,
+                tax: orderData.tax,
+                shipping: orderData.shipping,
+                total: orderData.total,
+                createdAt: Date(),
+                updatedAt: Date(),
+                estimatedDelivery: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
+                trackingNumber: nil
+            )
+            
+            return .success(order)
+        } catch {
+            return .failure(error)
+        }
+    }
+    
+    private func processStripePayment() async throws {
+        // This method would handle any additional Stripe payment processing
+        // For now, it's a placeholder since the payment is already processed in StripePaymentView
+        // In a real app, you might want to confirm the payment intent here
+        return
     }
     
     private func generateOrderNumber() -> String {

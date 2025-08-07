@@ -499,7 +499,8 @@ class UserProfileManager: ObservableObject {
                     expiryYear: 2027,
                     holderName: "John Doe"
                 ),
-                digitalWalletInfo: nil
+                digitalWalletInfo: nil,
+                stripePaymentMethodId: nil
             ),
             PaymentMethod(
                 id: UUID().uuidString,
@@ -509,7 +510,8 @@ class UserProfileManager: ObservableObject {
                 digitalWalletInfo: DigitalWalletInfo(
                     email: nil,
                     displayName: "Apple Pay"
-                )
+                ),
+                stripePaymentMethodId: nil
             )
         ]
     }
