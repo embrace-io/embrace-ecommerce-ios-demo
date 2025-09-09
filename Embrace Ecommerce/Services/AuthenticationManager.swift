@@ -14,6 +14,7 @@ class AuthenticationManager: ObservableObject {
     private let biometricManager = BiometricAuthenticationManager()
     private var cancellables = Set<AnyCancellable>()
     private let mockDataService = MockDataService.shared
+    private let analytics = MixpanelAnalyticsService.shared
     
     // Mock authentication configuration
     private let mockAuthConfig = MockAuthConfiguration()
@@ -78,9 +79,11 @@ class AuthenticationManager: ObservableObject {
                     biometricEnabled: false
                 )
                 
+                analytics.trackUserSignIn(method: "email", success: true)
                 await handleSuccessfulAuthentication(user: user, span: span)
                 
             } else {
+                analytics.trackUserSignIn(method: "email", success: false)
                 await handleAuthenticationError(.invalidCredentials, span: span)
             }
             
@@ -127,6 +130,7 @@ class AuthenticationManager: ObservableObject {
                 biometricEnabled: false
             )
             
+            analytics.trackUserSignUp(method: "email", success: true)
             await handleSuccessfulAuthentication(user: user, span: span)
             
         } catch {
@@ -221,10 +225,12 @@ class AuthenticationManager: ObservableObject {
                 biometricEnabled: false
             )
             
+            analytics.trackUserSignIn(method: "google", success: true)
             await handleSuccessfulAuthentication(user: authenticatedUser, span: span)
             
         } catch {
             span?.setAttribute(key: "error.description", value: error.localizedDescription)
+            analytics.trackUserSignIn(method: "google", success: false)
             await handleAuthenticationError(.googleSignInFailed(error.localizedDescription), span: span)
         }
         
@@ -264,6 +270,7 @@ class AuthenticationManager: ObservableObject {
             biometricEnabled: false
         )
         
+        analytics.trackUserSignIn(method: "guest", success: true)
         await handleSuccessfulAuthentication(user: guestUser, span: span)
         
         await MainActor.run {
@@ -308,12 +315,15 @@ class AuthenticationManager: ObservableObject {
                     biometricEnabled: savedUser.biometricEnabled
                 )
                 
+                analytics.trackUserSignIn(method: "biometric", success: true)
                 await handleSuccessfulAuthentication(user: updatedUser, span: span)
             } else {
+                analytics.trackUserSignIn(method: "biometric", success: false)
                 await handleAuthenticationError(.unknownError("User not found"), span: span)
             }
             
         case .failure(let error):
+            analytics.trackUserSignIn(method: "biometric", success: false)
             await handleAuthenticationError(error, span: span)
         }
         
@@ -348,6 +358,9 @@ class AuthenticationManager: ObservableObject {
         authState = .unauthenticated
         currentUser = nil
         
+        analytics.trackUserSignOut()
+        analytics.resetUserSession()
+        
         span?.end()
         
         Embrace.client?.log(
@@ -367,6 +380,14 @@ class AuthenticationManager: ObservableObject {
             currentUser = user
             saveUser(user)
         }
+        
+        // Identify user in Mixpanel
+        analytics.identifyUser(userId: user.id, email: user.isGuest ? nil : user.email)
+        analytics.updateUserProfile(
+            email: user.isGuest ? nil : user.email,
+            name: user.displayName,
+            plan: user.isGuest ? "guest" : "authenticated"
+        )
         
         span?.setAttribute(key: "auth.success", value: "true")
         span?.setAttribute(key: "user.id", value: user.id)

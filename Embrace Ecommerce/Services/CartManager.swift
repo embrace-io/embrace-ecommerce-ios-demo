@@ -13,6 +13,7 @@ class CartManager: ObservableObject {
     )
     
     private var cancellables = Set<AnyCancellable>()
+    private let analytics = MixpanelAnalyticsService.shared
     
     var totalItems: Int {
         cart.totalItems
@@ -67,6 +68,14 @@ class CartManager: ObservableObject {
         
         updateCart()
         
+        // Track Mixpanel analytics
+        analytics.trackProductAddedToCart(
+            productId: product.id,
+            productName: product.name,
+            price: product.price,
+            quantity: quantity
+        )
+        
         span?.setAttribute(key: "cart_total_items", value: String(totalItems))
         span?.setAttribute(key: "cart_subtotal", value: String(subtotal))
         span?.end()
@@ -90,11 +99,21 @@ class CartManager: ObservableObject {
             type: .performance
         ).startSpan()
         
-        if let item = cart.items.first(where: { $0.id == itemId }) {
+        let removedItem = cart.items.first(where: { $0.id == itemId })
+        
+        if let item = removedItem {
             span?.setAttribute(key: "item.id", value: item.id)
             span?.setAttribute(key: "product.id", value: item.productId)
             span?.setAttribute(key: "quantity", value: String(item.quantity))
             span?.setAttribute(key: "unit_price", value: String(item.unitPrice))
+            
+            // Track Mixpanel analytics
+            analytics.trackProductRemovedFromCart(
+                productId: item.productId,
+                productName: item.product.name,
+                price: item.unitPrice,
+                quantity: item.quantity
+            )
         }
         
         cart.items.removeAll { $0.id == itemId }
@@ -202,5 +221,9 @@ class CartManager: ObservableObject {
            let decodedCart = try? JSONDecoder().decode(Cart.self, from: data) {
             cart = decodedCart
         }
+    }
+    
+    func trackCartViewed() {
+        analytics.trackCartViewed(itemCount: totalItems, totalValue: subtotal)
     }
 }

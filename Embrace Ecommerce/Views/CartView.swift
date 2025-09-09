@@ -23,6 +23,10 @@ struct CartView: View {
             .navigationDestination(for: NavigationDestination.self) { destination in
                 destinationView(for: destination)
             }
+            .onAppear {
+                cartManager.trackCartViewed()
+                MixpanelAnalyticsService.shared.trackScreenView(screenName: "Cart")
+            }
             .toolbar {
                 if !cartManager.isEmpty {
                     ToolbarItem(placement: .navigationBarTrailing) {

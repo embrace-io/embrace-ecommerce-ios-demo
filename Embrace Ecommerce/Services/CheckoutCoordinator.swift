@@ -13,6 +13,7 @@ class CheckoutCoordinator: ObservableObject {
     
     private let cartManager: CartManager
     private let dataService = MockDataService.shared
+    private let analytics = MixpanelAnalyticsService.shared
     
     enum CheckoutStep: Int, CaseIterable, Hashable {
         case cartReview = 0
@@ -38,6 +39,12 @@ class CheckoutCoordinator: ObservableObject {
         self.cartManager = cartManager
         self.orderData = OrderData(cartItems: cartManager.cart.items)
         updateOrderDataFromCart()
+        
+        // Track checkout started
+        analytics.trackCheckoutStarted(
+            itemCount: cartManager.totalItems,
+            totalValue: cartManager.subtotal
+        )
     }
     
     func goToNextStep() {
@@ -55,6 +62,13 @@ class CheckoutCoordinator: ObservableObject {
         }
         
         currentStep = nextStep
+        
+        // Track checkout step completion
+        analytics.trackCheckoutStepCompleted(
+            step: nextStep.title.lowercased(),
+            itemCount: cartManager.totalItems,
+            totalValue: orderData.total
+        )
     }
     
     func goToPreviousStep() {

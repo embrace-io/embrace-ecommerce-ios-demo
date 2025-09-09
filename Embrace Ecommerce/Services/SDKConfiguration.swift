@@ -42,12 +42,12 @@ struct SDKConfiguration {
     
     struct Mixpanel {
         // TODO: Replace with your actual Mixpanel project token
-        static let projectToken = "YOUR_MIXPANEL_PROJECT_TOKEN"
+        static let projectToken = "674b83e272a9450f330537a9bc74bc34"
         static let trackAutomaticEvents = true
         
         // Development fallback
         static var isConfigured: Bool {
-            return projectToken != "YOUR_MIXPANEL_PROJECT_TOKEN"
+            return projectToken != "674b83e272a9450f330537a9bc74bc34"
         }
     }
     
