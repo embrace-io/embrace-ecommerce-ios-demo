@@ -1,21 +1,36 @@
 import Foundation
 import UIKit
+import Stripe
 
 @MainActor
 class StripePaymentService: ObservableObject {
     static let shared = StripePaymentService()
     
-    private let publishableKey = "pk_test_51Oe1X3Eep9vPfqZwLUKPzwMXNaTGNE8jGcHPt9M4Vt3XrHMG4iGJo8JTk0y8FEO9eMpG1w6H3v4QRhNvL5XK8X00ABC123DE"
-    private let secretKey = "sk_test_51Oe1X3Eep9vPfqZwLUKPzwMXNaTGNE8jGcHPt9M4Vt3XrHMG4iGJo8JTk0y8FEO9eMpG1w6H3v4QRhNvL5XK8X00ABC123DE"
-    
+    // MARK: - Published Properties
     @Published var paymentResult: StripePaymentResult?
     @Published var isProcessing = false
     
     private init() {
-        // Stripe setup - in real implementation would configure Stripe SDK
-        print("✅ Stripe Test Environment Initialized")
     }
     
+    private func configureStripe() {
+        // Set your publishable key - this should come from environment/config
+        guard let publishableKey = getPublishableKey() else {
+            print("❌ Stripe publishable key not found")
+            return
+        }
+        
+        STPAPIClient.shared.publishableKey = publishableKey
+        print("✅ Stripe SDK Configured for Test Environment")
+    }
+    
+    private func getPublishableKey() -> String? {
+        // In production, get this from your app's configuration/environment
+        // For testing, you can use a test publishable key
+        return "pk_test_6f8Y6rxOliLE6wXxJXTezt3p"
+    }
+    
+    // MARK: - Payment Processing
     func processPayment(amount: Double, currency: String = "usd") async -> Result<StripePaymentResult, StripePaymentError> {
         guard amount > 0 else {
             return .failure(.invalidAmount)
@@ -30,12 +45,12 @@ class StripePaymentService: ObservableObject {
         }
         
         do {
-            let paymentIntent = try await createPaymentIntent(amount: amount, currency: currency)
-            
+            // Simulate payment processing for test environment
+            // In production, this would integrate with actual Stripe PaymentSheet
             try await Task.sleep(nanoseconds: 2_000_000_000)
             
             let result = StripePaymentResult(
-                paymentIntentId: paymentIntent.id,
+                paymentIntentId: "pi_test_\(UUID().uuidString.prefix(16))",
                 status: .succeeded,
                 amount: amount,
                 currency: currency,
@@ -56,22 +71,7 @@ class StripePaymentService: ObservableObject {
         }
     }
     
-    private func createPaymentIntent(amount: Double, currency: String) async throws -> MockPaymentIntent {
-        let amountInCents = Int(amount * 100)
-        
-        let random = Double.random(in: 0...1)
-        if random < 0.05 {
-            throw StripePaymentError.paymentIntentCreationFailed
-        }
-        
-        return MockPaymentIntent(
-            id: "pi_test_\(UUID().uuidString.prefix(16))",
-            amount: amountInCents,
-            currency: currency,
-            status: "requires_payment_method"
-        )
-    }
-    
+    // MARK: - Test Methods
     func simulatePaymentFailure() async -> Result<StripePaymentResult, StripePaymentError> {
         await MainActor.run {
             isProcessing = true
@@ -83,15 +83,8 @@ class StripePaymentService: ObservableObject {
             isProcessing = false
         }
         
-        return .failure(.paymentFailed(NSError(domain: "StripeError", code: 4000, userInfo: [NSLocalizedDescriptionKey: "Your card was declined."])))
+        return .failure(.paymentFailed(NSError(domain: "StripeTestError", code: 4000, userInfo: [NSLocalizedDescriptionKey: "Test payment failure - card was declined."])))
     }
-}
-
-struct MockPaymentIntent {
-    let id: String
-    let amount: Int
-    let currency: String
-    let status: String
 }
 
 struct StripePaymentResult {
@@ -114,6 +107,7 @@ enum StripePaymentError: Error, LocalizedError {
     case amountTooSmall
     case paymentIntentCreationFailed
     case paymentFailed(Error)
+    case paymentCancelled
     case networkError(Error)
     case configurationError
     
@@ -127,6 +121,8 @@ enum StripePaymentError: Error, LocalizedError {
             return "Failed to create payment intent"
         case .paymentFailed(let error):
             return "Payment failed: \(error.localizedDescription)"
+        case .paymentCancelled:
+            return "Payment was cancelled"
         case .networkError(let error):
             return "Network error: \(error.localizedDescription)"
         case .configurationError:

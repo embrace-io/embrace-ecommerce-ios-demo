@@ -11,7 +11,9 @@
       "Bash(swift:*)",
       "Bash(grep:*)",
       "WebFetch(domain:developers.google.com)",
-      "WebFetch(domain:docs.mixpanel.com)"
+      "WebFetch(domain:docs.mixpanel.com)",
+      "WebFetch(domain:docs.stripe.com)",
+      "WebSearch"
     ],
     "deny": []
   }

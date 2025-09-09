@@ -2,8 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>GIDClientID</key>
-	<string>486537385178-t1ice7c4rqgdoqokeukjescgqltfkjvq.apps.googleusercontent.com</string>
+	<key>CFBundleURLName</key>
+	<string>stripe</string>
+	<key>CFBundleURLSchemes</key>
+	<array>
+		<string>embrace-ecommerce</string>
+	</array>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -13,5 +17,7 @@
 			</array>
 		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>486537385178-t1ice7c4rqgdoqokeukjescgqltfkjvq.apps.googleusercontent.com</string>
 </dict>
 </plist>
