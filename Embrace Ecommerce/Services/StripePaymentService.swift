@@ -11,6 +11,7 @@ class StripePaymentService: ObservableObject {
     @Published var isProcessing = false
     
     private init() {
+        configureStripe()
     }
     
     private func configureStripe() {
