@@ -41,17 +41,12 @@ struct AuthenticationView: View {
                     }
                     
                     // Google Sign In Button
-                    Button(action: {
+                    GoogleSignInButton(scheme: .dark, style: .wide, state: .normal) {
                         Task {
                             await authManager.signInWithGoogle()
                         }
-                    }) {
-                        AuthenticationButton(
-                            title: "Continue with Google",
-                            icon: "globe",
-                            backgroundColor: .red
-                        )
                     }
+                    .frame(height: 50)
                     .disabled(authManager.isLoading)
                     
                     // Biometric Authentication (if available)

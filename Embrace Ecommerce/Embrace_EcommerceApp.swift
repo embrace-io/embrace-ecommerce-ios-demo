@@ -15,45 +15,74 @@ import Mixpanel
 @main
 struct Embrace_EcommerceApp: App {
     init() {
-        // Initialize Firebase first (required for Firebase services)
-        configureFirebase()
+        print("🚀 Starting app initialization...")
         
-        // Initialize Embrace SDK with comprehensive options
-        configureEmbrace()
-        
-        // Initialize Mixpanel
-        configureMixpanel()
-        
-        // Configure Google Sign-In
-        configureGoogleSignIn()
-        
-        // Initialize Stripe
-        configureStripe()
-        
-        // Print configuration status and validate setup
-        SDKConfiguration.printConfigurationStatus()
-        
-        // Log successful initialization
-        EmbraceService.shared.logInfo("App initialization completed", properties: [
-            "embrace_version": "6.13.0",
-            "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
-            "configuration_warnings": SDKConfiguration.validateConfiguration().joined(separator: ", ")
-        ])
-        
-        // Run SDK compatibility tests in debug mode
-        #if DEBUG
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            SDKCompatibilityTest.shared.runCompatibilityTests()
+        do {
+            // Initialize Firebase first (required for Firebase services)
+            // Temporarily disabled to debug crash
+            // configureFirebase()
+            print("⚠️ Firebase configuration temporarily disabled for debugging")
+            
+            // Initialize Embrace SDK with comprehensive options
+            configureEmbrace()
+            print("✅ Embrace configuration completed")
+            
+            // Initialize Mixpanel
+            configureMixpanel()
+            print("✅ Mixpanel configuration completed")
+            
+            // Configure Google Sign-In
+            // Temporarily commented out to debug crash
+            // configureGoogleSignIn()
+            print("⚠️ Google Sign-In configuration temporarily disabled for debugging")
+            
+            // Initialize Stripe
+            configureStripe()
+            print("✅ Stripe configuration completed")
+            
+            // Print configuration status and validate setup
+            SDKConfiguration.printConfigurationStatus()
+            
+            // Log successful initialization
+            EmbraceService.shared.logInfo("App initialization completed", properties: [
+                "embrace_version": "6.13.0",
+                "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
+                "configuration_warnings": SDKConfiguration.validateConfiguration().joined(separator: ", ")
+            ])
+            
+            print("🎉 App initialization completed successfully!")
+            
+            // Run SDK compatibility tests in debug mode
+            #if DEBUG
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                SDKCompatibilityTest.shared.runCompatibilityTests()
+            }
+            #endif
+            
+        } catch {
+            print("❌ Critical error during app initialization: \(error)")
+            // Don't crash the app, but log the error
         }
-        #endif
     }
     
     private func configureFirebase() {
+        // Check if Firebase is already configured to prevent duplicate configuration
+        if FirebaseApp.app() != nil {
+            print("ℹ️ Firebase already configured, skipping configuration")
+            return
+        }
+        
         // Check if GoogleService-Info.plist exists before configuring Firebase
         if Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist") != nil {
-            FirebaseApp.configure()
-            print("✅ Firebase configured successfully")
-            EmbraceService.shared.addSessionProperty(key: "firebase_configured", value: "true")
+            do {
+                FirebaseApp.configure()
+                print("✅ Firebase configured successfully")
+                EmbraceService.shared.addSessionProperty(key: "firebase_configured", value: "true")
+            } catch {
+                print("❌ Error configuring Firebase: \(error)")
+                EmbraceService.shared.addSessionProperty(key: "firebase_configured", value: "false")
+                EmbraceService.shared.addSessionProperty(key: "firebase_error", value: error.localizedDescription)
+            }
         } else {
             print("⚠️ GoogleService-Info.plist not found. Firebase disabled for this session.")
             print("   To enable Firebase, add GoogleService-Info.plist from your Firebase project.")
@@ -108,21 +137,35 @@ struct Embrace_EcommerceApp: App {
     }
     
     private func configureGoogleSignIn() {
-        // TODO: Replace with your actual Google Sign-In client ID from Google Cloud Console
-        // For now, using a placeholder to prevent crashes
-        if let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
-           let plist = NSDictionary(contentsOfFile: path),
-           let clientId = plist["CLIENT_ID"] as? String {
-            let config = GIDConfiguration(clientID: clientId)
-            GIDSignIn.sharedInstance.configuration = config
-        } else {
-            // Fallback configuration for testing without Google Services file
-            print("⚠️ GoogleService-Info.plist not found. Google Sign-In will use mock mode.")
-            // You can add a mock client ID here for testing purposes
-            // For testing without a real Google project, use a placeholder
+        do {
+            // First, try to get client ID from Info.plist (recommended approach)
+            if let clientId = Bundle.main.object(forInfoDictionaryKey: "GIDClientID") as? String {
+                print("✅ Found GIDClientID in Info.plist: \(clientId)")
+                let config = GIDConfiguration(clientID: clientId)
+                GIDSignIn.sharedInstance.configuration = config
+                print("✅ Google Sign-In configured successfully")
+                return
+            }
+            
+            // Fallback: try to read from GoogleService-Info.plist
+            if let path = Bundle.main.path(forResource: "GoogleService-Info", ofType: "plist"),
+               let plist = NSDictionary(contentsOfFile: path),
+               let clientId = plist["CLIENT_ID"] as? String {
+                print("✅ Found CLIENT_ID in GoogleService-Info.plist: \(clientId)")
+                let config = GIDConfiguration(clientID: clientId)
+                GIDSignIn.sharedInstance.configuration = config
+                print("✅ Google Sign-In configured successfully from plist")
+                return
+            }
+            
+            // Last resort: use fallback
+            print("⚠️ No Google configuration found. Using fallback.")
             let testClientId = SDKConfiguration.GoogleSignIn.fallbackClientId
             let config = GIDConfiguration(clientID: testClientId)
             GIDSignIn.sharedInstance.configuration = config
+            
+        } catch {
+            print("❌ Error configuring Google Sign-In: \(error)")
         }
     }
     
@@ -139,12 +182,13 @@ struct Embrace_EcommerceApp: App {
                 .environmentObject(MockDataService.shared)
                 .environmentObject(AuthenticationManager())
                 .onOpenURL { url in
+                    // Handle Google Sign-In URL
+                    GIDSignIn.sharedInstance.handle(url)
+                    
                     // Track deep link / URL scheme handling
                     EmbraceService.shared.addBreadcrumb(message: "App opened via URL: \(url.absoluteString)")
                     
                     if url.scheme == "googlesignin" || url.absoluteString.contains("oauth") {
-                        // Handle Google Sign-In URL
-                        GIDSignIn.sharedInstance.handle(url)
                         EmbraceService.shared.addSessionProperty(key: "launch_source", value: "google_signin_redirect")
                         EmbraceService.shared.logInfo("Google Sign-In URL handled", properties: ["url": url.absoluteString])
                         
@@ -162,6 +206,16 @@ struct Embrace_EcommerceApp: App {
                             "host": url.host ?? "unknown",
                             "url": url.absoluteString
                         ])
+                    }
+                }
+                .onAppear {
+                    // Restore previous Google Sign-In state on app launch
+                    GIDSignIn.sharedInstance.restorePreviousSignIn { user, error in
+                        if let user = user {
+                            print("✅ Google Sign-In: Previous sign-in restored for \(user.profile?.email ?? "unknown")")
+                        } else if let error = error {
+                            print("ℹ️ Google Sign-In: No previous sign-in to restore - \(error.localizedDescription)")
+                        }
                     }
                 }
         }

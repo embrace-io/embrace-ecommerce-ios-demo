@@ -140,6 +140,46 @@ class AuthenticationManager: ObservableObject {
     
     // MARK: - Google Sign-In
     
+    func restorePreviousGoogleSignIn() async {
+        // This will be called automatically by the app, but we can also expose it
+        // for manual restoration if needed
+        await MainActor.run {
+            isLoading = true
+        }
+        
+        GIDSignIn.sharedInstance.restorePreviousSignIn { [weak self] user, error in
+            Task { @MainActor in
+                if let user = user {
+                    let authenticatedUser = AuthenticatedUser(
+                        id: user.userID ?? UUID().uuidString,
+                        email: user.profile?.email ?? "",
+                        displayName: user.profile?.name ?? "Google User",
+                        photoURL: user.profile?.imageURL(withDimension: 128)?.absoluteString,
+                        authMethod: .google,
+                        createdAt: Date(),
+                        lastSignInAt: Date(),
+                        isGuest: false,
+                        biometricEnabled: false
+                    )
+                    
+                    self?.authState = .authenticated(authenticatedUser)
+                    self?.currentUser = authenticatedUser
+                    self?.saveUser(authenticatedUser)
+                    
+                    Embrace.client?.log(
+                        "Google Sign-In restored from previous session",
+                        severity: .info,
+                        attributes: [
+                            "user.id": user.userID ?? "unknown",
+                            "user.email": user.profile?.email ?? "unknown"
+                        ]
+                    )
+                }
+                self?.isLoading = false
+            }
+        }
+    }
+    
     func signInWithGoogle() async {
         let span = Embrace.client?.buildSpan(
             name: "google_sign_in",
