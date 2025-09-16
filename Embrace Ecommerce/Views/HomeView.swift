@@ -18,14 +18,18 @@ struct HomeView: View {
             ZStack {
                 if isLoading && featuredProducts.isEmpty {
                     loadingView
+                        .accessibilityIdentifier("homeLoadingView")
                 } else {
                     mainContent
+                        .accessibilityIdentifier("homeMainContent")
                 }
-                
+
                 if showingError {
                     errorOverlay
+                        .accessibilityIdentifier("homeErrorOverlay")
                 }
             }
+            .accessibilityIdentifier("homeView")
             .navigationTitle("Embrace Store")
             .navigationBarTitleDisplayMode(.large)
             .navigationDestination(for: NavigationDestination.self) { destination in
@@ -69,10 +73,12 @@ struct HomeView: View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.5)
-            
+                .accessibilityIdentifier("homeLoadingSpinner")
+
             Text("Loading amazing products...")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+                .accessibilityIdentifier("homeLoadingText")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -98,6 +104,7 @@ struct HomeView: View {
                 loadInitialData()
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("homeErrorRetryButton")
         }
         .padding()
         .background(.regularMaterial)
@@ -110,12 +117,14 @@ struct HomeView: View {
             HStack {
                 Image(systemName: "magnifyingglass")
                     .foregroundColor(.secondary)
-                
+                    .accessibilityIdentifier("homeSearchIcon")
+
                 TextField("Search products...", text: $searchText)
                     .onSubmit {
                         performSearch()
                     }
-                
+                    .accessibilityIdentifier("homeSearchTextField")
+
                 if !searchText.isEmpty {
                     Button(action: {
                         searchText = ""
@@ -123,13 +132,15 @@ struct HomeView: View {
                         Image(systemName: "xmark.circle.fill")
                             .foregroundColor(.secondary)
                     }
+                    .accessibilityIdentifier("homeSearchClearButton")
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(Color(.systemGray6))
             .cornerRadius(10)
-            
+            .accessibilityIdentifier("homeSearchBar")
+
             Button(action: {
                 navigationCoordinator.switchTab(to: .search)
             }) {
@@ -137,8 +148,10 @@ struct HomeView: View {
                     .font(.title2)
                     .foregroundColor(.blue)
             }
+            .accessibilityIdentifier("homeSearchFiltersButton")
         }
         .padding(.top, 8)
+        .accessibilityIdentifier("homeSearchSection")
     }
     
     private var featuredProductsCarousel: some View {
@@ -147,27 +160,32 @@ struct HomeView: View {
                 Text("Featured Products")
                     .font(.title2)
                     .fontWeight(.bold)
-                
+                    .accessibilityIdentifier("homeFeaturedProductsTitle")
+
                 Spacer()
-                
+
                 Button("See All") {
                     navigationCoordinator.navigate(to: .productList(category: nil))
                 }
                 .font(.subheadline)
                 .foregroundColor(.blue)
+                .accessibilityIdentifier("homeFeaturedProductsSeeAllButton")
             }
-            
+
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 16) {
                     ForEach(featuredProducts) { product in
                         EnhancedProductCard(product: product, style: .featured) {
                             navigationCoordinator.navigate(to: .productDetail(productId: product.id))
                         }
+                        .accessibilityIdentifier("homeFeaturedProduct_\(product.id)")
                     }
                 }
                 .padding(.horizontal, 4)
+                .accessibilityIdentifier("homeFeaturedProductsList")
             }
         }
+        .accessibilityIdentifier("homeFeaturedProductsSection")
     }
     
     private var categoryGridSection: some View {
@@ -176,18 +194,22 @@ struct HomeView: View {
                 Text("Shop by Category")
                     .font(.title2)
                     .fontWeight(.bold)
-                
+                    .accessibilityIdentifier("homeCategoriesTitle")
+
                 Spacer()
             }
-            
+
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
                 ForEach(categories) { category in
                     EnhancedCategoryCard(category: category) {
                         navigationCoordinator.navigate(to: .productList(category: category.name))
                     }
+                    .accessibilityIdentifier("homeCategory_\(category.id)")
                 }
             }
+            .accessibilityIdentifier("homeCategoriesGrid")
         }
+        .accessibilityIdentifier("homeCategoriesSection")
     }
     
     private var newArrivalsSection: some View {
@@ -196,24 +218,29 @@ struct HomeView: View {
                 Text("New Arrivals")
                     .font(.title2)
                     .fontWeight(.bold)
-                
+                    .accessibilityIdentifier("homeNewArrivalsTitle")
+
                 Spacer()
-                
+
                 Button("View All") {
                     navigationCoordinator.navigate(to: .productList(category: nil))
                 }
                 .font(.subheadline)
                 .foregroundColor(.blue)
+                .accessibilityIdentifier("homeNewArrivalsViewAllButton")
             }
-            
+
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
                 ForEach(newArrivals.prefix(4), id: \.id) { product in
                     EnhancedProductCard(product: product, style: .compact) {
                         navigationCoordinator.navigate(to: .productDetail(productId: product.id))
                     }
+                    .accessibilityIdentifier("homeNewArrival_\(product.id)")
                 }
             }
+            .accessibilityIdentifier("homeNewArrivalsGrid")
         }
+        .accessibilityIdentifier("homeNewArrivalsSection")
     }
     
     private var dailyDealsSection: some View {
@@ -222,12 +249,14 @@ struct HomeView: View {
                 Text("Daily Deals")
                     .font(.title2)
                     .fontWeight(.bold)
-                
+                    .accessibilityIdentifier("homeDailyDealsTitle")
+
                 Image(systemName: "flame.fill")
                     .foregroundColor(.orange)
-                
+                    .accessibilityIdentifier("homeDailyDealsIcon")
+
                 Spacer()
-                
+
                 Text("24h left")
                     .font(.caption)
                     .foregroundColor(.red)
@@ -235,8 +264,9 @@ struct HomeView: View {
                     .padding(.vertical, 4)
                     .background(Color.red.opacity(0.1))
                     .cornerRadius(6)
+                    .accessibilityIdentifier("homeDailyDealsTimer")
             }
-            
+
             if featuredProducts.count > 2 {
                 ScrollView(.horizontal, showsIndicators: false) {
                     LazyHStack(spacing: 12) {
@@ -244,12 +274,15 @@ struct HomeView: View {
                             DealCard(product: product) {
                                 navigationCoordinator.navigate(to: .productDetail(productId: product.id))
                             }
+                            .accessibilityIdentifier("homeDailyDeal_\(product.id)")
                         }
                     }
                     .padding(.horizontal, 4)
+                    .accessibilityIdentifier("homeDailyDealsList")
                 }
             }
         }
+        .accessibilityIdentifier("homeDailyDealsSection")
     }
     
     @ViewBuilder

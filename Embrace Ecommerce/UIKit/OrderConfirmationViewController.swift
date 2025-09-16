@@ -30,6 +30,7 @@ class OrderConfirmationViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.accessibilityIdentifier = "orderConfirmationView"
         setupUI()
         setupConstraints()
     }
@@ -50,16 +51,19 @@ class OrderConfirmationViewController: UIViewController {
     private func setupScrollView() {
         scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.accessibilityIdentifier = "orderConfirmationScrollView"
         view.addSubview(scrollView)
-        
+
         contentView = UIView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.accessibilityIdentifier = "orderConfirmationContentView"
         scrollView.addSubview(contentView)
-        
+
         stackView = UIStackView()
         stackView.axis = .vertical
         stackView.spacing = 24
         stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.accessibilityIdentifier = "orderConfirmationStackView"
         contentView.addSubview(stackView)
     }
     
@@ -68,31 +72,37 @@ class OrderConfirmationViewController: UIViewController {
         stepLabel.text = "Step \(coordinator.currentStep.stepNumber)"
         stepLabel.font = .systemFont(ofSize: 12, weight: .medium)
         stepLabel.textColor = .secondaryLabel
-        
+        stepLabel.accessibilityIdentifier = "orderConfirmationStepLabel"
+
         let titleLabel = UILabel()
         titleLabel.text = coordinator.currentStep.title
         titleLabel.font = .systemFont(ofSize: 22, weight: .semibold)
         titleLabel.textColor = .label
-        
+        titleLabel.accessibilityIdentifier = "orderConfirmationTitleLabel"
+
         let headerStack = UIStackView(arrangedSubviews: [stepLabel, titleLabel])
         headerStack.axis = .vertical
         headerStack.spacing = 4
-        
+        headerStack.accessibilityIdentifier = "orderConfirmationHeaderStack"
+
         stackView.addArrangedSubview(headerStack)
     }
     
     private func setupOrderSummaryView() {
         orderSummaryView = OrderSummaryView(coordinator: coordinator)
+        orderSummaryView.accessibilityIdentifier = "orderConfirmationSummaryView"
         stackView.addArrangedSubview(orderSummaryView)
     }
     
     private func setupShippingDetailsView() {
         shippingDetailsView = ShippingDetailsView(coordinator: coordinator)
+        shippingDetailsView.accessibilityIdentifier = "orderConfirmationShippingDetailsView"
         stackView.addArrangedSubview(shippingDetailsView)
     }
     
     private func setupPaymentDetailsView() {
         paymentDetailsView = PaymentDetailsView(coordinator: coordinator)
+        paymentDetailsView.accessibilityIdentifier = "orderConfirmationPaymentDetailsView"
         stackView.addArrangedSubview(paymentDetailsView)
     }
     
@@ -110,16 +120,19 @@ class OrderConfirmationViewController: UIViewController {
         placeOrderButton.layer.cornerRadius = 12
         placeOrderButton.addTarget(self, action: #selector(placeOrderTapped), for: .touchUpInside)
         placeOrderButton.translatesAutoresizingMaskIntoConstraints = false
-        
+        placeOrderButton.accessibilityIdentifier = "placeOrderButton"
+
         backButton = UIButton(type: .system)
         backButton.setTitle("Back to Payment", for: .normal)
         backButton.titleLabel?.font = .systemFont(ofSize: 16)
         backButton.setTitleColor(.systemBlue, for: .normal)
         backButton.addTarget(self, action: #selector(backButtonTapped), for: .touchUpInside)
+        backButton.accessibilityIdentifier = "backToPaymentButton"
         
         buttonStack.addArrangedSubview(placeOrderButton)
         buttonStack.addArrangedSubview(backButton)
-        
+        buttonStack.accessibilityIdentifier = "orderConfirmationButtonStack"
+
         view.addSubview(buttonStack)
         
         NSLayoutConstraint.activate([
@@ -235,16 +248,19 @@ class OrderSummaryView: UIView {
     private func setupUI() {
         backgroundColor = .secondarySystemBackground
         layer.cornerRadius = 12
-        
+        accessibilityIdentifier = "orderSummaryContainer"
+
         let titleLabel = UILabel()
         titleLabel.text = "Order Summary"
         titleLabel.font = .systemFont(ofSize: 18, weight: .semibold)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
+        titleLabel.accessibilityIdentifier = "orderSummaryTitleLabel"
         
         let itemsStackView = UIStackView()
         itemsStackView.axis = .vertical
         itemsStackView.spacing = 8
         itemsStackView.translatesAutoresizingMaskIntoConstraints = false
+        itemsStackView.accessibilityIdentifier = "orderSummaryItemsStack"
         
         for item in coordinator.orderData.items.prefix(3) {
             let itemView = createItemView(for: item)
@@ -256,12 +272,14 @@ class OrderSummaryView: UIView {
             moreItemsLabel.text = "... and \(coordinator.orderData.items.count - 3) more items"
             moreItemsLabel.font = .systemFont(ofSize: 12)
             moreItemsLabel.textColor = .secondaryLabel
+            moreItemsLabel.accessibilityIdentifier = "orderSummaryMoreItemsLabel"
             itemsStackView.addArrangedSubview(moreItemsLabel)
         }
         
         let divider = UIView()
         divider.backgroundColor = .separator
         divider.translatesAutoresizingMaskIntoConstraints = false
+        divider.accessibilityIdentifier = "orderSummaryDivider"
         
         let totalsStackView = createTotalsView()
         
@@ -293,22 +311,26 @@ class OrderSummaryView: UIView {
     
     private func createItemView(for item: OrderItem) -> UIView {
         let container = UIView()
+        container.accessibilityIdentifier = "orderSummaryItemContainer"
         
         let nameLabel = UILabel()
         nameLabel.text = item.productName
         nameLabel.font = .systemFont(ofSize: 14, weight: .medium)
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        nameLabel.accessibilityIdentifier = "orderSummaryItemNameLabel"
+
         let qtyLabel = UILabel()
         qtyLabel.text = "Qty: \(item.quantity)"
         qtyLabel.font = .systemFont(ofSize: 12)
         qtyLabel.textColor = .secondaryLabel
         qtyLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        qtyLabel.accessibilityIdentifier = "orderSummaryItemQtyLabel"
+
         let priceLabel = UILabel()
         priceLabel.text = "$\(String(format: "%.2f", item.totalPrice))"
         priceLabel.font = .systemFont(ofSize: 14, weight: .medium)
         priceLabel.translatesAutoresizingMaskIntoConstraints = false
+        priceLabel.accessibilityIdentifier = "orderSummaryItemPriceLabel"
         
         container.addSubview(nameLabel)
         container.addSubview(qtyLabel)
@@ -335,6 +357,7 @@ class OrderSummaryView: UIView {
         stackView.axis = .vertical
         stackView.spacing = 8
         stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.accessibilityIdentifier = "orderSummaryTotalsStack"
         
         stackView.addArrangedSubview(createTotalRow("Subtotal", value: coordinator.orderData.subtotal))
         stackView.addArrangedSubview(createTotalRow("Shipping", value: coordinator.orderData.shipping))
@@ -348,18 +371,21 @@ class OrderSummaryView: UIView {
     
     private func createTotalRow(_ title: String, value: Double, isTotal: Bool = false) -> UIView {
         let container = UIView()
+        container.accessibilityIdentifier = "orderSummary\(title.replacingOccurrences(of: " ", with: ""))Row"
         
         let titleLabel = UILabel()
         titleLabel.text = title
         titleLabel.font = isTotal ? .systemFont(ofSize: 16, weight: .semibold) : .systemFont(ofSize: 14)
         titleLabel.textColor = isTotal ? .label : .secondaryLabel
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        titleLabel.accessibilityIdentifier = "orderSummary\(title.replacingOccurrences(of: " ", with: ""))TitleLabel"
+
         let valueLabel = UILabel()
         valueLabel.text = "$\(String(format: "%.2f", value))"
         valueLabel.font = isTotal ? .systemFont(ofSize: 16, weight: .semibold) : .systemFont(ofSize: 14)
         valueLabel.textColor = isTotal ? .label : .secondaryLabel
         valueLabel.translatesAutoresizingMaskIntoConstraints = false
+        valueLabel.accessibilityIdentifier = "orderSummary\(title.replacingOccurrences(of: " ", with: ""))ValueLabel"
         
         container.addSubview(titleLabel)
         container.addSubview(valueLabel)
@@ -394,22 +420,26 @@ class ShippingDetailsView: UIView {
     private func setupUI() {
         backgroundColor = .secondarySystemBackground
         layer.cornerRadius = 12
-        
+        accessibilityIdentifier = "shippingDetailsContainer"
+
         let titleLabel = UILabel()
         titleLabel.text = "Shipping Details"
         titleLabel.font = .systemFont(ofSize: 18, weight: .semibold)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        titleLabel.accessibilityIdentifier = "shippingDetailsTitleLabel"
+
         let addressLabel = UILabel()
         addressLabel.text = coordinator.selectedShippingAddress?.formattedAddress ?? "No address selected"
         addressLabel.font = .systemFont(ofSize: 14)
         addressLabel.numberOfLines = 0
         addressLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        addressLabel.accessibilityIdentifier = "shippingDetailsAddressLabel"
+
         let methodLabel = UILabel()
         methodLabel.text = coordinator.selectedShippingMethod?.displayName ?? "No shipping method selected"
         methodLabel.font = .systemFont(ofSize: 14)
         methodLabel.translatesAutoresizingMaskIntoConstraints = false
+        methodLabel.accessibilityIdentifier = "shippingDetailsMethodLabel"
         
         addSubview(titleLabel)
         addSubview(addressLabel)
@@ -448,12 +478,14 @@ class PaymentDetailsView: UIView {
     private func setupUI() {
         backgroundColor = .secondarySystemBackground
         layer.cornerRadius = 12
-        
+        accessibilityIdentifier = "paymentDetailsContainer"
+
         let titleLabel = UILabel()
         titleLabel.text = "Payment Method"
         titleLabel.font = .systemFont(ofSize: 18, weight: .semibold)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        titleLabel.accessibilityIdentifier = "paymentDetailsTitleLabel"
+
         let paymentLabel = UILabel()
         if let paymentMethod = coordinator.selectedPaymentMethod {
             if let cardInfo = paymentMethod.cardInfo {
@@ -468,6 +500,7 @@ class PaymentDetailsView: UIView {
         }
         paymentLabel.font = .systemFont(ofSize: 14)
         paymentLabel.translatesAutoresizingMaskIntoConstraints = false
+        paymentLabel.accessibilityIdentifier = "paymentDetailsPaymentLabel"
         
         addSubview(titleLabel)
         addSubview(paymentLabel)

@@ -12,7 +12,7 @@ class ProductImageCarouselView: UIView {
         layout.scrollDirection = .horizontal
         layout.minimumLineSpacing = 0
         layout.minimumInteritemSpacing = 0
-        
+
         let cv = UICollectionView(frame: .zero, collectionViewLayout: layout)
         cv.translatesAutoresizingMaskIntoConstraints = false
         cv.delegate = self
@@ -21,6 +21,7 @@ class ProductImageCarouselView: UIView {
         cv.showsHorizontalScrollIndicator = false
         cv.backgroundColor = .systemGray6
         cv.register(ImageCarouselCell.self, forCellWithReuseIdentifier: "ImageCell")
+        cv.accessibilityIdentifier = "productImageCarouselCollection"
         return cv
     }()
     
@@ -30,6 +31,7 @@ class ProductImageCarouselView: UIView {
         pc.currentPageIndicatorTintColor = .systemBlue
         pc.pageIndicatorTintColor = .systemGray4
         pc.addTarget(self, action: #selector(pageControlChanged(_:)), for: .valueChanged)
+        pc.accessibilityIdentifier = "productImagePageControl"
         return pc
     }()
     
@@ -40,6 +42,7 @@ class ProductImageCarouselView: UIView {
         imageView.image = UIImage(systemName: "photo.artframe")
         imageView.tintColor = .systemGray3
         imageView.backgroundColor = .systemGray6
+        imageView.accessibilityIdentifier = "productImagePlaceholder"
         return imageView
     }()
     
@@ -59,7 +62,8 @@ class ProductImageCarouselView: UIView {
         backgroundColor = .systemGray6
         layer.cornerRadius = 12
         clipsToBounds = true
-        
+        accessibilityIdentifier = "productImageCarousel"
+
         addSubview(placeholderImageView)
         addSubview(collectionView)
         addSubview(pageControl)
@@ -120,6 +124,7 @@ extension ProductImageCarouselView: UICollectionViewDataSource {
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "ImageCell", for: indexPath) as! ImageCarouselCell
         cell.configure(with: imageUrls[indexPath.item])
+        cell.accessibilityIdentifier = "productImageCell_\(indexPath.item)"
         return cell
     }
 }
@@ -146,6 +151,7 @@ class ImageCarouselCell: UICollectionViewCell {
         iv.contentMode = .scaleAspectFill
         iv.clipsToBounds = true
         iv.backgroundColor = .systemGray6
+        iv.accessibilityIdentifier = "productImageCarouselCellImage"
         return iv
     }()
     
@@ -153,6 +159,7 @@ class ImageCarouselCell: UICollectionViewCell {
         let indicator = UIActivityIndicatorView(style: .medium)
         indicator.translatesAutoresizingMaskIntoConstraints = false
         indicator.hidesWhenStopped = true
+        indicator.accessibilityIdentifier = "productImageCarouselCellLoading"
         return indicator
     }()
     
@@ -169,6 +176,7 @@ class ImageCarouselCell: UICollectionViewCell {
     private func setupUI() {
         contentView.addSubview(imageView)
         contentView.addSubview(activityIndicator)
+        accessibilityIdentifier = "productImageCarouselCell"
         
         NSLayoutConstraint.activate([
             imageView.topAnchor.constraint(equalTo: contentView.topAnchor),

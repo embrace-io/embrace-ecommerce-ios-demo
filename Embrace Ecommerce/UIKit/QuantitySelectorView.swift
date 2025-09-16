@@ -25,6 +25,7 @@ class QuantitySelectorView: UIView {
         view.translatesAutoresizingMaskIntoConstraints = false
         view.backgroundColor = .systemGray6
         view.layer.cornerRadius = 8
+        view.accessibilityIdentifier = "quantitySelectorContainer"
         return view
     }()
     
@@ -34,6 +35,7 @@ class QuantitySelectorView: UIView {
         button.setImage(UIImage(systemName: "minus"), for: .normal)
         button.tintColor = .systemBlue
         button.addTarget(self, action: #selector(decreaseTapped), for: .touchUpInside)
+        button.accessibilityIdentifier = "quantityDecreaseButton"
         return button
     }()
     
@@ -43,6 +45,7 @@ class QuantitySelectorView: UIView {
         label.textAlignment = .center
         label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         label.textColor = .label
+        label.accessibilityIdentifier = "quantityLabel"
         return label
     }()
     
@@ -52,6 +55,7 @@ class QuantitySelectorView: UIView {
         button.setImage(UIImage(systemName: "plus"), for: .normal)
         button.tintColor = .systemBlue
         button.addTarget(self, action: #selector(increaseTapped), for: .touchUpInside)
+        button.accessibilityIdentifier = "quantityIncreaseButton"
         return button
     }()
     
@@ -70,6 +74,7 @@ class QuantitySelectorView: UIView {
     
     // MARK: - Setup
     private func setupUI() {
+        accessibilityIdentifier = "quantitySelectorView"
         addSubview(containerView)
         containerView.addSubview(decreaseButton)
         containerView.addSubview(quantityLabel)
