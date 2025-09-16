@@ -10,11 +10,13 @@ struct ProfileView: View {
             VStack(spacing: 0) {
                 if let user = authManager.currentUser {
                     loggedInView(user: user)
+                        .accessibilityIdentifier("profileLoggedInView")
                 } else {
                     // This should not show since authentication is handled at app level
                     EmptyView()
                 }
             }
+            .accessibilityIdentifier("profileView")
             .navigationTitle("Profile")
             .navigationDestination(for: NavigationDestination.self) { destination in
                 destinationView(for: destination)
@@ -26,7 +28,8 @@ struct ProfileView: View {
     private func loggedInView(user: AuthenticatedUser) -> some View {
         List {
             userInfoSection(user: user)
-            
+                .accessibilityIdentifier("profileUserInfoSection")
+
             Section {
                 ProfileMenuRow(
                     icon: "person",
@@ -35,6 +38,7 @@ struct ProfileView: View {
                         navigationCoordinator.navigate(to: .editProfile)
                     }
                 )
+                .accessibilityIdentifier("profileEditProfileRow")
                 
                 ProfileMenuRow(
                     icon: "location",
@@ -43,7 +47,8 @@ struct ProfileView: View {
                         navigationCoordinator.navigate(to: .addressBook)
                     }
                 )
-                
+                .accessibilityIdentifier("profileAddressBookRow")
+
                 ProfileMenuRow(
                     icon: "creditcard",
                     title: "Payment Methods",
@@ -51,7 +56,8 @@ struct ProfileView: View {
                         navigationCoordinator.navigate(to: .paymentMethods)
                     }
                 )
-                
+                .accessibilityIdentifier("profilePaymentMethodsRow")
+
                 ProfileMenuRow(
                     icon: "clock",
                     title: "Order History",
@@ -59,6 +65,7 @@ struct ProfileView: View {
                         navigationCoordinator.navigate(to: .orderHistory)
                     }
                 )
+                .accessibilityIdentifier("profileOrderHistoryRow")
             }
             
             Section {
@@ -67,7 +74,8 @@ struct ProfileView: View {
                     title: "Notifications",
                     action: { }
                 )
-                
+                .accessibilityIdentifier("profileNotificationsRow")
+
                 ProfileMenuRow(
                     icon: "faceid",
                     title: "Biometric Authentication",
@@ -75,7 +83,8 @@ struct ProfileView: View {
                         showingBiometricSettings = true
                     }
                 )
-                
+                .accessibilityIdentifier("profileBiometricAuthRow")
+
                 ProfileMenuRow(
                     icon: "network",
                     title: "Network Settings",
@@ -83,7 +92,8 @@ struct ProfileView: View {
                         navigationCoordinator.navigate(to: .networkSettings)
                     }
                 )
-                
+                .accessibilityIdentifier("profileNetworkSettingsRow")
+
                 ProfileMenuRow(
                     icon: "chart.line.uptrend.xyaxis",
                     title: "Network Debug",
@@ -91,18 +101,21 @@ struct ProfileView: View {
                         navigationCoordinator.navigate(to: .networkDebug)
                     }
                 )
-                
+                .accessibilityIdentifier("profileNetworkDebugRow")
+
                 ProfileMenuRow(
                     icon: "questionmark.circle",
                     title: "Help & Support",
                     action: { }
                 )
-                
+                .accessibilityIdentifier("profileHelpSupportRow")
+
                 ProfileMenuRow(
                     icon: "doc.text",
                     title: "Terms & Privacy",
                     action: { }
                 )
+                .accessibilityIdentifier("profileTermsPrivacyRow")
             }
             
             Section {
@@ -110,12 +123,15 @@ struct ProfileView: View {
                     HStack {
                         Image(systemName: "rectangle.portrait.and.arrow.right")
                             .foregroundColor(.red)
+                            .accessibilityIdentifier("profileSignOutIcon")
                         Text("Sign Out")
                             .foregroundColor(.red)
+                            .accessibilityIdentifier("profileSignOutText")
                         Spacer()
                     }
                     .padding(.vertical, 4)
                 }
+                .accessibilityIdentifier("profileSignOutButton")
             }
         }
         .sheet(isPresented: $showingBiometricSettings) {
@@ -140,17 +156,20 @@ struct ProfileView: View {
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.blue)
+                                .accessibilityIdentifier("profileUserInitials")
                         )
                 }
                 .frame(width: 60, height: 60)
                 .clipShape(Circle())
+                .accessibilityIdentifier("profileUserImage")
                 
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(user.displayName)
                             .font(.headline)
                             .fontWeight(.semibold)
-                        
+                            .accessibilityIdentifier("profileUserDisplayName")
+
                         if user.isGuest {
                             Text("Guest")
                                 .font(.caption)
@@ -159,22 +178,27 @@ struct ProfileView: View {
                                 .background(Color.orange.opacity(0.2))
                                 .foregroundColor(.orange)
                                 .cornerRadius(4)
+                                .accessibilityIdentifier("profileGuestBadge")
                         }
                     }
                     
                     Text(user.email)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                    
+                        .accessibilityIdentifier("profileUserEmail")
+
                     HStack {
                         Text("Signed in with \(user.authMethod.displayName)")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        
+                            .accessibilityIdentifier("profileAuthMethodText")
+
                         Image(systemName: user.authMethod.iconName)
                             .font(.caption)
                             .foregroundColor(.secondary)
+                            .accessibilityIdentifier("profileAuthMethodIcon")
                     }
+                    .accessibilityIdentifier("profileAuthMethodInfo")
                 }
                 
                 Spacer()
@@ -223,19 +247,23 @@ struct ProfileMenuRow: View {
                 Image(systemName: icon)
                     .foregroundColor(.blue)
                     .frame(width: 24)
-                
+                    .accessibilityIdentifier("profileMenuRowIcon")
+
                 Text(title)
                     .foregroundColor(.primary)
-                
+                    .accessibilityIdentifier("profileMenuRowTitle")
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.caption)
                     .foregroundColor(.secondary)
+                    .accessibilityIdentifier("profileMenuRowChevron")
             }
             .padding(.vertical, 4)
         }
         .buttonStyle(PlainButtonStyle())
+        .accessibilityIdentifier("profileMenuRow_\(title.replacingOccurrences(of: " ", with: "").replacingOccurrences(of: "&", with: "And"))")
     }
 }
 

@@ -18,9 +18,12 @@ struct EnhancedProductCard: View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: cardSpacing) {
                 productImage
+                    .accessibilityIdentifier("productImage_\(product.id)")
                 productInfo
+                    .accessibilityIdentifier("productInfo_\(product.id)")
                 if style == .featured {
                     actionButtons
+                        .accessibilityIdentifier("productActionButtons_\(product.id)")
                 }
             }
             .frame(width: cardWidth)
@@ -31,13 +34,16 @@ struct EnhancedProductCard: View {
         }
         .buttonStyle(PlainButtonStyle())
         .overlay(
-            stockBadge,
+            stockBadge
+                .accessibilityIdentifier("productStockBadge_\(product.id)"),
             alignment: .topTrailing
         )
         .overlay(
-            confirmationOverlay,
+            confirmationOverlay
+                .accessibilityIdentifier("productConfirmationOverlay_\(product.id)"),
             alignment: .center
         )
+        .accessibilityIdentifier("productCard_\(product.id)_\(style)")
     }
     
     private var productImage: some View {
@@ -75,25 +81,30 @@ struct EnhancedProductCard: View {
                 .fontWeight(.semibold)
                 .lineLimit(titleLineLimit)
                 .multilineTextAlignment(.leading)
-            
+                .accessibilityIdentifier("productName_\(product.id)")
+
             if let brand = product.brand {
                 Text(brand)
                     .font(.caption)
                     .foregroundColor(.secondary)
+                    .accessibilityIdentifier("productBrand_\(product.id)")
             }
-            
+
             HStack {
                 Text("$\(String(format: "%.2f", product.price))")
                     .font(priceFont)
                     .fontWeight(.bold)
                     .foregroundColor(.blue)
-                
+                    .accessibilityIdentifier("productPrice_\(product.id)")
+
                 Spacer()
-                
+
                 if style != .compact {
                     ratingView
+                        .accessibilityIdentifier("productRating_\(product.id)")
                 }
             }
+            .accessibilityIdentifier("productPriceAndRating_\(product.id)")
         }
     }
     
@@ -104,7 +115,9 @@ struct EnhancedProductCard: View {
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "cart.badge.plus")
+                        .accessibilityIdentifier("addToCartIcon_\(product.id)")
                     Text("Add")
+                        .accessibilityIdentifier("addToCartText_\(product.id)")
                 }
                 .font(.caption)
                 .foregroundColor(.white)
@@ -114,15 +127,17 @@ struct EnhancedProductCard: View {
                 .cornerRadius(6)
             }
             .buttonStyle(PlainButtonStyle())
-            
+            .accessibilityIdentifier("addToCartButton_\(product.id)")
+
             Spacer()
-            
+
             Button(action: {}) {
                 Image(systemName: "heart")
                     .font(.title3)
                     .foregroundColor(.gray)
             }
             .buttonStyle(PlainButtonStyle())
+            .accessibilityIdentifier("favoriteButton_\(product.id)")
         }
     }
     

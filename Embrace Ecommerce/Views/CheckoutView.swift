@@ -18,6 +18,7 @@ struct CheckoutView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             CartReviewView(coordinator: coordinator)
+                .accessibilityIdentifier("checkoutCartReviewView")
                 .navigationTitle("Checkout")
                 .navigationBarTitleDisplayMode(.inline)
                 .navigationDestination(for: CheckoutCoordinator.CheckoutStep.self) { step in
@@ -30,6 +31,7 @@ struct CheckoutView: View {
                     setupInitialOrderData()
                 }
         }
+        .accessibilityIdentifier("checkoutView")
     }
     
     @ViewBuilder
@@ -37,19 +39,24 @@ struct CheckoutView: View {
         switch step {
         case .cartReview:
             CartReviewView(coordinator: coordinator)
+                .accessibilityIdentifier("checkoutCartReviewStep")
         case .shipping:
             ShippingInformationViewControllerWrapper(coordinator: coordinator)
+                .accessibilityIdentifier("checkoutShippingStep")
         case .payment:
             if coordinator.selectedPaymentMethod?.type == .stripe {
                 StripePaymentView(coordinator: coordinator)
+                    .accessibilityIdentifier("checkoutStripePaymentStep")
             } else {
                 PaymentSelectionView(coordinator: coordinator)
+                    .accessibilityIdentifier("checkoutPaymentSelectionStep")
             }
         case .confirmation:
             OrderConfirmationViewControllerWrapper(
                 coordinator: coordinator,
                 cartManager: cartManager
             )
+            .accessibilityIdentifier("checkoutConfirmationStep")
         }
     }
     

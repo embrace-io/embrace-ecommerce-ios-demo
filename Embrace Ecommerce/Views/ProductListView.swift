@@ -74,18 +74,25 @@ struct ProductListView: View {
         ZStack {
             if isLoading && products.isEmpty {
                 loadingView
+                    .accessibilityIdentifier("productListLoadingView")
             } else {
                 VStack(spacing: 0) {
                     headerSection
+                        .accessibilityIdentifier("productListHeaderSection")
                     filtersBar
+                        .accessibilityIdentifier("productListFiltersBar")
                     productContent
+                        .accessibilityIdentifier("productListContent")
                 }
+                .accessibilityIdentifier("productListMainContent")
             }
-            
+
             if showingError {
                 errorOverlay
+                    .accessibilityIdentifier("productListErrorOverlay")
             }
         }
+        .accessibilityIdentifier("productListView")
         .navigationTitle(category ?? "All Products")
         .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showingFilters) {
@@ -116,10 +123,12 @@ struct ProductListView: View {
         VStack(spacing: 20) {
             ProgressView()
                 .scaleEffect(1.5)
-            
+                .accessibilityIdentifier("productListLoadingSpinner")
+
             Text("Loading products...")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+                .accessibilityIdentifier("productListLoadingText")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -145,6 +154,7 @@ struct ProductListView: View {
                 loadInitialProducts()
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("productListRetryButton")
         }
         .padding()
         .background(.regularMaterial)
@@ -155,7 +165,9 @@ struct ProductListView: View {
     private var headerSection: some View {
         VStack(spacing: 12) {
             searchBar
+                .accessibilityIdentifier("productListSearchBar")
             controlsRow
+                .accessibilityIdentifier("productListControlsRow")
         }
         .padding(.horizontal)
         .padding(.top, 8)
@@ -165,15 +177,18 @@ struct ProductListView: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.secondary)
-            
+                .accessibilityIdentifier("productListSearchIcon")
+
             TextField("Search in \(category ?? "products")...", text: $searchText)
-            
+                .accessibilityIdentifier("productListSearchTextField")
+
             if !searchText.isEmpty {
                 Button(action: {
                     searchText = ""
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.secondary)
+                        .accessibilityIdentifier("productListSearchClearButton")
                 }
             }
         }
@@ -189,9 +204,11 @@ struct ProductListView: View {
                 Text("\(filteredProducts.count)")
                     .font(.subheadline)
                     .fontWeight(.semibold)
+                    .accessibilityIdentifier("productListItemCount")
                 Text("items")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+                    .accessibilityIdentifier("productListItemsLabel")
             }
             
             Spacer()
@@ -207,6 +224,7 @@ struct ProductListView: View {
                     .font(.subheadline)
                     .foregroundColor(hasActiveFilters ? .blue : .primary)
                 }
+                .accessibilityIdentifier("productListFiltersButton")
                 
                 Button(action: {
                     showingSortOptions.toggle()
@@ -218,6 +236,7 @@ struct ProductListView: View {
                     .font(.subheadline)
                     .foregroundColor(.primary)
                 }
+                .accessibilityIdentifier("productListSortButton")
                 .popover(isPresented: $showingSortOptions, arrowEdge: .top) {
                     sortOptionsMenu
                 }
@@ -229,6 +248,7 @@ struct ProductListView: View {
                         .font(.title3)
                         .foregroundColor(.primary)
                 }
+                .accessibilityIdentifier("productListViewTypeButton")
             }
         }
     }
@@ -246,6 +266,7 @@ struct ProductListView: View {
                     .padding(.vertical, 6)
                     .background(Color.red.opacity(0.1))
                     .cornerRadius(16)
+                    .accessibilityIdentifier("productListClearAllFiltersButton")
                 }
                 
                 ForEach(Array(selectedBrands), id: \.self) { brand in
@@ -253,6 +274,7 @@ struct ProductListView: View {
                         selectedBrands.remove(brand)
                         applyFilters()
                     }
+                    .accessibilityIdentifier("productListBrandFilter_\(brand)")
                 }
                 
                 if inStockOnly {
@@ -260,6 +282,7 @@ struct ProductListView: View {
                         inStockOnly = false
                         applyFilters()
                     }
+                    .accessibilityIdentifier("productListInStockFilter")
                 }
                 
                 if priceRange.min > 0 || priceRange.max < 1000 {
@@ -267,6 +290,7 @@ struct ProductListView: View {
                         priceRange = PriceRange()
                         applyFilters()
                     }
+                    .accessibilityIdentifier("productListPriceRangeFilter")
                 }
             }
             .padding(.horizontal)
@@ -304,6 +328,7 @@ struct ProductListView: View {
         }
         .padding(.horizontal)
         .padding(.top, 16)
+        .accessibilityIdentifier("productListGridLayout")
     }
     
     private var listLayout: some View {
@@ -316,6 +341,7 @@ struct ProductListView: View {
         }
         .padding(.horizontal)
         .padding(.top, 16)
+        .accessibilityIdentifier("productListListLayout")
     }
     
     private var loadMoreButton: some View {
@@ -334,6 +360,7 @@ struct ProductListView: View {
                 .background(Color.blue)
                 .cornerRadius(10)
                 .padding(.horizontal)
+                .accessibilityIdentifier("productListLoadMoreButton")
             }
         }
         .padding(.vertical, 16)
@@ -542,17 +569,20 @@ struct FilterChip: View {
             Text(title)
                 .font(.caption)
                 .foregroundColor(.blue)
-            
+                .accessibilityIdentifier("filterChipTitle")
+
             Button(action: onRemove) {
                 Image(systemName: "xmark")
                     .font(.caption2)
                     .foregroundColor(.blue)
+                    .accessibilityIdentifier("filterChipRemoveButton")
             }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Color.blue.opacity(0.1))
         .cornerRadius(12)
+        .accessibilityIdentifier("filterChip_\(title)")
     }
 }
 
@@ -579,6 +609,7 @@ struct ProductListRow: View {
                 .frame(width: 80, height: 80)
                 .clipped()
                 .cornerRadius(8)
+                .accessibilityIdentifier("productListRowImage_\(product.id)")
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(product.name)
@@ -586,23 +617,27 @@ struct ProductListRow: View {
                         .fontWeight(.semibold)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
+                        .accessibilityIdentifier("productListRowName_\(product.id)")
                     
                     if let brand = product.brand {
                         Text(brand)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                            .accessibilityIdentifier("productListRowBrand_\(product.id)")
                     }
                     
                     Text(product.description)
                         .font(.caption)
                         .foregroundColor(.secondary)
                         .lineLimit(2)
+                        .accessibilityIdentifier("productListRowDescription_\(product.id)")
                     
                     HStack {
                         Text("$\(String(format: "%.2f", product.price))")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.blue)
+                            .accessibilityIdentifier("productListRowPrice_\(product.id)")
                         
                         Spacer()
                         
@@ -629,12 +664,14 @@ struct ProductListRow: View {
                             .foregroundColor(.blue)
                     }
                     .disabled(!product.inStock)
+                    .accessibilityIdentifier("productListRowAddToCartButton_\(product.id)")
                     
                     Button(action: {}) {
                         Image(systemName: "heart")
                             .font(.title3)
                             .foregroundColor(.gray)
                     }
+                    .accessibilityIdentifier("productListRowFavoriteButton_\(product.id)")
                 }
             }
         }
@@ -643,6 +680,7 @@ struct ProductListRow: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .accessibilityIdentifier("productListRow_\(product.id)")
     }
 }
 

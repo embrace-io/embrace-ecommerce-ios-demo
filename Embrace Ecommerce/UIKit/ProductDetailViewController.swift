@@ -17,18 +17,21 @@ class ProductDetailViewController: UIViewController {
         scroll.translatesAutoresizingMaskIntoConstraints = false
         scroll.showsVerticalScrollIndicator = true
         scroll.bounces = true
+        scroll.accessibilityIdentifier = "productDetailScrollView"
         return scroll
     }()
     
     private lazy var contentView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.accessibilityIdentifier = "productDetailContentView"
         return view
     }()
     
     private lazy var imageCarousel: ProductImageCarouselView = {
         let carousel = ProductImageCarouselView()
         carousel.translatesAutoresizingMaskIntoConstraints = false
+        carousel.accessibilityIdentifier = "productDetailImageCarousel"
         return carousel
     }()
     
@@ -38,6 +41,7 @@ class ProductDetailViewController: UIViewController {
         stack.axis = .vertical
         stack.spacing = 16
         stack.alignment = .fill
+        stack.accessibilityIdentifier = "productDetailInfoStack"
         return stack
     }()
     
@@ -47,6 +51,7 @@ class ProductDetailViewController: UIViewController {
         label.font = UIFont.boldSystemFont(ofSize: 24)
         label.textColor = .label
         label.numberOfLines = 0
+        label.accessibilityIdentifier = "productDetailTitleLabel"
         return label
     }()
     
@@ -55,6 +60,7 @@ class ProductDetailViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = UIFont.systemFont(ofSize: 16)
         label.textColor = .secondaryLabel
+        label.accessibilityIdentifier = "productDetailBrandLabel"
         return label
     }()
     
@@ -63,6 +69,7 @@ class ProductDetailViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = UIFont.boldSystemFont(ofSize: 28)
         label.textColor = .systemBlue
+        label.accessibilityIdentifier = "productDetailPriceLabel"
         return label
     }()
     
@@ -70,6 +77,7 @@ class ProductDetailViewController: UIViewController {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.layer.cornerRadius = 12
+        view.accessibilityIdentifier = "productDetailStockStatusView"
         return view
     }()
     
@@ -78,6 +86,7 @@ class ProductDetailViewController: UIViewController {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.font = UIFont.systemFont(ofSize: 14, weight: .medium)
         label.textAlignment = .center
+        label.accessibilityIdentifier = "productDetailStockLabel"
         return label
     }()
     
@@ -87,6 +96,7 @@ class ProductDetailViewController: UIViewController {
         stack.axis = .horizontal
         stack.spacing = 4
         stack.alignment = .center
+        stack.accessibilityIdentifier = "productDetailRatingView"
         return stack
     }()
     
@@ -96,12 +106,14 @@ class ProductDetailViewController: UIViewController {
         label.font = UIFont.systemFont(ofSize: 16)
         label.textColor = .label
         label.numberOfLines = 0
+        label.accessibilityIdentifier = "productDetailDescriptionLabel"
         return label
     }()
     
     private lazy var variantsContainerView: UIView = {
         let view = UIView()
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.accessibilityIdentifier = "productDetailVariantsContainer"
         return view
     }()
     
@@ -109,6 +121,7 @@ class ProductDetailViewController: UIViewController {
         let selector = QuantitySelectorView()
         selector.translatesAutoresizingMaskIntoConstraints = false
         selector.delegate = self
+        selector.accessibilityIdentifier = "productDetailQuantitySelector"
         return selector
     }()
     
@@ -120,6 +133,7 @@ class ProductDetailViewController: UIViewController {
         button.titleLabel?.font = UIFont.boldSystemFont(ofSize: 18)
         button.layer.cornerRadius = 12
         button.addTarget(self, action: #selector(addToCartTapped), for: .touchUpInside)
+        button.accessibilityIdentifier = "addToCartButton"
         return button
     }()
     
@@ -130,12 +144,14 @@ class ProductDetailViewController: UIViewController {
         button.setImage(UIImage(systemName: "heart.fill"), for: .selected)
         button.tintColor = .systemRed
         button.addTarget(self, action: #selector(favoriteTapped), for: .touchUpInside)
+        button.accessibilityIdentifier = "favoriteButton"
         return button
     }()
     
     // MARK: - Lifecycle
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.accessibilityIdentifier = "productDetailView"
         setupUI()
         configureProduct()
     }
@@ -185,13 +201,15 @@ class ProductDetailViewController: UIViewController {
             starImageView.translatesAutoresizingMaskIntoConstraints = false
             starImageView.widthAnchor.constraint(equalToConstant: 16).isActive = true
             starImageView.heightAnchor.constraint(equalToConstant: 16).isActive = true
+            starImageView.accessibilityIdentifier = "productDetailStar\(i)"
             ratingView.addArrangedSubview(starImageView)
         }
-        
+
         let ratingLabel = UILabel()
         ratingLabel.text = "4.0 (127 reviews)"
         ratingLabel.font = UIFont.systemFont(ofSize: 14)
         ratingLabel.textColor = .secondaryLabel
+        ratingLabel.accessibilityIdentifier = "productDetailRatingLabel"
         ratingView.addArrangedSubview(ratingLabel)
     }
     
@@ -213,13 +231,15 @@ class ProductDetailViewController: UIViewController {
             target: self,
             action: #selector(closeTapped)
         )
-        
+        closeButton.accessibilityIdentifier = "productDetailCloseButton"
+
         let shareButton = UIBarButtonItem(
             image: UIImage(systemName: "square.and.arrow.up"),
             style: .plain,
             target: self,
             action: #selector(shareTapped)
         )
+        shareButton.accessibilityIdentifier = "productDetailShareButton"
         
         navigationItem.leftBarButtonItem = closeButton
         navigationItem.rightBarButtonItem = shareButton
@@ -350,17 +370,20 @@ class ProductDetailViewController: UIViewController {
         titleLabel.text = type.rawValue.capitalized
         titleLabel.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        titleLabel.accessibilityIdentifier = "productDetailVariant\(type.rawValue.capitalized)TitleLabel"
+
         let optionsStackView = UIStackView()
         optionsStackView.axis = .horizontal
         optionsStackView.spacing = 8
         optionsStackView.translatesAutoresizingMaskIntoConstraints = false
+        optionsStackView.accessibilityIdentifier = "productDetailVariant\(type.rawValue.capitalized)OptionsStack"
         
         for option in options {
             let button = createVariantButton(for: option, type: type)
             optionsStackView.addArrangedSubview(button)
         }
         
+        containerView.accessibilityIdentifier = "productDetailVariant\(type.rawValue.capitalized)Container"
         containerView.addSubview(titleLabel)
         containerView.addSubview(optionsStackView)
         
@@ -393,6 +416,7 @@ class ProductDetailViewController: UIViewController {
         
         button.addTarget(self, action: #selector(variantButtonTapped(_:)), for: .touchUpInside)
         button.tag = variant.hashValue
+        button.accessibilityIdentifier = "productDetailVariant\(type.rawValue.capitalized)\(variant.value)Button"
         
         return button
     }

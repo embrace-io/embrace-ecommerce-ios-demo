@@ -13,12 +13,16 @@ struct CartView: View {
             VStack(spacing: 0) {
                 if isLoading {
                     loadingView
+                        .accessibilityIdentifier("cartLoadingView")
                 } else if cartManager.isEmpty {
                     emptyCartView
+                        .accessibilityIdentifier("cartEmptyView")
                 } else {
                     cartContentView
+                        .accessibilityIdentifier("cartContentView")
                 }
             }
+            .accessibilityIdentifier("cartView")
             .navigationTitle("Cart")
             .navigationDestination(for: NavigationDestination.self) { destination in
                 destinationView(for: destination)
@@ -34,6 +38,7 @@ struct CartView: View {
                             showingClearCartAlert = true
                         }
                         .foregroundColor(.red)
+                        .accessibilityIdentifier("cartClearButton")
                     }
                 }
             }
@@ -55,21 +60,25 @@ struct CartView: View {
     private var emptyCartView: some View {
         VStack(spacing: 24) {
             Spacer()
-            
+
             Image(systemName: "cart")
                 .font(.system(size: 64))
                 .foregroundColor(.gray)
-            
+                .accessibilityIdentifier("cartEmptyIcon")
+
             VStack(spacing: 8) {
                 Text("Your cart is empty")
                     .font(.title2)
                     .fontWeight(.semibold)
-                
+                    .accessibilityIdentifier("cartEmptyTitle")
+
                 Text("Add some products to get started")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+                    .accessibilityIdentifier("cartEmptySubtitle")
             }
-            
+            .accessibilityIdentifier("cartEmptyMessage")
+
             Button("Start Shopping") {
                 trackEmptyCartAction()
                 navigationCoordinator.switchTab(to: .home)
@@ -80,7 +89,8 @@ struct CartView: View {
             .padding(.vertical, 12)
             .background(Color.blue)
             .cornerRadius(10)
-            
+            .accessibilityIdentifier("cartStartShoppingButton")
+
             Spacer()
         }
         .padding()
@@ -89,16 +99,20 @@ struct CartView: View {
     private var cartContentView: some View {
         VStack(spacing: 0) {
             cartItemsList
-            
+                .accessibilityIdentifier("cartItemsList")
+
             if showingSavedForLaterSection {
                 savedForLaterSection
+                    .accessibilityIdentifier("cartSavedForLaterSection")
             }
-            
+
             Divider()
-            
+
             cartSummary
-            
+                .accessibilityIdentifier("cartSummary")
+
             checkoutButton
+                .accessibilityIdentifier("cartCheckoutButton")
         }
     }
     
@@ -107,9 +121,11 @@ struct CartView: View {
             Spacer()
             ProgressView()
                 .scaleEffect(1.5)
+                .accessibilityIdentifier("cartLoadingSpinner")
             Text("Loading cart...")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
+                .accessibilityIdentifier("cartLoadingText")
             Spacer()
         }
     }
@@ -164,39 +180,48 @@ struct CartView: View {
             HStack {
                 Text("Subtotal (\(cartManager.totalItems) items)")
                     .font(.subheadline)
-                
+                    .accessibilityIdentifier("cartSubtotalLabel")
+
                 Spacer()
-                
+
                 Text("$\(String(format: "%.2f", cartManager.subtotal))")
                     .font(.headline)
                     .fontWeight(.semibold)
+                    .accessibilityIdentifier("cartSubtotalAmount")
             }
-            
+            .accessibilityIdentifier("cartSubtotalRow")
+
             HStack {
                 Text("Shipping")
                     .font(.subheadline)
-                
+                    .accessibilityIdentifier("cartShippingLabel")
+
                 Spacer()
-                
+
                 Text("FREE")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.green)
+                    .accessibilityIdentifier("cartShippingAmount")
             }
-            
+            .accessibilityIdentifier("cartShippingRow")
+
             Divider()
-            
+
             HStack {
                 Text("Total")
                     .font(.headline)
                     .fontWeight(.bold)
-                
+                    .accessibilityIdentifier("cartTotalLabel")
+
                 Spacer()
-                
+
                 Text("$\(String(format: "%.2f", cartManager.subtotal))")
                     .font(.headline)
                     .fontWeight(.bold)
+                    .accessibilityIdentifier("cartTotalAmount")
             }
+            .accessibilityIdentifier("cartTotalRow")
         }
         .padding()
         .background(Color(.systemGray6))
@@ -214,6 +239,7 @@ struct CartView: View {
         .background(Color.blue)
         .cornerRadius(10)
         .padding()
+        .accessibilityIdentifier("cartProceedToCheckoutButton")
     }
     
     @ViewBuilder
@@ -319,39 +345,47 @@ struct CartItemRow: View {
             .frame(width: 80, height: 80)
             .clipped()
             .cornerRadius(8)
+            .accessibilityIdentifier("cartItemImage_\(item.id)")
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(product?.name ?? "Loading...")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .lineLimit(2)
-                
+                    .accessibilityIdentifier("cartItemName_\(item.id)")
+
                 if !item.selectedVariants.isEmpty {
                     Text(variantsText)
                         .font(.caption)
                         .foregroundColor(.secondary)
+                        .accessibilityIdentifier("cartItemVariants_\(item.id)")
                 }
-                
+
                 HStack {
                     Text("$\(String(format: "%.2f", item.unitPrice))")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                         .foregroundColor(.blue)
-                    
+                        .accessibilityIdentifier("cartItemUnitPrice_\(item.id)")
+
                     if item.quantity > 1 {
                         Text("x\(item.quantity)")
                             .font(.caption)
                             .foregroundColor(.secondary)
+                            .accessibilityIdentifier("cartItemQuantityLabel_\(item.id)")
                     }
                 }
-                
+                .accessibilityIdentifier("cartItemPriceInfo_\(item.id)")
+
                 Text("Total: $\(String(format: "%.2f", item.totalPrice))")
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(.primary)
-                
+                    .accessibilityIdentifier("cartItemTotalPrice_\(item.id)")
+
                 Spacer()
             }
+            .accessibilityIdentifier("cartItemInfo_\(item.id)")
             
             Spacer()
             
@@ -363,7 +397,8 @@ struct CartItemRow: View {
                         onQuantityChange(newQuantity)
                     }
                 )
-                
+                .accessibilityIdentifier("cartItemQuantitySelector_\(item.id)")
+
                 Button(action: {
                     showingRemoveAlert = true
                 }) {
@@ -371,9 +406,12 @@ struct CartItemRow: View {
                         .foregroundColor(.red)
                 }
                 .buttonStyle(PlainButtonStyle())
+                .accessibilityIdentifier("cartItemRemoveButton_\(item.id)")
             }
+            .accessibilityIdentifier("cartItemActions_\(item.id)")
         }
         .padding(.vertical, 8)
+        .accessibilityIdentifier("cartItemRow_\(item.id)")
         .onAppear {
             loadProduct()
         }
@@ -426,7 +464,7 @@ struct CartItemRow: View {
 struct QuantitySelector: View {
     let quantity: Int
     let onQuantityChange: (Int) -> Void
-    
+
     var body: some View {
         HStack(spacing: 8) {
             Button(action: {
@@ -436,12 +474,14 @@ struct QuantitySelector: View {
                     .foregroundColor(quantity > 1 ? .blue : .gray)
             }
             .disabled(quantity <= 1)
-            
+            .accessibilityIdentifier("quantityDecrementButton")
+
             Text("\(quantity)")
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .frame(minWidth: 20)
-            
+                .accessibilityIdentifier("quantityValue")
+
             Button(action: {
                 onQuantityChange(min(10, quantity + 1))
             }) {
@@ -449,7 +489,9 @@ struct QuantitySelector: View {
                     .foregroundColor(quantity < 10 ? .blue : .gray)
             }
             .disabled(quantity >= 10)
+            .accessibilityIdentifier("quantityIncrementButton")
         }
+        .accessibilityIdentifier("quantitySelector")
     }
 }
 

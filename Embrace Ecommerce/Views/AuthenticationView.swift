@@ -10,27 +10,31 @@ struct AuthenticationView: View {
         NavigationView {
             VStack(spacing: 24) {
                 Spacer()
-                
+
                 // App Logo/Header
                 VStack(spacing: 16) {
                     Image(systemName: "cart.fill")
                         .font(.system(size: 64))
                         .foregroundColor(.blue)
-                    
+                        .accessibilityIdentifier("authAppLogo")
+
                     Text("Embrace Store")
                         .font(.largeTitle)
                         .fontWeight(.bold)
-                    
+                        .accessibilityIdentifier("authAppTitle")
+
                     Text("Welcome back! Please sign in to continue.")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
+                        .accessibilityIdentifier("authWelcomeMessage")
                 }
                 .padding(.bottom, 32)
+                .accessibilityIdentifier("authHeader")
                 
                 // Authentication Options
                 VStack(spacing: 16) {
-                    
+
                     // Email Sign In Button
                     NavigationLink(destination: EmailAuthenticationView(isSignUp: $showingSignUp)) {
                         AuthenticationButton(
@@ -39,7 +43,8 @@ struct AuthenticationView: View {
                             backgroundColor: .blue
                         )
                     }
-                    
+                    .accessibilityIdentifier("authEmailSignInButton")
+
                     // Google Sign In Button
                     GoogleSignInButton(scheme: .dark, style: .wide, state: .normal) {
                         Task {
@@ -48,7 +53,8 @@ struct AuthenticationView: View {
                     }
                     .frame(height: 50)
                     .disabled(authManager.isLoading)
-                    
+                    .accessibilityIdentifier("authGoogleSignInButton")
+
                     // Biometric Authentication (if available)
                     if canShowBiometricAuth {
                         Button(action: {
@@ -63,8 +69,9 @@ struct AuthenticationView: View {
                         .sheet(isPresented: $showingBiometricAuth) {
                             BiometricAuthenticationView()
                         }
+                        .accessibilityIdentifier("authBiometricSignInButton")
                     }
-                    
+
                     // Guest Checkout
                     Button(action: {
                         Task {
@@ -78,8 +85,10 @@ struct AuthenticationView: View {
                         )
                     }
                     .disabled(authManager.isLoading)
+                    .accessibilityIdentifier("authGuestButton")
                 }
                 .padding(.horizontal, 32)
+                .accessibilityIdentifier("authOptionsSection")
                 
                 Spacer()
                 
@@ -87,18 +96,23 @@ struct AuthenticationView: View {
                 HStack {
                     Text("Don't have an account?")
                         .foregroundColor(.secondary)
-                    
+                        .accessibilityIdentifier("authSignUpPrompt")
+
                     Button("Sign Up") {
                         showingSignUp = true
                     }
                     .foregroundColor(.blue)
                     .fontWeight(.medium)
+                    .accessibilityIdentifier("authSignUpButton")
                 }
                 .padding(.bottom, 32)
+                .accessibilityIdentifier("authSignUpSection")
             }
+            .accessibilityIdentifier("authenticationView")
             .navigationBarHidden(true)
             .overlay(
-                loadingOverlay,
+                loadingOverlay
+                    .accessibilityIdentifier("authLoadingOverlay"),
                 alignment: .center
             )
             .alert("Authentication Error", isPresented: .constant(showError)) {
@@ -140,9 +154,11 @@ struct AuthenticationView: View {
             VStack(spacing: 16) {
                 ProgressView()
                     .scaleEffect(1.5)
+                    .accessibilityIdentifier("authLoadingSpinner")
                 Text("Signing in...")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+                    .accessibilityIdentifier("authLoadingText")
             }
             .padding(24)
             .background(.regularMaterial)
@@ -155,16 +171,18 @@ struct AuthenticationButton: View {
     let title: String
     let icon: String
     let backgroundColor: Color
-    
+
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
                 .font(.title3)
-            
+                .accessibilityIdentifier("authButtonIcon_\(icon)")
+
             Text(title)
                 .font(.headline)
                 .fontWeight(.medium)
-            
+                .accessibilityIdentifier("authButtonTitle_\(title.replacingOccurrences(of: " ", with: ""))")
+
             Spacer()
         }
         .foregroundColor(.white)
@@ -172,6 +190,7 @@ struct AuthenticationButton: View {
         .background(backgroundColor)
         .cornerRadius(12)
         .shadow(color: backgroundColor.opacity(0.3), radius: 4, x: 0, y: 2)
+        .accessibilityIdentifier("authButton_\(title.replacingOccurrences(of: " ", with: ""))")
     }
 }
 
