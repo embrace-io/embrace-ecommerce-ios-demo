@@ -8,7 +8,9 @@ struct EnhancedCategoryCard: View {
         Button(action: action) {
             VStack(spacing: 12) {
                 categoryImage
+                    .accessibilityIdentifier("categoryImage_\(category.id)")
                 categoryInfo
+                    .accessibilityIdentifier("categoryInfo_\(category.id)")
             }
             .frame(maxWidth: .infinity)
             .frame(height: 120)
@@ -18,6 +20,7 @@ struct EnhancedCategoryCard: View {
             .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
+        .accessibilityIdentifier("categoryCard_\(category.id)")
     }
     
     private var categoryImage: some View {
@@ -55,10 +58,12 @@ struct EnhancedCategoryCard: View {
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-            
+                .accessibilityIdentifier("categoryName_\(category.id)")
+
             Text("\(category.subcategories.count) items")
                 .font(.caption)
                 .foregroundColor(.secondary)
+                .accessibilityIdentifier("categoryItemCount_\(category.id)")
         }
     }
     
@@ -117,7 +122,7 @@ struct EnhancedCategoryCard: View {
 struct DealCard: View {
     let product: Product
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: 8) {
@@ -137,28 +142,35 @@ struct DealCard: View {
                     .frame(width: 120, height: 90)
                     .clipped()
                     .cornerRadius(8)
-                    
+                    .accessibilityIdentifier("dealProductImage_\(product.id)")
+
                     dealBadge
+                        .accessibilityIdentifier("dealBadge_\(product.id)")
                 }
-                
+
                 VStack(alignment: .leading, spacing: 4) {
                     Text(product.name)
                         .font(.caption)
                         .fontWeight(.medium)
                         .lineLimit(2)
-                    
+                        .accessibilityIdentifier("dealProductName_\(product.id)")
+
                     HStack {
                         Text("$\(String(format: "%.2f", product.price * 0.8))")
                             .font(.caption)
                             .fontWeight(.bold)
                             .foregroundColor(.red)
-                        
+                            .accessibilityIdentifier("dealDiscountedPrice_\(product.id)")
+
                         Text("$\(String(format: "%.2f", product.price))")
                             .font(.caption2)
                             .strikethrough()
                             .foregroundColor(.secondary)
+                            .accessibilityIdentifier("dealOriginalPrice_\(product.id)")
                     }
+                    .accessibilityIdentifier("dealPricing_\(product.id)")
                 }
+                .accessibilityIdentifier("dealProductInfo_\(product.id)")
             }
         }
         .buttonStyle(PlainButtonStyle())
@@ -167,6 +179,7 @@ struct DealCard: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .accessibilityIdentifier("dealCard_\(product.id)")
     }
     
     private var dealBadge: some View {
@@ -179,6 +192,7 @@ struct DealCard: View {
             .background(Color.red)
             .cornerRadius(4)
             .offset(x: 4, y: 4)
+            .accessibilityIdentifier("dealBadgeText_\(product.id)")
     }
 }
 

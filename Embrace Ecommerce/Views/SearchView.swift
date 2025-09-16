@@ -11,17 +11,22 @@ struct SearchView: View {
         NavigationStack(path: $navigationCoordinator.navigationPath) {
             VStack(spacing: 0) {
                 searchBar
-                
+                    .accessibilityIdentifier("searchBar")
+
                 if searchText.isEmpty {
                     recentSearchesView
+                        .accessibilityIdentifier("recentSearchesView")
                 } else if isSearching {
                     searchingView
+                        .accessibilityIdentifier("searchingView")
                 } else {
                     searchResultsView
+                        .accessibilityIdentifier("searchResultsView")
                 }
-                
+
                 Spacer()
             }
+            .accessibilityIdentifier("searchView")
             .navigationTitle("Search")
             .navigationDestination(for: NavigationDestination.self) { destination in
                 destinationView(for: destination)
@@ -36,9 +41,11 @@ struct SearchView: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.gray)
-            
+                .accessibilityIdentifier("searchIcon")
+
             TextField("Search products...", text: $searchText)
                 .textFieldStyle(PlainTextFieldStyle())
+                .accessibilityIdentifier("searchTextField")
                 .onSubmit {
                     performSearch()
                 }
@@ -50,7 +57,7 @@ struct SearchView: View {
                         debounceSearch()
                     }
                 }
-            
+
             if !searchText.isEmpty {
                 Button("Clear") {
                     searchText = ""
@@ -59,6 +66,7 @@ struct SearchView: View {
                 }
                 .font(.caption)
                 .foregroundColor(.blue)
+                .accessibilityIdentifier("searchClearButton")
             }
         }
         .padding()
@@ -75,7 +83,8 @@ struct SearchView: View {
                     Text("Recent Searches")
                         .font(.headline)
                         .padding(.horizontal)
-                    
+                        .accessibilityIdentifier("recentSearchesTitle")
+
                     LazyVStack(alignment: .leading, spacing: 8) {
                         ForEach(recentSearches, id: \.self) { search in
                             Button(action: {
@@ -85,24 +94,29 @@ struct SearchView: View {
                                 HStack {
                                     Image(systemName: "clock")
                                         .foregroundColor(.gray)
-                                    
+                                        .accessibilityIdentifier("recentSearchIcon")
+
                                     Text(search)
                                         .foregroundColor(.primary)
-                                    
+                                        .accessibilityIdentifier("recentSearchText_\(search)")
+
                                     Spacer()
-                                    
+
                                     Button(action: {
                                         removeFromRecentSearches(search)
                                     }) {
                                         Image(systemName: "xmark")
                                             .foregroundColor(.gray)
+                                            .accessibilityIdentifier("recentSearchRemoveButton_\(search)")
                                     }
                                 }
                                 .padding(.horizontal)
                             }
                             .buttonStyle(PlainButtonStyle())
+                            .accessibilityIdentifier("recentSearchButton_\(search)")
                         }
                     }
+                    .accessibilityIdentifier("recentSearchesList")
                 }
             }
             
@@ -117,7 +131,8 @@ struct SearchView: View {
             Text("Popular Categories")
                 .font(.headline)
                 .padding(.horizontal)
-            
+                .accessibilityIdentifier("popularCategoriesTitle")
+
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
                 ForEach(["Electronics", "Fashion", "Home", "Sports", "Books", "Beauty"], id: \.self) { category in
                     Button(action: {
@@ -133,18 +148,22 @@ struct SearchView: View {
                             .foregroundColor(.blue)
                             .cornerRadius(8)
                     }
+                    .accessibilityIdentifier("categoryButton_\(category)")
                 }
             }
             .padding(.horizontal)
+            .accessibilityIdentifier("popularCategoriesGrid")
         }
     }
     
     private var searchingView: some View {
         VStack(spacing: 16) {
             ProgressView("Searching...")
+                .accessibilityIdentifier("searchingSpinner")
             Text("Finding the best products for you")
                 .font(.caption)
                 .foregroundColor(.secondary)
+                .accessibilityIdentifier("searchingText")
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
@@ -156,6 +175,7 @@ struct SearchView: View {
                 HStack {
                     Text("\(searchResults.count) results for '\(searchText)'")
                         .font(.headline)
+                        .accessibilityIdentifier("searchResultsCount")
                     Spacer()
                 }
                 .padding(.horizontal)
@@ -165,14 +185,17 @@ struct SearchView: View {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 48))
                             .foregroundColor(.gray)
-                        
+                            .accessibilityIdentifier("noResultsIcon")
+
                         Text("No results found")
                             .font(.title3)
                             .fontWeight(.medium)
-                        
+                            .accessibilityIdentifier("noResultsTitle")
+
                         Text("Try adjusting your search terms")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                            .accessibilityIdentifier("noResultsSubtitle")
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.top, 60)
@@ -185,6 +208,7 @@ struct SearchView: View {
                         }
                     }
                     .padding(.horizontal)
+                    .accessibilityIdentifier("searchResultsList")
                 }
             }
         }

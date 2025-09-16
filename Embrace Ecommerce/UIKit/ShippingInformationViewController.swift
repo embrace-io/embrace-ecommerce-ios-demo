@@ -25,6 +25,7 @@ class ShippingInformationViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        view.accessibilityIdentifier = "shippingInformationView"
         setupUI()
         setupConstraints()
         updateContinueButton()
@@ -46,16 +47,19 @@ class ShippingInformationViewController: UIViewController {
     private func setupScrollView() {
         scrollView = UIScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.accessibilityIdentifier = "shippingInformationScrollView"
         view.addSubview(scrollView)
-        
+
         contentView = UIView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.accessibilityIdentifier = "shippingInformationContentView"
         scrollView.addSubview(contentView)
-        
+
         stackView = UIStackView()
         stackView.axis = .vertical
         stackView.spacing = 24
         stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.accessibilityIdentifier = "shippingInformationStackView"
         contentView.addSubview(stackView)
     }
     
@@ -64,16 +68,19 @@ class ShippingInformationViewController: UIViewController {
         stepLabel.text = "Step \(coordinator.currentStep.stepNumber)"
         stepLabel.font = .systemFont(ofSize: 12, weight: .medium)
         stepLabel.textColor = .secondaryLabel
-        
+        stepLabel.accessibilityIdentifier = "shippingInformationStepLabel"
+
         let titleLabel = UILabel()
         titleLabel.text = coordinator.currentStep.title
         titleLabel.font = .systemFont(ofSize: 22, weight: .semibold)
         titleLabel.textColor = .label
-        
+        titleLabel.accessibilityIdentifier = "shippingInformationTitleLabel"
+
         let headerStack = UIStackView(arrangedSubviews: [stepLabel, titleLabel])
         headerStack.axis = .vertical
         headerStack.spacing = 4
-        
+        headerStack.accessibilityIdentifier = "shippingInformationHeaderStack"
+
         stackView.addArrangedSubview(headerStack)
     }
     
@@ -83,6 +90,7 @@ class ShippingInformationViewController: UIViewController {
             addressType: .shipping
         )
         shippingAddressSection.delegate = self
+        shippingAddressSection.accessibilityIdentifier = "shippingAddressSection"
         stackView.addArrangedSubview(shippingAddressSection)
     }
     
@@ -90,22 +98,26 @@ class ShippingInformationViewController: UIViewController {
         let sameAsShippingSwitch = UISwitch()
         sameAsShippingSwitch.isOn = billingAddressSameAsShipping
         sameAsShippingSwitch.addTarget(self, action: #selector(billingAddressSwitchChanged(_:)), for: .valueChanged)
-        
+        sameAsShippingSwitch.accessibilityIdentifier = "billingAddressSameAsShippingSwitch"
+
         let switchLabel = UILabel()
         switchLabel.text = "Billing address same as shipping"
         switchLabel.font = .systemFont(ofSize: 16)
+        switchLabel.accessibilityIdentifier = "billingAddressSameAsShippingLabel"
         
         let switchStack = UIStackView(arrangedSubviews: [switchLabel, sameAsShippingSwitch])
         switchStack.axis = .horizontal
         switchStack.spacing = 8
+        switchStack.accessibilityIdentifier = "billingAddressSwitchStack"
         switchLabel.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        
+
         billingAddressSection = AddressSelectionView(
             title: "Billing Address",
             addressType: .billing
         )
         billingAddressSection.delegate = self
         billingAddressSection.isHidden = billingAddressSameAsShipping
+        billingAddressSection.accessibilityIdentifier = "billingAddressSection"
         
         stackView.addArrangedSubview(switchStack)
         stackView.addArrangedSubview(billingAddressSection)
@@ -114,6 +126,7 @@ class ShippingInformationViewController: UIViewController {
     private func setupShippingMethodSection() {
         shippingMethodSection = ShippingMethodSelectionView()
         shippingMethodSection.delegate = self
+        shippingMethodSection.accessibilityIdentifier = "shippingMethodSection"
         stackView.addArrangedSubview(shippingMethodSection)
     }
     
@@ -126,18 +139,21 @@ class ShippingInformationViewController: UIViewController {
         continueButton.setTitleColor(.lightGray, for: .disabled)
         continueButton.layer.cornerRadius = 12
         continueButton.addTarget(self, action: #selector(continueButtonTapped), for: .touchUpInside)
-        
+        continueButton.accessibilityIdentifier = "continueToPaymentButton"
+
         continueButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(continueButton)
     }
     
     private func setupNavigationBar() {
-        navigationItem.leftBarButtonItem = UIBarButtonItem(
+        let backBarButton = UIBarButtonItem(
             title: "Back",
             style: .plain,
             target: self,
             action: #selector(backButtonTapped)
         )
+        backBarButton.accessibilityIdentifier = "shippingInformationBackButton"
+        navigationItem.leftBarButtonItem = backBarButton
     }
     
     private func setupConstraints() {
@@ -243,24 +259,28 @@ class AddressSelectionView: UIView {
     private func setupUI() {
         backgroundColor = .secondarySystemBackground
         layer.cornerRadius = 12
-        
+        accessibilityIdentifier = "addressSelectionContainer"
+
         titleLabel = UILabel()
         titleLabel.text = title
         titleLabel.font = .systemFont(ofSize: 18, weight: .semibold)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        titleLabel.accessibilityIdentifier = "addressSelectionTitleLabel"
+
         selectedAddressLabel = UILabel()
         selectedAddressLabel.text = "No address selected"
         selectedAddressLabel.font = .systemFont(ofSize: 14)
         selectedAddressLabel.textColor = .secondaryLabel
         selectedAddressLabel.numberOfLines = 3
         selectedAddressLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        selectedAddressLabel.accessibilityIdentifier = "selectedAddressLabel"
+
         selectButton = UIButton(type: .system)
         selectButton.setTitle("Select Address", for: .normal)
         selectButton.titleLabel?.font = .systemFont(ofSize: 16, weight: .medium)
         selectButton.addTarget(self, action: #selector(selectButtonTapped), for: .touchUpInside)
         selectButton.translatesAutoresizingMaskIntoConstraints = false
+        selectButton.accessibilityIdentifier = "selectAddressButton"
         
         addSubview(titleLabel)
         addSubview(selectedAddressLabel)
@@ -334,22 +354,26 @@ class ShippingMethodSelectionView: UIView {
     private func setupUI() {
         backgroundColor = .secondarySystemBackground
         layer.cornerRadius = 12
-        
+        accessibilityIdentifier = "shippingMethodSelectionContainer"
+
         titleLabel = UILabel()
         titleLabel.text = "Shipping Method"
         titleLabel.font = .systemFont(ofSize: 18, weight: .semibold)
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        titleLabel.accessibilityIdentifier = "shippingMethodSelectionTitleLabel"
+
         methodsStackView = UIStackView()
         methodsStackView.axis = .vertical
         methodsStackView.spacing = 12
         methodsStackView.translatesAutoresizingMaskIntoConstraints = false
+        methodsStackView.accessibilityIdentifier = "shippingMethodsStack"
         
         addSubview(titleLabel)
         addSubview(methodsStackView)
         
         for (index, method) in shippingMethods.enumerated() {
             let methodView = createMethodView(method: method, isSelected: index == 0)
+            methodView.accessibilityIdentifier = "shippingMethod\(method.id)View"
             methodsStackView.addArrangedSubview(methodView)
             
             if index == 0 {
@@ -381,16 +405,19 @@ class ShippingMethodSelectionView: UIView {
         nameLabel.text = method.displayName
         nameLabel.font = .systemFont(ofSize: 16, weight: .medium)
         nameLabel.translatesAutoresizingMaskIntoConstraints = false
-        
+        nameLabel.accessibilityIdentifier = "shippingMethod\(method.id)NameLabel"
+
         let descriptionLabel = UILabel()
         descriptionLabel.text = method.description
         descriptionLabel.font = .systemFont(ofSize: 14)
         descriptionLabel.textColor = .secondaryLabel
         descriptionLabel.translatesAutoresizingMaskIntoConstraints = false
+        descriptionLabel.accessibilityIdentifier = "shippingMethod\(method.id)DescriptionLabel"
         
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(methodTapped(_:)))
         container.addGestureRecognizer(tapGesture)
         container.tag = shippingMethods.firstIndex { $0.id == method.id } ?? 0
+        container.accessibilityIdentifier = "shippingMethod\(method.id)Container"
         
         container.addSubview(nameLabel)
         container.addSubview(descriptionLabel)

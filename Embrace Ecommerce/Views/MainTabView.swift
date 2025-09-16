@@ -9,32 +9,45 @@ struct MainTabView: View {
             HomeView()
                 .tabItem {
                     Image(systemName: "house.fill")
+                        .accessibilityIdentifier("homeTabIcon")
                     Text("Home")
+                        .accessibilityIdentifier("homeTabLabel")
                 }
+                .accessibilityIdentifier("homeTab")
                 .tag(Tab.home)
-            
+
             SearchView()
                 .tabItem {
                     Image(systemName: "magnifyingglass")
+                        .accessibilityIdentifier("searchTabIcon")
                     Text("Search")
+                        .accessibilityIdentifier("searchTabLabel")
                 }
+                .accessibilityIdentifier("searchTab")
                 .tag(Tab.search)
-            
+
             CartView()
                 .tabItem {
                     Image(systemName: "cart.fill")
+                        .accessibilityIdentifier("cartTabIcon")
                     Text("Cart")
+                        .accessibilityIdentifier("cartTabLabel")
                 }
                 .badge(cartManager.totalItems > 0 ? cartManager.totalItems : 0)
+                .accessibilityIdentifier("cartTab")
                 .tag(Tab.cart)
-            
+
             ProfileView()
                 .tabItem {
                     Image(systemName: "person.fill")
+                        .accessibilityIdentifier("profileTabIcon")
                     Text("Profile")
+                        .accessibilityIdentifier("profileTabLabel")
                 }
+                .accessibilityIdentifier("profileTab")
                 .tag(Tab.profile)
         }
+        .accessibilityIdentifier("mainTabView")
         .environmentObject(navigationCoordinator)
         .environmentObject(cartManager)
     }

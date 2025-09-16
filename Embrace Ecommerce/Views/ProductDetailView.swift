@@ -67,15 +67,21 @@ struct SwiftUIProductDetailView: View {
             VStack(alignment: .leading, spacing: 24) {
                 if let product = product {
                     productImageSection(product)
+                        .accessibilityIdentifier("productDetailImageSection")
                     productInfoSection(product)
+                        .accessibilityIdentifier("productDetailInfoSection")
                     variantsSection(product)
+                        .accessibilityIdentifier("productDetailVariantsSection")
                     quantityAndCartSection(product)
+                        .accessibilityIdentifier("productDetailQuantityAndCartSection")
                 } else {
                     ProgressView("Loading product...")
+                        .accessibilityIdentifier("productDetailLoadingView")
                 }
             }
             .padding()
         }
+        .accessibilityIdentifier("productDetailView")
         .navigationTitle("Product Details")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -123,6 +129,7 @@ struct SwiftUIProductDetailView: View {
             Text(product.name)
                 .font(.title2)
                 .fontWeight(.bold)
+                .accessibilityIdentifier("productDetailName")
             
             if let brand = product.brand {
                 Text(brand)
@@ -134,6 +141,7 @@ struct SwiftUIProductDetailView: View {
                 .font(.title)
                 .fontWeight(.bold)
                 .foregroundColor(.blue)
+                .accessibilityIdentifier("productDetailPrice")
             
             stockStatusView(product)
             
@@ -254,6 +262,7 @@ struct SwiftUIProductDetailView: View {
                     .cornerRadius(12)
             }
             .disabled(!product.inStock)
+            .accessibilityIdentifier("productDetailAddToCartButton")
         }
     }
     
