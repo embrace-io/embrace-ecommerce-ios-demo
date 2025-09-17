@@ -269,5 +269,1055 @@
       "height": 12.0,
       "depth": 7.8
     }
+  },
+  {
+    "id": "prod_011",
+    "name": "Sony WH-1000XM5 Wireless Headphones",
+    "description": "Industry-leading noise cancellation with crystal-clear hands-free calling. 30-hour battery life and quick charge capability.",
+    "price": 399.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.sony.com/image/5d02f5d2b2b2d2b2b2b2b2b2"
+    ],
+    "category": "Electronics",
+    "brand": "Sony",
+    "variants": [
+      {"id": "v54", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v55", "type": "color", "value": "Silver", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 27,
+    "weight": 0.55,
+    "dimensions": {
+      "width": 10.2,
+      "height": 8.9,
+      "depth": 3.8
+    }
+  },
+  {
+    "id": "prod_012",
+    "name": "Instant Pot Duo 7-in-1 Electric Pressure Cooker",
+    "description": "7 appliances in 1: pressure cooker, slow cooker, rice cooker, yogurt maker, steamer, sauté pan, and food warmer.",
+    "price": 99.95,
+    "currency": "USD",
+    "image_urls": [
+      "https://m.media-amazon.com/images/I/71VnjDkYzFL._AC_SL1500_.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "Instant Pot",
+    "variants": [
+      {"id": "v56", "type": "size", "value": "6 Qt", "price_adjustment": 0},
+      {"id": "v57", "type": "size", "value": "8 Qt", "price_adjustment": 30}
+    ],
+    "in_stock": true,
+    "stock_count": 41,
+    "weight": 12.5,
+    "dimensions": {
+      "width": 13.0,
+      "height": 12.5,
+      "depth": 12.2
+    }
+  },
+  {
+    "id": "prod_013",
+    "name": "Ray-Ban Aviator Classic Sunglasses",
+    "description": "The original Ray-Ban Aviator with crystal lenses and a timeless gold frame. UV protection and iconic style.",
+    "price": 154.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://assets.ray-ban.com/is/image/RayBan/8056597048910__STD__shad__qt.png"
+    ],
+    "category": "Clothing",
+    "brand": "Ray-Ban",
+    "variants": [
+      {"id": "v58", "type": "color", "value": "Gold/Green", "price_adjustment": 0},
+      {"id": "v59", "type": "color", "value": "Silver/Blue", "price_adjustment": 0},
+      {"id": "v60", "type": "size", "value": "58mm", "price_adjustment": 0},
+      {"id": "v61", "type": "size", "value": "62mm", "price_adjustment": 10}
+    ],
+    "in_stock": true,
+    "stock_count": 73,
+    "weight": 0.03,
+    "dimensions": {
+      "width": 6.2,
+      "height": 2.1,
+      "depth": 5.5
+    }
+  },
+  {
+    "id": "prod_014",
+    "name": "Patagonia Houdini Jacket",
+    "description": "Ultra-lightweight windbreaker made from 100% recycled nylon. Packs into its own pocket and weighs just 3 oz.",
+    "price": 99.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.patagonia.com/dw/image/v2/BDJB_PRD/on/demandware.static/-/Sites-patagonia-master/default/dw123456/images/hi-res/24142_FGE.jpg"
+    ],
+    "category": "Clothing",
+    "brand": "Patagonia",
+    "variants": [
+      {"id": "v62", "type": "color", "value": "Fire Red", "price_adjustment": 0},
+      {"id": "v63", "type": "color", "value": "Classic Navy", "price_adjustment": 0},
+      {"id": "v64", "type": "color", "value": "Forge Grey", "price_adjustment": 0},
+      {"id": "v65", "type": "size", "value": "XS", "price_adjustment": 0},
+      {"id": "v66", "type": "size", "value": "S", "price_adjustment": 0},
+      {"id": "v67", "type": "size", "value": "M", "price_adjustment": 0},
+      {"id": "v68", "type": "size", "value": "L", "price_adjustment": 0},
+      {"id": "v69", "type": "size", "value": "XL", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 56,
+    "weight": 0.19,
+    "dimensions": {
+      "width": 6.0,
+      "height": 8.0,
+      "depth": 2.0
+    }
+  },
+  {
+    "id": "prod_015",
+    "name": "Nintendo Switch OLED Model",
+    "description": "Nintendo Switch with a vibrant 7-inch OLED screen, enhanced audio, and a wide adjustable stand for tabletop gaming.",
+    "price": 349.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://assets.nintendo.com/image/upload/c_fill,w_1200/q_auto:best/f_auto/dpr_2.0/ncom/software/switch/70010000000025/7137262b5a64d921e193653f8aa0b722925abc5680380ca0e18a5cfd91697f58"
+    ],
+    "category": "Electronics",
+    "brand": "Nintendo",
+    "variants": [
+      {"id": "v70", "type": "color", "value": "White", "price_adjustment": 0},
+      {"id": "v71", "type": "color", "value": "Neon Blue/Red", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 19,
+    "weight": 0.42,
+    "dimensions": {
+      "width": 4.0,
+      "height": 9.5,
+      "depth": 0.55
+    }
+  },
+  {
+    "id": "prod_016",
+    "name": "Yeti Rambler 20 oz Tumbler",
+    "description": "Double-wall vacuum insulated stainless steel tumbler keeps drinks cold for 24+ hours. Dishwasher safe with MagSlider Lid.",
+    "price": 35.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://cdn.yeti.com/website-ui/20oz_tumbler_navy_front_updated_1800x1800.jpg"
+    ],
+    "category": "Sports",
+    "brand": "YETI",
+    "variants": [
+      {"id": "v72", "type": "color", "value": "Navy", "price_adjustment": 0},
+      {"id": "v73", "type": "color", "value": "Charcoal", "price_adjustment": 0},
+      {"id": "v74", "type": "color", "value": "White", "price_adjustment": 0},
+      {"id": "v75", "type": "color", "value": "Seafoam", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 92,
+    "weight": 0.45,
+    "dimensions": {
+      "width": 3.5,
+      "height": 6.9,
+      "depth": 3.5
+    }
+  },
+  {
+    "id": "prod_017",
+    "name": "Anthropologie Gleaming Primrose Mirror",
+    "description": "Sunburst wall mirror with antique brass finish. Perfect statement piece for any room with vintage charm.",
+    "price": 248.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://images.anthropologie.com/is/image/Anthropologie/4130072760007_020_b"
+    ],
+    "category": "Home & Garden",
+    "brand": "Anthropologie",
+    "variants": [
+      {"id": "v76", "type": "size", "value": "Medium", "price_adjustment": 0},
+      {"id": "v77", "type": "size", "value": "Large", "price_adjustment": 100}
+    ],
+    "in_stock": true,
+    "stock_count": 14,
+    "weight": 3.2,
+    "dimensions": {
+      "width": 24.0,
+      "height": 24.0,
+      "depth": 2.5
+    }
+  },
+  {
+    "id": "prod_018",
+    "name": "Allbirds Tree Runners",
+    "description": "Comfortable everyday sneakers made from eucalyptus tree fiber. Machine washable and carbon neutral shipping.",
+    "price": 98.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://cdn.allbirds.com/image/fetch/q_auto,f_auto/w_1000,h_1000/https://cdn.allbirds.com/image/upload/f_auto,q_auto,w_1000,h_1000/v1/production/colorway/en-US/images/1KW8EMeIQ3L4cVLmDUzOo3/1"
+    ],
+    "category": "Clothing",
+    "brand": "Allbirds",
+    "variants": [
+      {"id": "v78", "type": "color", "value": "Natural White", "price_adjustment": 0},
+      {"id": "v79", "type": "color", "value": "Storm", "price_adjustment": 0},
+      {"id": "v80", "type": "color", "value": "Tree Green", "price_adjustment": 0},
+      {"id": "v81", "type": "size", "value": "7", "price_adjustment": 0},
+      {"id": "v82", "type": "size", "value": "8", "price_adjustment": 0},
+      {"id": "v83", "type": "size", "value": "9", "price_adjustment": 0},
+      {"id": "v84", "type": "size", "value": "10", "price_adjustment": 0},
+      {"id": "v85", "type": "size", "value": "11", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 68,
+    "weight": 0.52,
+    "dimensions": {
+      "width": 4.1,
+      "height": 11.8,
+      "depth": 7.2
+    }
+  },
+  {
+    "id": "prod_019",
+    "name": "Vitamix 5200 Blender",
+    "description": "Professional-grade blender with 2-peak horsepower motor. Self-cleaning and comes with a 64-oz container.",
+    "price": 449.95,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.vitamix.com/media/catalog/product/cache/5/image/9df78eab33525d08d6e5fb8d27136e95/0/0/001372-5200-red-main_1.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "Vitamix",
+    "variants": [
+      {"id": "v86", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v87", "type": "color", "value": "Red", "price_adjustment": 0},
+      {"id": "v88", "type": "color", "value": "White", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 11,
+    "weight": 10.6,
+    "dimensions": {
+      "width": 8.75,
+      "height": 20.5,
+      "depth": 7.25
+    }
+  },
+  {
+    "id": "prod_020",
+    "name": "Peloton Bike Shoes",
+    "description": "Cycling shoes designed for Peloton bikes with LOOK Delta cleats. Breathable mesh upper with secure strap closure.",
+    "price": 125.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://res.cloudinary.com/peloton-cycle/image/fetch/dpr_1.0,f_auto,q_auto:good,w_400/https://s3.amazonaws.com/peloton-ride-images/bike_shoes_black_womens.jpg"
+    ],
+    "category": "Sports",
+    "brand": "Peloton",
+    "variants": [
+      {"id": "v89", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v90", "type": "color", "value": "White", "price_adjustment": 0},
+      {"id": "v91", "type": "size", "value": "36", "price_adjustment": 0},
+      {"id": "v92", "type": "size", "value": "37", "price_adjustment": 0},
+      {"id": "v93", "type": "size", "value": "38", "price_adjustment": 0},
+      {"id": "v94", "type": "size", "value": "39", "price_adjustment": 0},
+      {"id": "v95", "type": "size", "value": "40", "price_adjustment": 0},
+      {"id": "v96", "type": "size", "value": "41", "price_adjustment": 0},
+      {"id": "v97", "type": "size", "value": "42", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 33,
+    "weight": 0.85,
+    "dimensions": {
+      "width": 4.2,
+      "height": 11.5,
+      "depth": 7.8
+    }
+  },
+  {
+    "id": "prod_021",
+    "name": "Carhartt Insulated Work Gloves",
+    "description": "Durable work gloves with synthetic leather palm and 3M Thinsulate insulation for cold weather protection.",
+    "price": 24.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.carhartt.com/dw/image/v2/BDBM_PRD/on/demandware.static/-/Sites-carhartt-master-catalog/default/dw123456/images/large/A511_BRN_01.jpg"
+    ],
+    "category": "Clothing",
+    "brand": "Carhartt",
+    "variants": [
+      {"id": "v98", "type": "color", "value": "Brown", "price_adjustment": 0},
+      {"id": "v99", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v100", "type": "size", "value": "S", "price_adjustment": 0},
+      {"id": "v101", "type": "size", "value": "M", "price_adjustment": 0},
+      {"id": "v102", "type": "size", "value": "L", "price_adjustment": 0},
+      {"id": "v103", "type": "size", "value": "XL", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 85,
+    "weight": 0.15,
+    "dimensions": {
+      "width": 4.5,
+      "height": 10.0,
+      "depth": 1.2
+    }
+  },
+  {
+    "id": "prod_022",
+    "name": "Kindle Paperwhite (11th Generation)",
+    "description": "6.8\" display with adjustable warm light, waterproof design, and weeks of battery life. 8GB storage.",
+    "price": 139.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://m.media-amazon.com/images/I/51QCk82iGcL._SL1000_.jpg"
+    ],
+    "category": "Electronics",
+    "brand": "Amazon",
+    "variants": [
+      {"id": "v104", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v105", "type": "color", "value": "Denim", "price_adjustment": 0},
+      {"id": "v106", "type": "size", "value": "8GB", "price_adjustment": 0},
+      {"id": "v107", "type": "size", "value": "32GB", "price_adjustment": 40}
+    ],
+    "in_stock": true,
+    "stock_count": 47,
+    "weight": 0.23,
+    "dimensions": {
+      "width": 4.9,
+      "height": 6.9,
+      "depth": 0.32
+    }
+  },
+  {
+    "id": "prod_023",
+    "name": "West Elm Mid-Century Dining Table",
+    "description": "Solid walnut dining table with tapered legs and natural wood grain. Seats 6 comfortably.",
+    "price": 899.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://assets.weimgs.com/weimgs/rk/images/wcm/products/202147/0003/mid-century-dining-table-walnut-c.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "West Elm",
+    "variants": [
+      {"id": "v108", "type": "size", "value": "60\" x 36\"", "price_adjustment": 0},
+      {"id": "v109", "type": "size", "value": "72\" x 36\"", "price_adjustment": 200}
+    ],
+    "in_stock": true,
+    "stock_count": 4,
+    "weight": 85.0,
+    "dimensions": {
+      "width": 60.0,
+      "height": 29.0,
+      "depth": 36.0
+    }
+  },
+  {
+    "id": "prod_024",
+    "name": "Hydro Flask Standard Mouth Water Bottle",
+    "description": "Double-wall vacuum insulated stainless steel water bottle. Keeps cold drinks cold for 24 hours.",
+    "price": 39.95,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.hydroflask.com/media/catalog/product/s/1/s21sx001_pacific_1.jpg"
+    ],
+    "category": "Sports",
+    "brand": "Hydro Flask",
+    "variants": [
+      {"id": "v110", "type": "color", "value": "Pacific", "price_adjustment": 0},
+      {"id": "v111", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v112", "type": "color", "value": "White", "price_adjustment": 0},
+      {"id": "v113", "type": "color", "value": "Mint", "price_adjustment": 0},
+      {"id": "v114", "type": "size", "value": "18 oz", "price_adjustment": -5},
+      {"id": "v115", "type": "size", "value": "21 oz", "price_adjustment": 0},
+      {"id": "v116", "type": "size", "value": "24 oz", "price_adjustment": 5}
+    ],
+    "in_stock": true,
+    "stock_count": 76,
+    "weight": 0.4,
+    "dimensions": {
+      "width": 2.9,
+      "height": 10.2,
+      "depth": 2.9
+    }
+  },
+  {
+    "id": "prod_025",
+    "name": "Canon EOS R6 Mark II Camera Body",
+    "description": "Full-frame mirrorless camera with 24.2MP sensor, 4K 60p video recording, and advanced autofocus system.",
+    "price": 2499.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://i1.adis.ws/i/canon/eos-r6-mark-ii_front_rf24-105mmf4lisusm_32c26ad194234d42b3cd9e582a21c99b"
+    ],
+    "category": "Electronics",
+    "brand": "Canon",
+    "variants": [
+      {"id": "v117", "type": "style", "value": "Body Only", "price_adjustment": 0},
+      {"id": "v118", "type": "style", "value": "Kit with 24-105mm", "price_adjustment": 600}
+    ],
+    "in_stock": true,
+    "stock_count": 7,
+    "weight": 0.67,
+    "dimensions": {
+      "width": 5.4,
+      "height": 3.8,
+      "depth": 3.7
+    }
+  },
+  {
+    "id": "prod_026",
+    "name": "Lululemon Align High-Rise Pant 28\"",
+    "description": "Ultra-soft Nulu fabric leggings designed for yoga and low-impact workouts. Four-way stretch and sweat-wicking.",
+    "price": 128.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://images.lululemon.com/is/image/lululemon/LW5CWGS_0001_1"
+    ],
+    "category": "Clothing",
+    "brand": "Lululemon",
+    "variants": [
+      {"id": "v119", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v120", "type": "color", "value": "Heathered Core Ultra Light Grey", "price_adjustment": 0},
+      {"id": "v121", "type": "color", "value": "Navy Blue", "price_adjustment": 0},
+      {"id": "v122", "type": "size", "value": "2", "price_adjustment": 0},
+      {"id": "v123", "type": "size", "value": "4", "price_adjustment": 0},
+      {"id": "v124", "type": "size", "value": "6", "price_adjustment": 0},
+      {"id": "v125", "type": "size", "value": "8", "price_adjustment": 0},
+      {"id": "v126", "type": "size", "value": "10", "price_adjustment": 0},
+      {"id": "v127", "type": "size", "value": "12", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 52,
+    "weight": 0.25,
+    "dimensions": {
+      "width": 8.0,
+      "height": 12.0,
+      "depth": 1.0
+    }
+  },
+  {
+    "id": "prod_027",
+    "name": "Bose QuietComfort Earbuds",
+    "description": "World-class noise cancellation in wireless earbuds. 6-hour battery plus 12 hours with charging case.",
+    "price": 279.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://assets.bose.com/content/dam/Bose_DAM/Web/consumer_electronics/global/products/headphones/qc_earbuds/product_silo_images/qc_earbuds_black_013.jpg"
+    ],
+    "category": "Electronics",
+    "brand": "Bose",
+    "variants": [
+      {"id": "v128", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v129", "type": "color", "value": "White", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 38,
+    "weight": 0.018,
+    "dimensions": {
+      "width": 1.4,
+      "height": 1.0,
+      "depth": 0.8
+    }
+  },
+  {
+    "id": "prod_028",
+    "name": "Lodge Cast Iron Dutch Oven",
+    "description": "Pre-seasoned cast iron Dutch oven perfect for braising, baking, and roasting. Dual loop handles for easy lifting.",
+    "price": 59.90,
+    "currency": "USD",
+    "image_urls": [
+      "https://lodgemfg.com/media/catalog/product/l/8/l8dd3_lifestyle1_1.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "Lodge",
+    "variants": [
+      {"id": "v130", "type": "size", "value": "5 Qt", "price_adjustment": 0},
+      {"id": "v131", "type": "size", "value": "7 Qt", "price_adjustment": 20}
+    ],
+    "in_stock": true,
+    "stock_count": 29,
+    "weight": 12.85,
+    "dimensions": {
+      "width": 10.5,
+      "height": 4.5,
+      "depth": 10.5
+    }
+  },
+  {
+    "id": "prod_029",
+    "name": "Patagonia Better Sweater Fleece Jacket",
+    "description": "Classic fleece jacket made from recycled polyester. Full-zip design with stand-up collar and zippered pockets.",
+    "price": 119.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.patagonia.com/dw/image/v2/BDJB_PRD/on/demandware.static/-/Sites-patagonia-master/default/dw123456/images/hi-res/25527_NENA.jpg"
+    ],
+    "category": "Clothing",
+    "brand": "Patagonia",
+    "variants": [
+      {"id": "v132", "type": "color", "value": "New Navy", "price_adjustment": 0},
+      {"id": "v133", "type": "color", "value": "Nickel", "price_adjustment": 0},
+      {"id": "v134", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v135", "type": "size", "value": "XS", "price_adjustment": 0},
+      {"id": "v136", "type": "size", "value": "S", "price_adjustment": 0},
+      {"id": "v137", "type": "size", "value": "M", "price_adjustment": 0},
+      {"id": "v138", "type": "size", "value": "L", "price_adjustment": 0},
+      {"id": "v139", "type": "size", "value": "XL", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 44,
+    "weight": 1.1,
+    "dimensions": {
+      "width": 10.0,
+      "height": 12.0,
+      "depth": 4.0
+    }
+  },
+  {
+    "id": "prod_030",
+    "name": "Fitbit Versa 4 Fitness Smartwatch",
+    "description": "Health and fitness focused smartwatch with 6+ day battery life, built-in GPS, and 40+ exercise modes.",
+    "price": 199.95,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.fitbit.com/global/content/dam/fitbit/global/pdp/devices/versa-4/hero/versa4-black-aluminum-black-sport-band-clock-1.png"
+    ],
+    "category": "Electronics",
+    "brand": "Fitbit",
+    "variants": [
+      {"id": "v140", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v141", "type": "color", "value": "Pink Sand", "price_adjustment": 0},
+      {"id": "v142", "type": "color", "value": "Waterfall Blue", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 31,
+    "weight": 0.037,
+    "dimensions": {
+      "width": 1.6,
+      "height": 1.6,
+      "depth": 0.47
+    }
+  },
+  {
+    "id": "prod_031",
+    "name": "Coleman Sundome 4-Person Tent",
+    "description": "Spacious dome tent with WeatherTec system to keep you dry. Easy setup in 10 minutes with color-coded poles.",
+    "price": 79.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.coleman.com/dw/image/v2/BDBM_PRD/on/demandware.static/-/Sites-coleman-master-catalog/default/dw123456/images/large/2000036921_1.jpg"
+    ],
+    "category": "Sports",
+    "brand": "Coleman",
+    "variants": [
+      {"id": "v143", "type": "size", "value": "4-Person", "price_adjustment": 0},
+      {"id": "v144", "type": "size", "value": "6-Person", "price_adjustment": 40}
+    ],
+    "in_stock": true,
+    "stock_count": 18,
+    "weight": 9.4,
+    "dimensions": {
+      "width": 9.0,
+      "height": 4.8,
+      "depth": 8.0
+    }
+  },
+  {
+    "id": "prod_032",
+    "name": "Anthropologie Capri Blue Volcano Candle",
+    "description": "Signature scented candle with tropical blend of citrus and sugared oranges. Burns for 85+ hours.",
+    "price": 36.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://images.anthropologie.com/is/image/Anthropologie/4130403560007_095_b"
+    ],
+    "category": "Home & Garden",
+    "brand": "Capri Blue",
+    "variants": [
+      {"id": "v145", "type": "size", "value": "8.5 oz", "price_adjustment": 0},
+      {"id": "v146", "type": "size", "value": "19 oz", "price_adjustment": 32}
+    ],
+    "in_stock": true,
+    "stock_count": 63,
+    "weight": 1.2,
+    "dimensions": {
+      "width": 3.5,
+      "height": 3.75,
+      "depth": 3.5
+    }
+  },
+  {
+    "id": "prod_033",
+    "name": "Birkenstock Arizona Soft Footbed Sandals",
+    "description": "Classic two-strap sandal with contoured cork footbed and soft suede lining. Adjustable metal buckles.",
+    "price": 135.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.birkenstock.com/dw/image/v2/BDFM_PRD/on/demandware.static/-/Sites-master-catalog-birkenstock/default/dw123456/551251/551251_4.jpg"
+    ],
+    "category": "Clothing",
+    "brand": "Birkenstock",
+    "variants": [
+      {"id": "v147", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v148", "type": "color", "value": "Mocha", "price_adjustment": 0},
+      {"id": "v149", "type": "color", "value": "Taupe", "price_adjustment": 0},
+      {"id": "v150", "type": "size", "value": "36", "price_adjustment": 0},
+      {"id": "v151", "type": "size", "value": "37", "price_adjustment": 0},
+      {"id": "v152", "type": "size", "value": "38", "price_adjustment": 0},
+      {"id": "v153", "type": "size", "value": "39", "price_adjustment": 0},
+      {"id": "v154", "type": "size", "value": "40", "price_adjustment": 0},
+      {"id": "v155", "type": "size", "value": "41", "price_adjustment": 0},
+      {"id": "v156", "type": "size", "value": "42", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 71,
+    "weight": 0.8,
+    "dimensions": {
+      "width": 4.1,
+      "height": 11.2,
+      "depth": 7.5
+    }
+  },
+  {
+    "id": "prod_034",
+    "name": "GoPro HERO11 Black Action Camera",
+    "description": "Waterproof action camera with 5.3K video recording, HyperSmooth 5.0 stabilization, and front + rear screens.",
+    "price": 399.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://gopro.com/content/dam/gopro/en/products/cameras/hero11-black/pdp/hero11-black-front-image.png"
+    ],
+    "category": "Electronics",
+    "brand": "GoPro",
+    "variants": [
+      {"id": "v157", "type": "style", "value": "Camera Only", "price_adjustment": 0},
+      {"id": "v158", "type": "style", "value": "Creator Edition", "price_adjustment": 100}
+    ],
+    "in_stock": true,
+    "stock_count": 25,
+    "weight": 0.15,
+    "dimensions": {
+      "width": 2.8,
+      "height": 2.1,
+      "depth": 1.3
+    }
+  },
+  {
+    "id": "prod_035",
+    "name": "Theragun Elite Percussive Therapy Device",
+    "description": "Professional-grade massage device with customizable speed range and smartphone app connectivity. 120-minute battery.",
+    "price": 399.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://cdn.therabody.com/image/upload/f_auto,q_auto,w_1000/v1/products/theragun-elite/theragun-elite-black-front-1000x1000.png"
+    ],
+    "category": "Sports",
+    "brand": "Theragun",
+    "variants": [
+      {"id": "v159", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v160", "type": "color", "value": "White", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 16,
+    "weight": 1.0,
+    "dimensions": {
+      "width": 6.0,
+      "height": 8.7,
+      "depth": 2.3
+    }
+  },
+  {
+    "id": "prod_036",
+    "name": "Crate & Barrel Lounge II Apartment Sofa",
+    "description": "Modern sectional sofa with deep, plush cushions and durable performance fabric. Perfect for smaller spaces.",
+    "price": 1599.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://images.crateandbarrel.com/is/image/Crate/LoungeIIAptSofaTaftSteelSHF16"
+    ],
+    "category": "Home & Garden",
+    "brand": "Crate & Barrel",
+    "variants": [
+      {"id": "v161", "type": "color", "value": "Taft Steel", "price_adjustment": 0},
+      {"id": "v162", "type": "color", "value": "Petite Chenille Fog", "price_adjustment": 100},
+      {"id": "v163", "type": "color", "value": "Douglas Charcoal", "price_adjustment": 200}
+    ],
+    "in_stock": true,
+    "stock_count": 3,
+    "weight": 120.0,
+    "dimensions": {
+      "width": 83.0,
+      "height": 32.0,
+      "depth": 38.0
+    }
+  },
+  {
+    "id": "prod_037",
+    "name": "Nespresso Vertuo Next Coffee Maker",
+    "description": "Single-serve coffee maker with one-touch brewing. Uses Centrifusion technology for rich crema extraction.",
+    "price": 159.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.nespresso.com/shared_res/agility/n-components/pdp/vertuo-next-cherry-red/assets/images/vertuo-next-cherry-red_pdp_main.png"
+    ],
+    "category": "Home & Garden",
+    "brand": "Nespresso",
+    "variants": [
+      {"id": "v164", "type": "color", "value": "Cherry Red", "price_adjustment": 0},
+      {"id": "v165", "type": "color", "value": "Matte Black", "price_adjustment": 0},
+      {"id": "v166", "type": "color", "value": "Pure White", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 22,
+    "weight": 8.8,
+    "dimensions": {
+      "width": 5.5,
+      "height": 16.0,
+      "depth": 12.8
+    }
+  },
+  {
+    "id": "prod_038",
+    "name": "Champion Powerblend Fleece Hoodie",
+    "description": "Classic pullover hoodie with soft fleece lining. Features kangaroo pocket and adjustable drawstring hood.",
+    "price": 35.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.champion.com/dw/image/v2/BBDG_PRD/on/demandware.static/-/Sites-hanes-master-catalog/default/dw123456/champion/S0889_549314_HT1.jpg"
+    ],
+    "category": "Clothing",
+    "brand": "Champion",
+    "variants": [
+      {"id": "v167", "type": "color", "value": "Oxford Gray", "price_adjustment": 0},
+      {"id": "v168", "type": "color", "value": "Navy", "price_adjustment": 0},
+      {"id": "v169", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v170", "type": "size", "value": "S", "price_adjustment": 0},
+      {"id": "v171", "type": "size", "value": "M", "price_adjustment": 0},
+      {"id": "v172", "type": "size", "value": "L", "price_adjustment": 0},
+      {"id": "v173", "type": "size", "value": "XL", "price_adjustment": 0},
+      {"id": "v174", "type": "size", "value": "XXL", "price_adjustment": 5}
+    ],
+    "in_stock": true,
+    "stock_count": 88,
+    "weight": 0.7,
+    "dimensions": {
+      "width": 8.0,
+      "height": 10.0,
+      "depth": 2.5
+    }
+  },
+  {
+    "id": "prod_039",
+    "name": "iRobot Roomba j7+ Robot Vacuum",
+    "description": "Smart robot vacuum with obstacle avoidance, automatic dirt disposal, and pet waste guarantee. WiFi connected.",
+    "price": 799.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.irobot.com/dw/image/v2/BFXP_PRD/on/demandware.static/-/Sites-master-catalog-irobot/default/dw123456/images/large/J755020_1.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "iRobot",
+    "variants": [],
+    "in_stock": true,
+    "stock_count": 9,
+    "weight": 7.44,
+    "dimensions": {
+      "width": 13.26,
+      "height": 3.63,
+      "depth": 13.26
+    }
+  },
+  {
+    "id": "prod_040",
+    "name": "Oakley Holbrook Sunglasses",
+    "description": "Classic American frame design inspired by the screen heroes of the 1940s, 50s, and 60s. Plutonite lens material.",
+    "price": 118.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.oakley.com/dw/image/v2/BCZM_PRD/on/demandware.static/-/Sites-oakley-master-catalog/default/dw123456/images/large/9102_9102A5_primary.jpg"
+    ],
+    "category": "Clothing",
+    "brand": "Oakley",
+    "variants": [
+      {"id": "v175", "type": "color", "value": "Matte Black/Grey", "price_adjustment": 0},
+      {"id": "v176", "type": "color", "value": "Polished Black/Violet", "price_adjustment": 0},
+      {"id": "v177", "type": "color", "value": "Olive Ink/Dark Bronze", "price_adjustment": 10}
+    ],
+    "in_stock": true,
+    "stock_count": 42,
+    "weight": 0.027,
+    "dimensions": {
+      "width": 5.6,
+      "height": 1.8,
+      "depth": 5.5
+    }
+  },
+  {
+    "id": "prod_041",
+    "name": "REI Co-op Merino Wool Long Underwear Set",
+    "description": "Base layer set made from responsibly sourced merino wool. Natural odor resistance and temperature regulation.",
+    "price": 89.95,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.rei.com/media/4e1f5b05-09ef-4ec2-9827-6f8d7f8e4c6c"
+    ],
+    "category": "Clothing",
+    "brand": "REI Co-op",
+    "variants": [
+      {"id": "v178", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v179", "type": "color", "value": "Charcoal", "price_adjustment": 0},
+      {"id": "v180", "type": "size", "value": "S", "price_adjustment": 0},
+      {"id": "v181", "type": "size", "value": "M", "price_adjustment": 0},
+      {"id": "v182", "type": "size", "value": "L", "price_adjustment": 0},
+      {"id": "v183", "type": "size", "value": "XL", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 35,
+    "weight": 0.45,
+    "dimensions": {
+      "width": 8.0,
+      "height": 12.0,
+      "depth": 2.0
+    }
+  },
+  {
+    "id": "prod_042",
+    "name": "Staub Cast Iron Round Cocotte",
+    "description": "Enameled cast iron Dutch oven with self-basting spikes on lid. Perfect for braising, roasting, and baking.",
+    "price": 279.95,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.zwilling.com/dw/image/v2/BBDG_PRD/on/demandware.static/-/Sites-zwilling-master-catalog/default/dw123456/large/1102087_round-cocotte-24-cm_1.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "Staub",
+    "variants": [
+      {"id": "v184", "type": "color", "value": "Basil", "price_adjustment": 0},
+      {"id": "v185", "type": "color", "value": "Cherry", "price_adjustment": 0},
+      {"id": "v186", "type": "color", "value": "Dark Blue", "price_adjustment": 0},
+      {"id": "v187", "type": "size", "value": "3.75 Qt", "price_adjustment": 0},
+      {"id": "v188", "type": "size", "value": "5.5 Qt", "price_adjustment": 50}
+    ],
+    "in_stock": true,
+    "stock_count": 13,
+    "weight": 8.6,
+    "dimensions": {
+      "width": 9.4,
+      "height": 4.3,
+      "depth": 9.4
+    }
+  },
+  {
+    "id": "prod_043",
+    "name": "Beats Studio3 Wireless Headphones",
+    "description": "Over-ear headphones with Pure Adaptive Noise Cancelling and Apple W1 chip. Up to 22 hours of battery life.",
+    "price": 349.95,
+    "currency": "USD",
+    "image_urls": [
+      "https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQDU2?wid=1144&hei=1144&fmt=jpeg&qlt=95&.v=1503948581027"
+    ],
+    "category": "Electronics",
+    "brand": "Beats",
+    "variants": [
+      {"id": "v189", "type": "color", "value": "Matte Black", "price_adjustment": 0},
+      {"id": "v190", "type": "color", "value": "Red", "price_adjustment": 0},
+      {"id": "v191", "type": "color", "value": "Rose Gold", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 24,
+    "weight": 0.26,
+    "dimensions": {
+      "width": 7.4,
+      "height": 8.5,
+      "depth": 3.2
+    }
+  },
+  {
+    "id": "prod_044",
+    "name": "Osprey Atmos AG 65 Backpack",
+    "description": "Backpacking pack with Anti-Gravity suspension system. Includes integrated raincover and multiple access points.",
+    "price": 270.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.osprey.com/dw/image/v2/BBNM_PRD/on/demandware.static/-/Sites-osprey-master-catalog/default/dw123456/images/large/atmos_ag_65_F19_abyss_grey_hero.jpg"
+    ],
+    "category": "Sports",
+    "brand": "Osprey",
+    "variants": [
+      {"id": "v192", "type": "color", "value": "Abyss Grey", "price_adjustment": 0},
+      {"id": "v193", "type": "color", "value": "Unity Blue", "price_adjustment": 0},
+      {"id": "v194", "type": "size", "value": "M", "price_adjustment": 0},
+      {"id": "v195", "type": "size", "value": "L", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 11,
+    "weight": 2.18,
+    "dimensions": {
+      "width": 14.0,
+      "height": 32.0,
+      "depth": 12.0
+    }
+  },
+  {
+    "id": "prod_045",
+    "name": "Le Creuset Enameled Cast Iron Stockpot",
+    "description": "Colorful enameled cast iron stockpot perfect for soups, stews, and pasta. Chip-resistant exterior enamel.",
+    "price": 299.95,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.lecreuset.com/dw/image/v2/BBDG_PRD/on/demandware.static/-/Sites-lecreuset-master-catalog/default/dw123456/images/large/N4100-2067_1.jpg"
+    ],
+    "category": "Home & Garden",
+    "brand": "Le Creuset",
+    "variants": [
+      {"id": "v196", "type": "color", "value": "Flame", "price_adjustment": 0},
+      {"id": "v197", "type": "color", "value": "Caribbean", "price_adjustment": 0},
+      {"id": "v198", "type": "color", "value": "White", "price_adjustment": 0},
+      {"id": "v199", "type": "size", "value": "6 Qt", "price_adjustment": 0},
+      {"id": "v200", "type": "size", "value": "9 Qt", "price_adjustment": 100}
+    ],
+    "in_stock": true,
+    "stock_count": 8,
+    "weight": 11.2,
+    "dimensions": {
+      "width": 10.8,
+      "height": 6.4,
+      "depth": 10.8
+    }
+  },
+  {
+    "id": "prod_046",
+    "name": "Garmin Forerunner 945 GPS Running Watch",
+    "description": "Premium GPS running smartwatch with advanced training metrics, music storage, and up to 2 weeks battery life.",
+    "price": 599.99,
+    "currency": "USD",
+    "image_urls": [
+      "https://res.garmin.com/en/products/010-02063-00/g/forerunner-945-01.jpg"
+    ],
+    "category": "Electronics",
+    "brand": "Garmin",
+    "variants": [
+      {"id": "v201", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v202", "type": "color", "value": "Blue", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 14,
+    "weight": 0.05,
+    "dimensions": {
+      "width": 1.9,
+      "height": 1.9,
+      "depth": 0.55
+    }
+  },
+  {
+    "id": "prod_047",
+    "name": "Anthropologie Gleaming Primrose Mirror",
+    "description": "Sunburst wall mirror with antique brass finish. Perfect statement piece for any room with vintage charm.",
+    "price": 248.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://images.anthropologie.com/is/image/Anthropologie/4130072760007_020_b"
+    ],
+    "category": "Home & Garden",
+    "brand": "Anthropologie",
+    "variants": [
+      {"id": "v203", "type": "size", "value": "Medium", "price_adjustment": 0},
+      {"id": "v204", "type": "size", "value": "Large", "price_adjustment": 100}
+    ],
+    "in_stock": true,
+    "stock_count": 14,
+    "weight": 3.2,
+    "dimensions": {
+      "width": 24.0,
+      "height": 24.0,
+      "depth": 2.5
+    }
+  },
+  {
+    "id": "prod_048",
+    "name": "Madewell Perfect Vintage Jean",
+    "description": "Classic straight-leg jeans with a vintage-inspired fit. Made from premium denim with just the right amount of stretch.",
+    "price": 128.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://images.madewell.com/is/image/madewell/MA497_DM3349_m"
+    ],
+    "category": "Clothing",
+    "brand": "Madewell",
+    "variants": [
+      {"id": "v205", "type": "color", "value": "Pinter Wash", "price_adjustment": 0},
+      {"id": "v206", "type": "color", "value": "Mayfield Wash", "price_adjustment": 0},
+      {"id": "v207", "type": "size", "value": "24", "price_adjustment": 0},
+      {"id": "v208", "type": "size", "value": "25", "price_adjustment": 0},
+      {"id": "v209", "type": "size", "value": "26", "price_adjustment": 0},
+      {"id": "v210", "type": "size", "value": "27", "price_adjustment": 0},
+      {"id": "v211", "type": "size", "value": "28", "price_adjustment": 0},
+      {"id": "v212", "type": "size", "value": "29", "price_adjustment": 0},
+      {"id": "v213", "type": "size", "value": "30", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 67,
+    "weight": 1.1,
+    "dimensions": {
+      "width": 8.0,
+      "height": 12.0,
+      "depth": 2.0
+    }
+  },
+  {
+    "id": "prod_049",
+    "name": "Weber Genesis II E-310 Gas Grill",
+    "description": "3-burner propane gas grill with porcelain-enameled cooking grates and Flavorizer Bars for authentic barbecue flavor.",
+    "price": 529.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://www.weber.com/US/en/grills/gas-grills/genesis/genesis-ii-e-310-gas-grill-61010001.html"
+    ],
+    "category": "Home & Garden",
+    "brand": "Weber",
+    "variants": [
+      {"id": "v214", "type": "color", "value": "Black", "price_adjustment": 0},
+      {"id": "v215", "type": "color", "value": "Copper", "price_adjustment": 50}
+    ],
+    "in_stock": true,
+    "stock_count": 6,
+    "weight": 123.0,
+    "dimensions": {
+      "width": 52.0,
+      "height": 47.0,
+      "depth": 26.0
+    }
+  },
+  {
+    "id": "prod_050",
+    "name": "Allbirds Tree Dasher 2",
+    "description": "Performance running shoe made with eucalyptus tree fiber upper and SweetFoam midsole from sugarcane.",
+    "price": 125.00,
+    "currency": "USD",
+    "image_urls": [
+      "https://cdn.allbirds.com/image/fetch/q_auto,f_auto/w_1000,h_1000/https://cdn.allbirds.com/image/upload/f_auto,q_auto,w_1000,h_1000/v1/production/colorway/en-US/images/6BwJltR4rPrRvU8fON9lJH/1"
+    ],
+    "category": "Sports",
+    "brand": "Allbirds",
+    "variants": [
+      {"id": "v216", "type": "color", "value": "Natural Black", "price_adjustment": 0},
+      {"id": "v217", "type": "color", "value": "Natural White", "price_adjustment": 0},
+      {"id": "v218", "type": "color", "value": "Lemon", "price_adjustment": 0},
+      {"id": "v219", "type": "size", "value": "7", "price_adjustment": 0},
+      {"id": "v220", "type": "size", "value": "8", "price_adjustment": 0},
+      {"id": "v221", "type": "size", "value": "9", "price_adjustment": 0},
+      {"id": "v222", "type": "size", "value": "10", "price_adjustment": 0},
+      {"id": "v223", "type": "size", "value": "11", "price_adjustment": 0},
+      {"id": "v224", "type": "size", "value": "12", "price_adjustment": 0}
+    ],
+    "in_stock": true,
+    "stock_count": 39,
+    "weight": 0.6,
+    "dimensions": {
+      "width": 4.2,
+      "height": 12.0,
+      "depth": 7.8
+    }
   }
 ]
