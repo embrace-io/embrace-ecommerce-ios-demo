@@ -9,24 +9,20 @@ struct CartView: View {
     @State private var showingSavedForLaterSection = false
     
     var body: some View {
-        NavigationStack(path: $navigationCoordinator.navigationPath) {
-            VStack(spacing: 0) {
-                if isLoading {
-                    loadingView
-                        .accessibilityIdentifier("cartLoadingView")
-                } else if cartManager.isEmpty {
-                    emptyCartView
-                        .accessibilityIdentifier("cartEmptyView")
-                } else {
-                    cartContentView
-                        .accessibilityIdentifier("cartContentView")
-                }
+        VStack(spacing: 0) {
+            if isLoading {
+                loadingView
+                    .accessibilityIdentifier("cartLoadingView")
+            } else if cartManager.isEmpty {
+                emptyCartView
+                    .accessibilityIdentifier("cartEmptyView")
+            } else {
+                cartContentView
+                    .accessibilityIdentifier("cartContentView")
             }
-            .accessibilityIdentifier("cartView")
-            .navigationTitle("Cart")
-            .navigationDestination(for: NavigationDestination.self) { destination in
-                destinationView(for: destination)
-            }
+        }
+        .accessibilityIdentifier("cartView")
+        .navigationTitle("Cart")
             .onAppear {
                 cartManager.trackCartViewed()
                 MixpanelAnalyticsService.shared.trackScreenView(screenName: "Cart")
@@ -54,7 +50,6 @@ struct CartView: View {
             .onAppear {
                 trackCartView()
             }
-        }
     }
     
     private var emptyCartView: some View {
@@ -242,18 +237,6 @@ struct CartView: View {
         .accessibilityIdentifier("cartProceedToCheckoutButton")
     }
     
-    @ViewBuilder
-    private func destinationView(for destination: NavigationDestination) -> some View {
-        switch destination {
-        case .checkout:
-            CheckoutView()
-        case .productDetail(let productId):
-            ProductDetailView(productId: productId)
-        default:
-            Text("Coming Soon")
-                .navigationTitle("Coming Soon")
-        }
-    }
     
     // MARK: - Telemetry Methods
     private func trackCartView() {

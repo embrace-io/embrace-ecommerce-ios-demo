@@ -4,7 +4,29 @@ import Combine
 @MainActor
 class NavigationCoordinator: ObservableObject {
     @Published var selectedTab: Tab = .home
-    @Published var navigationPath: [NavigationDestination] = []
+    @Published var homeNavigationPath: [NavigationDestination] = []
+    @Published var searchNavigationPath: [NavigationDestination] = []
+    @Published var cartNavigationPath: [NavigationDestination] = []
+    @Published var profileNavigationPath: [NavigationDestination] = []
+
+    var navigationPath: [NavigationDestination] {
+        get {
+            switch selectedTab {
+            case .home: return homeNavigationPath
+            case .search: return searchNavigationPath
+            case .cart: return cartNavigationPath
+            case .profile: return profileNavigationPath
+            }
+        }
+        set {
+            switch selectedTab {
+            case .home: homeNavigationPath = newValue
+            case .search: searchNavigationPath = newValue
+            case .cart: cartNavigationPath = newValue
+            case .profile: profileNavigationPath = newValue
+            }
+        }
+    }
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -13,22 +35,38 @@ class NavigationCoordinator: ObservableObject {
     }
     
     func navigate(to destination: NavigationDestination) {
-        navigationPath.append(destination)
-    }
-    
-    func navigateBack() {
-        if !navigationPath.isEmpty {
-            navigationPath.removeLast()
+        switch selectedTab {
+        case .home: homeNavigationPath.append(destination)
+        case .search: searchNavigationPath.append(destination)
+        case .cart: cartNavigationPath.append(destination)
+        case .profile: profileNavigationPath.append(destination)
         }
     }
-    
-    func navigateToRoot() {
-        navigationPath.removeAll()
+
+    func navigateBack() {
+        switch selectedTab {
+        case .home:
+            if !homeNavigationPath.isEmpty { homeNavigationPath.removeLast() }
+        case .search:
+            if !searchNavigationPath.isEmpty { searchNavigationPath.removeLast() }
+        case .cart:
+            if !cartNavigationPath.isEmpty { cartNavigationPath.removeLast() }
+        case .profile:
+            if !profileNavigationPath.isEmpty { profileNavigationPath.removeLast() }
+        }
     }
-    
+
+    func navigateToRoot() {
+        switch selectedTab {
+        case .home: homeNavigationPath.removeAll()
+        case .search: searchNavigationPath.removeAll()
+        case .cart: cartNavigationPath.removeAll()
+        case .profile: profileNavigationPath.removeAll()
+        }
+    }
+
     func switchTab(to tab: Tab) {
         selectedTab = tab
-        navigationPath.removeAll()
     }
     
     func handleDeepLink(url: URL) {
