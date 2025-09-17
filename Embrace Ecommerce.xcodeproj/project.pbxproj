@@ -23,11 +23,27 @@
 		70DFC7EA2E44082700585111 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 70DFC7E92E44082700585111 /* GoogleSignInSwift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		540463152E7B366500021FF7 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 701466EC2E43C509000ECF98 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 701466F32E43C509000ECF98;
+			remoteInfo = "Embrace Ecommerce";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		5404630F2E7B366500021FF7 /* Embrace EcommerceUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Embrace EcommerceUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		701466F42E43C509000ECF98 /* Embrace Ecommerce.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Embrace Ecommerce.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		540463102E7B366500021FF7 /* Embrace EcommerceUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Embrace EcommerceUITests";
+			sourceTree = "<group>";
+		};
 		701466F62E43C509000ECF98 /* Embrace Ecommerce */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Embrace Ecommerce";
@@ -36,6 +52,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		5404630C2E7B366500021FF7 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		701466F12E43C509000ECF98 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -64,6 +87,7 @@
 			isa = PBXGroup;
 			children = (
 				701466F62E43C509000ECF98 /* Embrace Ecommerce */,
+				540463102E7B366500021FF7 /* Embrace EcommerceUITests */,
 				701466F52E43C509000ECF98 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -72,6 +96,7 @@
 			isa = PBXGroup;
 			children = (
 				701466F42E43C509000ECF98 /* Embrace Ecommerce.app */,
+				5404630F2E7B366500021FF7 /* Embrace EcommerceUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -79,6 +104,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		5404630E2E7B366500021FF7 /* Embrace EcommerceUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 540463192E7B366500021FF7 /* Build configuration list for PBXNativeTarget "Embrace EcommerceUITests" */;
+			buildPhases = (
+				5404630B2E7B366500021FF7 /* Sources */,
+				5404630C2E7B366500021FF7 /* Frameworks */,
+				5404630D2E7B366500021FF7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				540463162E7B366500021FF7 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				540463102E7B366500021FF7 /* Embrace EcommerceUITests */,
+			);
+			name = "Embrace EcommerceUITests";
+			packageProductDependencies = (
+			);
+			productName = "Embrace EcommerceUITests";
+			productReference = 5404630F2E7B366500021FF7 /* Embrace EcommerceUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		701466F32E43C509000ECF98 /* Embrace Ecommerce */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 701466FF2E43C50A000ECF98 /* Build configuration list for PBXNativeTarget "Embrace Ecommerce" */;
@@ -122,9 +170,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1640;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 1640;
 				TargetAttributes = {
+					5404630E2E7B366500021FF7 = {
+						CreatedOnToolsVersion = 26.0;
+						TestTargetID = 701466F32E43C509000ECF98;
+					};
 					701466F32E43C509000ECF98 = {
 						CreatedOnToolsVersion = 16.4;
 					};
@@ -152,11 +204,19 @@
 			projectRoot = "";
 			targets = (
 				701466F32E43C509000ECF98 /* Embrace Ecommerce */,
+				5404630E2E7B366500021FF7 /* Embrace EcommerceUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		5404630D2E7B366500021FF7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		701466F22E43C509000ECF98 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -167,6 +227,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		5404630B2E7B366500021FF7 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		701466F02E43C509000ECF98 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -176,7 +243,57 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		540463162E7B366500021FF7 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 701466F32E43C509000ECF98 /* Embrace Ecommerce */;
+			targetProxy = 540463152E7B366500021FF7 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		540463172E7B366500021FF7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7L6ZG648LR;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.embrace.Embrace-EcommerceUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Embrace Ecommerce";
+			};
+			name = Debug;
+		};
+		540463182E7B366500021FF7 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7L6ZG648LR;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "io.embrace.Embrace-EcommerceUITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = "Embrace Ecommerce";
+			};
+			name = Release;
+		};
 		701466FD2E43C50A000ECF98 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -357,6 +474,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		540463192E7B366500021FF7 /* Build configuration list for PBXNativeTarget "Embrace EcommerceUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				540463172E7B366500021FF7 /* Debug */,
+				540463182E7B366500021FF7 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		701466EF2E43C509000ECF98 /* Build configuration list for PBXProject "Embrace Ecommerce" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
