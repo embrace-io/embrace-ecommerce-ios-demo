@@ -3,6 +3,7 @@ import SwiftUI
 
 class ShippingInformationViewController: UIViewController {
     private let coordinator: CheckoutCoordinator
+    private let embraceService = EmbraceService.shared
     private var scrollView: UIScrollView!
     private var contentView: UIView!
     private var stackView: UIStackView!
@@ -199,6 +200,8 @@ class ShippingInformationViewController: UIViewController {
     }
     
     @objc private func continueButtonTapped() {
+        // Flow 1: Track shipping information completion
+        embraceService.addBreadcrumb(message: "SHIPPING_INFORMATION_COMPLETED")
         coordinator.goToNextStep()
     }
     

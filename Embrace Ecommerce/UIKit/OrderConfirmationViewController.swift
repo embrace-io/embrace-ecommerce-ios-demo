@@ -4,6 +4,7 @@ import SwiftUI
 class OrderConfirmationViewController: UIViewController {
     private let coordinator: CheckoutCoordinator
     private let cartManager: CartManager
+    private let embraceService = EmbraceService.shared
     
     private var scrollView: UIScrollView!
     private var contentView: UIView!
@@ -169,6 +170,8 @@ class OrderConfirmationViewController: UIViewController {
     }
     
     @objc private func placeOrderTapped() {
+        // Flow 3: Track order placement initiation
+        embraceService.addBreadcrumb(message: "PLACE_ORDER_INITIATED")
         Task {
             await placeOrder()
         }
@@ -204,30 +207,36 @@ class OrderConfirmationViewController: UIViewController {
     }
     
     private func handleOrderSuccess(_ order: Order) {
+        // Flow 3: Track successful order placement
+        embraceService.addBreadcrumb(message: "ORDER_PLACED_SUCCESS")
+
         cartManager.clearCart()
-        
+
         let alert = UIAlertController(
             title: "Order Placed Successfully!",
             message: "Your order #\(order.orderNumber) has been placed. You'll receive a confirmation email shortly.",
             preferredStyle: .alert
         )
-        
+
         alert.addAction(UIAlertAction(title: "Continue Shopping", style: .default) { _ in
             self.navigationController?.popToRootViewController(animated: true)
         })
-        
+
         present(alert, animated: true)
     }
     
     private func handleOrderError(_ error: Error) {
+        // Flow 3: Track order placement failure
+        embraceService.addBreadcrumb(message: "ORDER_PLACED_FAILED")
+
         let alert = UIAlertController(
             title: "Order Failed",
             message: error.localizedDescription,
             preferredStyle: .alert
         )
-        
+
         alert.addAction(UIAlertAction(title: "Try Again", style: .default))
-        
+
         present(alert, animated: true)
     }
 }
