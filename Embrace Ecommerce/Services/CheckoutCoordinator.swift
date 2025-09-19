@@ -14,6 +14,7 @@ class CheckoutCoordinator: ObservableObject {
     private let cartManager: CartManager
     private let dataService = MockDataService.shared
     private let analytics = MixpanelAnalyticsService.shared
+    private let embraceService = EmbraceService.shared
     
     enum CheckoutStep: Int, CaseIterable, Hashable {
         case cartReview = 0
@@ -45,6 +46,9 @@ class CheckoutCoordinator: ObservableObject {
             itemCount: cartManager.totalItems,
             totalValue: cartManager.subtotal
         )
+
+        // Flow 1 Start: CHECKOUT_STARTED breadcrumb
+        embraceService.addBreadcrumb(message: "CHECKOUT_STARTED")
     }
     
     func goToNextStep() {
@@ -62,13 +66,25 @@ class CheckoutCoordinator: ObservableObject {
         }
         
         currentStep = nextStep
-        
+
         // Track checkout step completion
         analytics.trackCheckoutStepCompleted(
             step: nextStep.title.lowercased(),
             itemCount: cartManager.totalItems,
             totalValue: orderData.total
         )
+
+        // Add breadcrumbs for flow transitions
+        switch nextStep {
+        case .payment:
+            // Flow 1 End: CHECKOUT_SHIPPING_COMPLETED
+            embraceService.addBreadcrumb(message: "CHECKOUT_SHIPPING_COMPLETED")
+        case .confirmation:
+            // Flow 2 End: CHECKOUT_PAYMENT_COMPLETED
+            embraceService.addBreadcrumb(message: "CHECKOUT_PAYMENT_COMPLETED")
+        default:
+            break
+        }
     }
     
     func goToPreviousStep() {
@@ -156,7 +172,10 @@ class CheckoutCoordinator: ObservableObject {
                 estimatedDelivery: Calendar.current.date(byAdding: .day, value: 5, to: Date()),
                 trackingNumber: nil
             )
-            
+
+            // Flow 3 End: Order details API call completed
+            embraceService.addBreadcrumb(message: "ORDER_DETAILS_API_COMPLETED")
+
             return .success(order)
         } catch {
             return .failure(error)

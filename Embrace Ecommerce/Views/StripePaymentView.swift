@@ -8,6 +8,8 @@ struct StripePaymentView: View {
     @State private var showTestCardsInfo = false
     @State private var paymentError: String?
     @State private var showSuccessAlert = false
+
+    private let embraceService = EmbraceService.shared
     
     var body: some View {
         ScrollView {
@@ -260,10 +262,13 @@ struct StripePaymentView: View {
     
     private func processStripePayment() {
         isProcessingPayment = true
-        
+
+        // Flow 2: Track payment processing start
+        embraceService.addBreadcrumb(message: "STRIPE_PAYMENT_PROCESSING_STARTED")
+
         Task {
             let result = await stripeService.processPayment(amount: coordinator.orderData.total)
-            
+
             await handlePaymentResult(result)
         }
     }
@@ -284,6 +289,9 @@ struct StripePaymentView: View {
         
         switch result {
         case .success(let paymentResult):
+            // Flow 2: Track successful payment processing
+            embraceService.addBreadcrumb(message: "STRIPE_PAYMENT_PROCESSING_SUCCESS")
+
             let stripePaymentMethod = PaymentMethod(
                 id: UUID().uuidString,
                 type: .stripe,
@@ -294,8 +302,10 @@ struct StripePaymentView: View {
             )
             coordinator.selectedPaymentMethod = stripePaymentMethod
             showSuccessAlert = true
-            
+
         case .failure(let error):
+            // Flow 2: Track payment processing failure
+            embraceService.addBreadcrumb(message: "STRIPE_PAYMENT_PROCESSING_FAILED")
             paymentError = error.localizedDescription
         }
     }
