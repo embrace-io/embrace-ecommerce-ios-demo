@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CLIENT_ID</key>
-	<string>486537385178-t1ice7c4rqgdoqokeukjescgqltfkjvq.apps.googleusercontent.com</string>
+	<string>YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
-	<string>com.googleusercontent.apps.486537385178-t1ice7c4rqgdoqokeukjescgqltfkjvq</string>
+	<string>com.googleusercontent.apps.YOUR_GOOGLE_CLIENT_ID</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
