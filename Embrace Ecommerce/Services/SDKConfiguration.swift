@@ -13,7 +13,7 @@ struct SDKConfiguration {
     
     struct Embrace {
         // TODO: Replace with your actual Embrace App ID from the dashboard
-        static let appId = "ogzgy"
+        static let appId = "YOUR_EMBRACE_APP_ID"
         
         // Development settings for comprehensive telemetry
         static let logLevel = "info"
@@ -42,12 +42,12 @@ struct SDKConfiguration {
     
     struct Mixpanel {
         // TODO: Replace with your actual Mixpanel project token
-        static let projectToken = "674b83e272a9450f330537a9bc74bc34"
+        static let projectToken = "YOUR_MIXPANEL_PROJECT_TOKEN"
         static let trackAutomaticEvents = true
         
         // Development fallback
         static var isConfigured: Bool {
-            return projectToken != "674b83e272a9450f330537a9bc74bc34"
+            return projectToken != "YOUR_MIXPANEL_PROJECT_TOKEN"
         }
     }
     
@@ -100,7 +100,7 @@ struct SDKConfiguration {
     static func validateConfiguration() -> [String] {
         var warnings: [String] = []
         
-        if Embrace.appId == "ogzgy" {
+        if Embrace.appId == "YOUR_EMBRACE_APP_ID" {
             warnings.append("⚠️ Embrace App ID not configured - using placeholder")
         }
         
