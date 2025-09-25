@@ -43,7 +43,6 @@ struct AuthenticationView: View {
                             backgroundColor: .blue
                         )
                     }
-                    .accessibilityIdentifier("authEmailSignInButton")
 
                     // Google Sign In Button
                     GoogleSignInButton(scheme: .dark, style: .wide, state: .normal) {
@@ -53,7 +52,6 @@ struct AuthenticationView: View {
                     }
                     .frame(height: 50)
                     .disabled(authManager.isLoading)
-                    .accessibilityIdentifier("authGoogleSignInButton")
 
                     // Biometric Authentication (if available)
                     if canShowBiometricAuth {
@@ -69,7 +67,6 @@ struct AuthenticationView: View {
                         .sheet(isPresented: $showingBiometricAuth) {
                             BiometricAuthenticationView()
                         }
-                        .accessibilityIdentifier("authBiometricSignInButton")
                     }
 
                     // Guest Checkout
@@ -85,7 +82,6 @@ struct AuthenticationView: View {
                         )
                     }
                     .disabled(authManager.isLoading)
-                    .accessibilityIdentifier("authGuestButton")
                 }
                 .padding(.horizontal, 32)
                 .accessibilityIdentifier("authOptionsSection")
@@ -109,6 +105,7 @@ struct AuthenticationView: View {
                 .accessibilityIdentifier("authSignUpSection")
             }
             .accessibilityIdentifier("authenticationView")
+            .accessibilityElement(children: .contain)
             .navigationBarHidden(true)
             .overlay(
                 loadingOverlay
