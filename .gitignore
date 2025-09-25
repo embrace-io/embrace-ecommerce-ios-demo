@@ -99,3 +99,6 @@ iOSInjectionProject/
 # Embrace specific
 *.embrace_crash
 embrace_debug.log
+
+# Claude Code
+CLAUDE.md
