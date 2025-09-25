@@ -109,6 +109,7 @@ struct AuthenticationView: View {
                 .accessibilityIdentifier("authSignUpSection")
             }
             .accessibilityIdentifier("authenticationView")
+            .accessibilityElement(children: .contain)
             .navigationBarHidden(true)
             .overlay(
                 loadingOverlay
