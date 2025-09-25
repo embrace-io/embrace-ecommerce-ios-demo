@@ -13,9 +13,23 @@ final class Embrace_EcommerceUITests: XCTestCase {
         // Put setup code here. This method is called before the invocation of each test method in the class.
         // In UI tests it is usually best to stop immediately when a failure occurs.
         continueAfterFailure = false
+
+        // Configure the app with launch environment variables
+        let app = XCUIApplication()
+        app.launchEnvironment = [
+            "UI_TESTING": "1",
+            "DISABLE_NETWORK_CALLS": "1",
+            "USE_MOCK_DATA": "1"
+        ]
     }
 
     override func tearDownWithError() throws {
+        let app = XCUIApplication()
+
+        // Terminate the app completely
+        if app.state != .notRunning {
+            app.terminate()
+        }
     }
 
     @MainActor
