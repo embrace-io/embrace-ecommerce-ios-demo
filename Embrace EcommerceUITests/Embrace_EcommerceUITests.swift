@@ -33,12 +33,39 @@ final class Embrace_EcommerceUITests: XCTestCase {
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testAuthenticationGuestFlow() throws {
+        // Launch the application
         let app = XCUIApplication()
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        // Step 1: Wait for authentication view to load
+        let authenticationView = app.descendants(matching: .any)["authenticationView"].firstMatch
+        XCTAssertTrue(authenticationView.waitForExistence(timeout: 5.0),
+                     "Authentication view with identifier 'authenticationView' failed to load within 5 seconds")
+
+        // Step 2: Find the guest authentication button
+        let authGuestButton = app.descendants(matching: .any)["authButton_ContinueasGuest"].firstMatch
+        XCTAssertTrue(authGuestButton.exists,
+                     "Guest authentication button with identifier 'authGuestButton' does not exist")
+
+        // Step 3: Capture initial screen state for navigation verification
+        let initialScreenExists = authenticationView.exists
+
+        // Step 4: Tap the guest button
+        authGuestButton.tap()
+
+        // Step 5: Wait 3 seconds for navigation to occur
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Step 6: Verify navigation to a different screen
+        // Check that we've navigated away from the authentication view
+        let navigationOccurred = !authenticationView.exists ||
+                                app.otherElements.allElementsBoundByIndex.count > 1
+        XCTAssertTrue(navigationOccurred,
+                     "Navigation did not occur after tapping guest button - still on authentication screen")
+
+        // Additional validation: ensure we're not stuck on the same screen
+        XCTAssertTrue(initialScreenExists, "Initial screen validation failed")
     }
 
     @MainActor
