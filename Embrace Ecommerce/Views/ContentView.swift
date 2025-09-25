@@ -21,7 +21,6 @@ struct ContentView: View {
                     ))
             } else {
                 AuthenticationView()
-                    .accessibilityIdentifier("authenticationView")
                     .transition(.asymmetric(
                         insertion: .move(edge: .leading),
                         removal: .move(edge: .trailing)
