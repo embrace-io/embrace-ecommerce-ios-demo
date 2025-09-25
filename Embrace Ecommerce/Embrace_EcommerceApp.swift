@@ -16,7 +16,22 @@ import Mixpanel
 struct Embrace_EcommerceApp: App {
     init() {
         print("🚀 Starting app initialization...")
-        
+
+        // TODO: receive launch arguments from UITest
+        let environment = ProcessInfo.processInfo.environment
+
+        if environment["UI_TESTING"] == "1" {
+            print("📱 Running in UI Testing mode")
+        }
+
+        if environment["DISABLE_NETWORK_CALLS"] == "1" {
+            print("🚫 Network calls disabled for testing")
+        }
+
+        if environment["USE_MOCK_DATA"] == "1" {
+            print("🎭 Using mock data for testing")
+        }
+
         do {
             // Initialize Firebase first (required for Firebase services)
             // Temporarily disabled to debug crash
