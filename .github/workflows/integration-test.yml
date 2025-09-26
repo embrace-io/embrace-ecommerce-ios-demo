@@ -11,6 +11,29 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+      
+    - name: Configure App with Repository Variables
+      run: |
+        echo "🔧 Configuring app with repository variables..."
+        # Check if APP_ID variable exists
+        if [[ -n "${{ vars.APP_ID }}" ]]; then
+          echo "✅ APP_ID found in repository variables: ${{ vars.APP_ID }}"
+          # Update the appId in Embrace_EcommerceApp.swift
+          echo "📝 Updating appId in Embrace_EcommerceApp.swift..."
+          # Use sed to replace the line containing 'appId: SDKConfiguration.Embrace.appId'
+          sed -i '' 's/appId: SDKConfiguration\.Embrace\.appId/appId: "${{ vars.APP_ID }}"/g' "Embrace Ecommerce/Embrace_EcommerceApp.swift"
+          echo "✅ Updated appId to use repository variable"
+          # Show the updated line for verification
+          echo "📋 Updated line:"
+          grep -n "appId:" "Embrace Ecommerce/Embrace_EcommerceApp.swift" || echo "⚠️ Could not find appId line"
+        else
+          echo "❌ ERROR: APP_ID variable not found in repository variables"
+          echo "   Please add APP_ID as a repository variable before running this workflow."
+          echo "   Go to Settings → Secrets and variables → Actions → Variables tab"
+          exit 1
+        fi
+        echo ""
+
     - name: Set up Xcode
       uses: maxim-lobanov/setup-xcode@v1
       with:
