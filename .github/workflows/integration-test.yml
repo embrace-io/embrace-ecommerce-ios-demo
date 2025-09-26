@@ -35,9 +35,19 @@ jobs:
         echo ""
 
     - name: Set up Xcode
-      uses: maxim-lobanov/setup-xcode@v1
-      with:
-        xcode-version: latest-stable
+      run: |
+        echo "🔧 Setting up Xcode..."
+        # Show available Xcode versions
+        echo "📋 Available Xcode installations:"
+        ls -la /Applications/Xcode*.app 2>/dev/null || echo "No Xcode*.app found in /Applications"
+
+        # Use xcode-select to ensure we're using the default Xcode
+        sudo xcode-select --print-path
+        echo "✅ Using Xcode at: $(xcode-select --print-path)"
+
+        # Accept Xcode license if needed
+        sudo xcodebuild -license accept 2>/dev/null || echo "License already accepted or not required"
+        echo ""
 
     - name: Environment Information
       run: |
