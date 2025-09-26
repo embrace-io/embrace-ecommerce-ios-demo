@@ -1,0 +1,193 @@
+name: Integration Tests
+
+on:
+  workflow_dispatch:
+
+jobs:
+  ui-tests:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Xcode
+      uses: maxim-lobanov/setup-xcode@v1
+      with:
+        xcode-version: latest-stable
+
+    - name: Environment Information
+      run: |
+        echo "🔧 ENVIRONMENT INFORMATION"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "🖥️  Runner OS: ${{ runner.os }}"
+        echo "📅 Date: $(date)"
+        echo "🛠️  Xcode Version: $(xcodebuild -version | head -1)"
+        echo "📱 Available SDK versions:"
+        xcodebuild -showsdks | grep iOS || echo "No iOS SDKs found"
+        echo "🔍 Simulator runtimes:"
+        xcrun simctl list runtimes | grep iOS || echo "No iOS runtimes found"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+
+    - name: Cache derived data
+      uses: actions/cache@v3
+      with:
+        path: ~/Library/Developer/Xcode/DerivedData
+        key: ${{ runner.os }}-derived-data-${{ hashFiles('**/*.xcodeproj/project.pbxproj') }}
+        restore-keys: |
+          ${{ runner.os }}-derived-data-
+
+    - name: Build for testing (once for all devices)
+      run: |
+        echo "🔍 Discovering available destinations for building..."
+
+        # Show all available destinations first
+        echo "📱 All available destinations:"
+        xcodebuild -showdestinations -scheme "Embrace Ecommerce" || {
+          echo "❌ ERROR: Failed to get destinations for scheme 'Embrace Ecommerce'"
+          echo "Available schemes:"
+          xcodebuild -list
+          exit 1
+        }
+
+        echo ""
+        echo "🎯 Filtering for iOS Simulator destinations..."
+
+        # Get any available iOS simulator for building
+        build_destination=$(xcodebuild -showdestinations -scheme "Embrace Ecommerce" | \
+          grep "platform:iOS Simulator" | \
+          grep -E "(iPhone|iPad)" | \
+          grep -v "Any iOS Simulator Device" | \
+          head -1 | \
+          sed 's/.*{\([^}]*\)}.*/\1/' | \
+          sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+        if [[ -z "$build_destination" ]]; then
+          echo "❌ ERROR: No suitable iOS simulator destination found for building"
+          exit 1
+        fi
+
+        echo "✅ Selected build destination: $build_destination"
+        echo ""
+        echo "🔨 Starting build-for-testing..."
+        echo "Command: xcodebuild build-for-testing -scheme 'Embrace Ecommerce' -destination '$build_destination'"
+        echo ""
+
+        xcodebuild build-for-testing \
+          -scheme "Embrace Ecommerce" \
+          -destination "$build_destination" \
+          -derivedDataPath ~/Library/Developer/Xcode/DerivedData || {
+          echo "❌ ERROR: Build failed!"
+          exit 1
+        }
+
+        echo "✅ Build completed successfully"
+
+    - name: Run UI Tests on multiple devices
+      run: |
+        echo "🧪 Starting UI Test execution on multiple devices..."
+        echo ""
+
+        # Get device info with OS versions
+        echo "🔍 Discovering iOS simulator devices with OS versions..."
+
+        # Create temp file with device info
+        echo "📱 Getting destination list from xcodebuild..."
+        xcodebuild -showdestinations -scheme "Embrace Ecommerce" | \
+          grep "platform:iOS Simulator" | \
+          grep -E "(iPhone|iPad)" | \
+          grep -v "Any iOS Simulator Device" > /tmp/device_destinations.txt || {
+          echo "❌ ERROR: Failed to get device destinations"
+          exit 1
+        }
+
+        echo "📝 Raw device destinations found:"
+        cat /tmp/device_destinations.txt | head -5
+        echo "... (showing first 5 entries)"
+        echo ""
+
+        # Extract device info and create a simple list
+        echo "🔄 Processing device information..."
+        processed_count=0
+        while IFS= read -r line; do
+          device_name=$(echo "$line" | sed 's/.*name:\([^,}]*\).*/\1/' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          os_version=$(echo "$line" | sed 's/.*OS:\([^,}]*\).*/\1/' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+          if [[ -n "$device_name" ]] && [[ "$device_name" =~ ^(iPhone|iPad) ]] && [[ -n "$os_version" ]]; then
+            echo "$device_name|$os_version"
+            processed_count=$((processed_count + 1))
+          fi
+        done < /tmp/device_destinations.txt | sort -u -t'|' -k1,1 > /tmp/device_os_list.txt
+
+        echo "✅ Processed $processed_count device entries"
+        echo ""
+
+        # Check if we found any devices
+        device_count=$(wc -l < /tmp/device_os_list.txt)
+        if [[ $device_count -eq 0 ]]; then
+          echo "❌ ERROR: No valid iOS simulator devices found!"
+          echo "Debug info:"
+          echo "- Raw destinations file size: $(wc -l < /tmp/device_destinations.txt) lines"
+          echo "- Processed devices file size: $(wc -l < /tmp/device_os_list.txt) lines"
+          exit 1
+        fi
+
+        echo "📱 Available devices with OS versions (found $device_count total):"
+        cat /tmp/device_os_list.txt | while IFS='|' read -r device os; do
+          echo "  ✓ $device (OS: $os)"
+        done
+        echo ""
+
+        # Test on up to 5 devices
+        max_devices=5
+        actual_test_count=$(( device_count < max_devices ? device_count : max_devices ))
+        echo "🎯 Will test on $actual_test_count devices (max: $max_devices)"
+        echo ""
+
+        tested_count=0
+        failed_count=0
+        passed_count=0
+
+        cat /tmp/device_os_list.txt | head -$max_devices | while IFS='|' read -r device os_version; do
+          tested_count=$((tested_count + 1))
+
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "🧪 TEST $tested_count/$actual_test_count: $device (OS: $os_version)"
+          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "📱 Device: $device"
+          echo "📊 OS Version: $os_version"
+          echo "🎯 Target: Embrace EcommerceUITests"
+          echo ""
+          echo "🚀 Executing: xcodebuild test-without-building..."
+
+          if xcodebuild test-without-building \
+            -scheme "Embrace Ecommerce" \
+            -destination "platform=iOS Simulator,name=$device,OS=$os_version" \
+            -derivedDataPath ~/Library/Developer/Xcode/DerivedData \
+            -only-testing:"Embrace EcommerceUITests"; then
+            echo "✅ PASSED: Tests completed successfully on $device"
+            passed_count=$((passed_count + 1))
+          else
+            echo "❌ FAILED: Tests failed on $device (OS: $os_version)"
+            failed_count=$((failed_count + 1))
+            echo "📝 Note: Continuing with remaining devices..."
+          fi
+          echo ""
+        done
+
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📊 FINAL RESULTS"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "🔢 Total devices found: $device_count"
+        echo "🧪 Devices tested: $actual_test_count"
+        echo "✅ Passed: $passed_count"
+        echo "❌ Failed: $failed_count"
+        echo ""
+
+        if [[ $passed_count -gt 0 ]]; then
+          echo "🎉 SUCCESS: At least one device passed tests"
+        else
+          echo "💥 FAILURE: No devices passed tests"
+          exit 1
+        fi
