@@ -15,6 +15,7 @@ class AuthenticationManager: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let mockDataService = MockDataService.shared
     private let analytics = MixpanelAnalyticsService.shared
+    private let embraceService = EmbraceService.shared
     
     // Mock authentication configuration
     private let mockAuthConfig = MockAuthConfiguration()
@@ -46,11 +47,14 @@ class AuthenticationManager: ObservableObject {
             name: "email_sign_in",
             type: .performance
         ).startSpan()
-        
+
         await MainActor.run {
             isLoading = true
             authState = .authenticating
         }
+
+        // Login Flow Start: USER_LOGIN_STARTED breadcrumb
+        embraceService.addBreadcrumb(message: "USER_LOGIN_STARTED_EMAIL")
         
         span?.setAttribute(key: "auth.method", value: "email")
         span?.setAttribute(key: "auth.email", value: email)
@@ -80,10 +84,18 @@ class AuthenticationManager: ObservableObject {
                 )
                 
                 analytics.trackUserSignIn(method: "email", success: true)
+
+                // Login Flow Success: USER_LOGIN_SUCCESS breadcrumb
+                embraceService.addBreadcrumb(message: "USER_LOGIN_SUCCESS_EMAIL")
+
                 await handleSuccessfulAuthentication(user: user, span: span)
                 
             } else {
                 analytics.trackUserSignIn(method: "email", success: false)
+
+                // Login Flow Failure: USER_LOGIN_FAILED breadcrumb
+                embraceService.addBreadcrumb(message: "USER_LOGIN_FAILED_EMAIL")
+
                 await handleAuthenticationError(.invalidCredentials, span: span)
             }
             
@@ -194,7 +206,10 @@ class AuthenticationManager: ObservableObject {
             isLoading = true
             authState = .authenticating
         }
-        
+
+        // Login Flow Start: USER_LOGIN_STARTED breadcrumb
+        embraceService.addBreadcrumb(message: "USER_LOGIN_STARTED_GOOGLE")
+
         span?.setAttribute(key: "auth.method", value: "google")
         span?.setAttribute(key: "auth.provider", value: "google")
         
@@ -226,11 +241,19 @@ class AuthenticationManager: ObservableObject {
             )
             
             analytics.trackUserSignIn(method: "google", success: true)
+
+            // Login Flow Success: USER_LOGIN_SUCCESS breadcrumb
+            embraceService.addBreadcrumb(message: "USER_LOGIN_SUCCESS_GOOGLE")
+
             await handleSuccessfulAuthentication(user: authenticatedUser, span: span)
             
         } catch {
             span?.setAttribute(key: "error.description", value: error.localizedDescription)
             analytics.trackUserSignIn(method: "google", success: false)
+
+            // Login Flow Failure: USER_LOGIN_FAILED breadcrumb
+            embraceService.addBreadcrumb(message: "USER_LOGIN_FAILED_GOOGLE")
+
             await handleAuthenticationError(.googleSignInFailed(error.localizedDescription), span: span)
         }
         

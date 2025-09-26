@@ -88,8 +88,7 @@ final class EmbraceService: TelemetryService {
     // MARK: - Breadcrumbs
     
     func addBreadcrumb(message: String) {
-        // Note: Breadcrumb API needs to be checked for Embrace 6.x
-        // Embrace.client?.addBreadcrumb(message)
+        Embrace.client?.add(event: .breadcrumb(message))
     }
     
     // MARK: - Session Properties
