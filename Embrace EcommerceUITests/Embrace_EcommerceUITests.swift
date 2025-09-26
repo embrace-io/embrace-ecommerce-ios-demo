@@ -18,8 +18,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchEnvironment = [
             "UI_TESTING": "1",
-            "DISABLE_NETWORK_CALLS": "1",
-            "USE_MOCK_DATA": "1"
+            "DISABLE_NETWORK_CALLS": "1", // Disable app network calls but allow Embrace SDK
+            "USE_MOCK_DATA": "1",
+            "ALLOW_EMBRACE_NETWORK": "1" // Allow Embrace SDK network requests
         ]
     }
 
@@ -66,6 +67,20 @@ final class Embrace_EcommerceUITests: XCTestCase {
 
         // Additional validation: ensure we're not stuck on the same screen
         XCTAssertTrue(initialScreenExists, "Initial screen validation failed")
+
+        // Send app to background to trigger Embrace session upload
+        sendAppToBackground()
+    }
+
+    // MARK: - Helper Methods
+
+    /// Sends the app to background to trigger Embrace session uploads
+    private func sendAppToBackground() {
+        // Send app to background by pressing home button
+        XCUIDevice.shared.press(.home)
+
+        // Wait to allow Embrace SDK time to upload sessions
+        Thread.sleep(forTimeInterval: 5.0)
     }
 
     @MainActor
