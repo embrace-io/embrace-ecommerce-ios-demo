@@ -63,13 +63,27 @@ jobs:
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
 
-    - name: Cache derived data
+    - name: Cache derived data and Swift packages
       uses: actions/cache@v3
       with:
-        path: ~/Library/Developer/Xcode/DerivedData
-        key: ${{ runner.os }}-derived-data-${{ hashFiles('**/*.xcodeproj/project.pbxproj') }}
+        path: |
+          ~/Library/Developer/Xcode/DerivedData
+          ~/Library/Caches/org.swift.swiftpm
+        key: ${{ runner.os }}-xcode-cache-${{ hashFiles('**/*.xcodeproj/project.pbxproj', '**/*.swift', '**/Package.resolved') }}
         restore-keys: |
-          ${{ runner.os }}-derived-data-
+          ${{ runner.os }}-xcode-cache-
+
+    - name: Resolve Swift Package dependencies
+      run: |
+        echo "📦 Resolving Swift Package dependencies..."
+        xcodebuild -resolvePackageDependencies \
+          -scheme "Embrace Ecommerce" \
+          -derivedDataPath ~/Library/Developer/Xcode/DerivedData || {
+          echo "❌ ERROR: Failed to resolve Swift Package dependencies"
+          exit 1
+        }
+        echo "✅ Swift Package dependencies resolved"
+        echo ""
 
     - name: Build for testing (once for all devices)
       run: |
@@ -103,10 +117,8 @@ jobs:
 
         if [[ -z "$build_destination" ]] || [[ "$build_destination" == *"platform="* && "$build_destination" != *"name="* ]]; then
           echo "❌ ERROR: Failed to parse simulator destination"
-          echo "Trying fallback approach..."
-
-          # Fallback: use a generic iPhone simulator
-          build_destination="platform=iOS Simulator,name=iPhone 15,OS=latest"
+          echo "No suitable iOS simulator destination found for building"
+          exit 1
         fi
 
         echo "✅ Selected build destination: $build_destination"
