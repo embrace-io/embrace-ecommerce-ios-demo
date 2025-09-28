@@ -110,7 +110,7 @@ jobs:
 
         # Extract a simple iPhone simulator destination
         selected_line=$(echo "$available_destinations" | \
-          grep -E "name:iPhone.*platform:iOS Simulator" | \
+          grep -E "platform:iOS Simulator.*name:iPhone" | \
           head -1)
 
         if [[ -n "$selected_line" ]]; then
