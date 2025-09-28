@@ -109,11 +109,26 @@ jobs:
         echo ""
 
         # Extract a simple iPhone simulator destination
-        build_destination=$(echo "$available_destinations" | \
+        selected_line=$(echo "$available_destinations" | \
           grep -E "name:iPhone.*platform:iOS Simulator" | \
-          head -1 | \
-          sed 's/.*name:\([^,}]*\).*OS:\([^,}]*\).*platform:\([^,}]*\).*/platform=\3,name=\1,OS=\2/' | \
-          sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          head -1)
+
+        if [[ -n "$selected_line" ]]; then
+          # Extract each field independently regardless of order
+          device_name=$(echo "$selected_line" | sed -n 's/.*name:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          os_version=$(echo "$selected_line" | sed -n 's/.*OS:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          platform=$(echo "$selected_line" | sed -n 's/.*platform:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+          # Construct the destination string
+          build_destination="platform=${platform},name=${device_name},OS=${os_version}"
+
+          echo "🔍 Parsed fields:"
+          echo "  Platform: '$platform'"
+          echo "  Device: '$device_name'"
+          echo "  OS: '$os_version'"
+        else
+          build_destination=""
+        fi
 
         if [[ -z "$build_destination" ]] || [[ "$build_destination" == *"platform="* && "$build_destination" != *"name="* ]]; then
           echo "❌ ERROR: Failed to parse simulator destination"
