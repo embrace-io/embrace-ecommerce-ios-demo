@@ -88,17 +88,25 @@ jobs:
         echo "🎯 Filtering for iOS Simulator destinations..."
 
         # Get any available iOS simulator for building
-        build_destination=$(xcodebuild -showdestinations -scheme "Embrace Ecommerce" | \
-          grep "platform:iOS Simulator" | \
-          grep -E "(iPhone|iPad)" | \
-          grep -v "Any iOS Simulator Device" | \
+        echo "🔍 Searching for available simulators..."
+        available_destinations=$(xcodebuild -showdestinations -scheme "Embrace Ecommerce" | grep "platform:iOS Simulator")
+        echo "Raw destinations found:"
+        echo "$available_destinations"
+        echo ""
+
+        # Extract a simple iPhone simulator destination
+        build_destination=$(echo "$available_destinations" | \
+          grep -E "iPhone.*platform:iOS Simulator" | \
           head -1 | \
-          sed 's/.*{\([^}]*\)}.*/\1/' | \
+          sed 's/.*platform:\([^,}]*\).*name:\([^,}]*\).*OS:\([^,}]*\).*/platform=\1,name=\2,OS=\3/' | \
           sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
-        if [[ -z "$build_destination" ]]; then
-          echo "❌ ERROR: No suitable iOS simulator destination found for building"
-          exit 1
+        if [[ -z "$build_destination" ]] || [[ "$build_destination" == *"platform="* && "$build_destination" != *"name="* ]]; then
+          echo "❌ ERROR: Failed to parse simulator destination"
+          echo "Trying fallback approach..."
+
+          # Fallback: use a generic iPhone simulator
+          build_destination="platform=iOS Simulator,name=iPhone 15,OS=latest"
         fi
 
         echo "✅ Selected build destination: $build_destination"
@@ -144,10 +152,16 @@ jobs:
         echo "🔄 Processing device information..."
         processed_count=0
         while IFS= read -r line; do
-          device_name=$(echo "$line" | sed 's/.*name:\([^,}]*\).*/\1/' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          os_version=$(echo "$line" | sed 's/.*OS:\([^,}]*\).*/\1/' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          # Extract device name and OS version more carefully
+          device_name=$(echo "$line" | sed -n 's/.*name:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+          os_version=$(echo "$line" | sed -n 's/.*OS:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
-          if [[ -n "$device_name" ]] && [[ "$device_name" =~ ^(iPhone|iPad) ]] && [[ -n "$os_version" ]]; then
+          # Validate we have both values and device name is iPhone/iPad
+          if [[ -n "$device_name" ]] && [[ -n "$os_version" ]] && [[ "$device_name" =~ ^(iPhone|iPad) ]]; then
+            # Clean up any quotes or extra spaces
+            device_name=$(echo "$device_name" | sed 's/["'"'"']//g')
+            os_version=$(echo "$os_version" | sed 's/["'"'"']//g')
+
             echo "$device_name|$os_version"
             processed_count=$((processed_count + 1))
           fi
@@ -185,6 +199,15 @@ jobs:
         cat /tmp/device_os_list.txt | head -$max_devices | while IFS='|' read -r device os_version; do
           tested_count=$((tested_count + 1))
 
+          # Validate device and OS are not empty
+          if [[ -z "$device" ]] || [[ -z "$os_version" ]]; then
+            echo "❌ ERROR: Empty device name or OS version - skipping"
+            echo "  Device: '$device'"
+            echo "  OS Version: '$os_version'"
+            failed_count=$((failed_count + 1))
+            continue
+          fi
+
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "🧪 TEST $tested_count/$actual_test_count: $device (OS: $os_version)"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -192,11 +215,13 @@ jobs:
           echo "📊 OS Version: $os_version"
           echo "🎯 Target: Embrace EcommerceUITests"
           echo ""
-          echo "🚀 Executing: xcodebuild test-without-building..."
+
+          destination="platform=iOS Simulator,name=$device,OS=$os_version"
+          echo "🚀 Executing: xcodebuild test-without-building with destination: $destination"
 
           if xcodebuild test-without-building \
             -scheme "Embrace Ecommerce" \
-            -destination "platform=iOS Simulator,name=$device,OS=$os_version" \
+            -destination "$destination" \
             -derivedDataPath ~/Library/Developer/Xcode/DerivedData \
             -only-testing:"Embrace EcommerceUITests"; then
             echo "✅ PASSED: Tests completed successfully on $device"
