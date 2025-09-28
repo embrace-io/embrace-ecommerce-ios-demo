@@ -110,9 +110,9 @@ jobs:
 
         # Extract a simple iPhone simulator destination
         build_destination=$(echo "$available_destinations" | \
-          grep -E "iPhone.*platform:iOS Simulator" | \
+          grep -E "name:iPhone.*platform:iOS Simulator" | \
           head -1 | \
-          sed 's/.*platform:\([^,}]*\).*name:\([^,}]*\).*OS:\([^,}]*\).*/platform=\1,name=\2,OS=\3/' | \
+          sed 's/.*name:\([^,}]*\).*OS:\([^,}]*\).*platform:\([^,}]*\).*/platform=\3,name=\1,OS=\2/' | \
           sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 
         if [[ -z "$build_destination" ]] || [[ "$build_destination" == *"platform="* && "$build_destination" != *"name="* ]]; then
