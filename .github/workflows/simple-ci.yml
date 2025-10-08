@@ -64,6 +64,20 @@ jobs:
         echo "⏳ Waiting for simulator to be ready..."
         xcrun simctl bootstatus "$SIMULATOR_UDID" -b
 
+        # Additional wait for simulator services to fully initialize
+        echo "⏳ Waiting for simulator services to initialize..."
+        sleep 10
+
+        # Verify simulator is actually booted
+        BOOT_STATUS=$(xcrun simctl list devices | grep "$SIMULATOR_UDID" | grep -o "Booted" || echo "Not Booted")
+        if [[ "$BOOT_STATUS" != "Booted" ]]; then
+          echo "❌ ERROR: Simulator failed to boot properly"
+          xcrun simctl list devices | grep "$SIMULATOR_UDID"
+          exit 1
+        fi
+
+        echo "✅ Simulator status: $BOOT_STATUS"
+
         # Save simulator info for next step
         echo "SIMULATOR_NAME=$SIMULATOR_NAME" >> $GITHUB_ENV
         echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> $GITHUB_ENV
