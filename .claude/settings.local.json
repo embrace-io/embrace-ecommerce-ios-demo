@@ -15,7 +15,8 @@
       "WebFetch(domain:docs.stripe.com)",
       "WebSearch",
       "Read(//Users/sergiorodriguez/Documents/**)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Read(//Users/sergiorodriguez/embrace-apple-sdk/**)"
     ],
     "deny": []
   }
