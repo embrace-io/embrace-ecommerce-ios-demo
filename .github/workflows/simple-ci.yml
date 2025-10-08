@@ -36,17 +36,9 @@ jobs:
       run: |
         echo "🧪 Running UI tests..."
 
-        # Get the first available iPhone simulator
-        SIMULATOR_LINE=$(xcrun simctl list devices available | grep "iPhone" | grep -v "unavailable" | head -n 1)
-        SIMULATOR_NAME=$(echo "$SIMULATOR_LINE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*(.*//')
-        SIMULATOR_UDID=$(echo "$SIMULATOR_LINE" | grep -o '([A-F0-9-]*[A-F0-9])' | head -n 1 | tr -d '()')
-
-        echo "📱 Selected simulator: $SIMULATOR_NAME"
-        echo "🆔 Simulator UDID: $SIMULATOR_UDID"
-
         xcodebuild test \
           -scheme "Embrace Ecommerce" \
-          -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+          -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
           -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow" \
           -allowProvisioningUpdates \
           -skipMacroValidation
