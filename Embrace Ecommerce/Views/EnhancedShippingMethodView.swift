@@ -101,14 +101,13 @@ struct EnhancedShippingMethodView: View {
                     isSelected: selectedMethod?.id == quote.method.id,
                     onSelect: {
                         selectedMethod = quote.method
-                        EmbraceManager.shared.logMessage(
+                        EmbraceService.shared.logInfo(
                             "Shipping method selected",
-                            severity: .info,
                             properties: [
                                 "method_id": quote.method.id,
                                 "method_name": quote.method.name,
-                                "cost": quote.adjustedCost,
-                                "estimated_days": quote.method.estimatedDays
+                                "cost": String(quote.adjustedCost),
+                                "estimated_days": String(quote.method.estimatedDays)
                             ]
                         )
                     }
@@ -223,13 +222,12 @@ struct EnhancedShippingMethodView: View {
             shippingService.availableMethods = updatedQuotes
             appliedPromotions.append(code)
             promotionCode = ""
-            
-            EmbraceManager.shared.logMessage(
+
+            EmbraceService.shared.logInfo(
                 "Shipping promotion applied",
-                severity: .info,
                 properties: [
                     "promotion_code": code,
-                    "methods_affected": updatedQuotes.count
+                    "methods_affected": String(updatedQuotes.count)
                 ]
             )
         }
