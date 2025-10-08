@@ -84,31 +84,17 @@ jobs:
 
         echo "✅ Simulator prebuilt and ready"
 
-    - name: Build for Testing
-      run: |
-        echo "🔨 Building for testing on simulator..."
-        echo "📱 Simulator: $SIMULATOR_NAME"
-        echo "🆔 UDID: $SIMULATOR_UDID"
-
-        xcodebuild build-for-testing \
-          -scheme "Embrace Ecommerce" \
-          -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
-          -allowProvisioningUpdates \
-          -skipMacroValidation \
-          -derivedDataPath ./DerivedData
-
-        echo "✅ Build for testing completed successfully"
-
     - name: Run UI Tests
       run: |
         echo "🧪 Running UI tests on prebuilt simulator..."
         echo "📱 Simulator: $SIMULATOR_NAME"
         echo "🆔 UDID: $SIMULATOR_UDID"
 
-        xcodebuild test-without-building \
+        xcodebuild test \
           -scheme "Embrace Ecommerce" \
           -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
           -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow" \
-          -derivedDataPath ./DerivedData
+          -allowProvisioningUpdates \
+          -skipMacroValidation
 
         echo "✅ UI tests completed successfully"
