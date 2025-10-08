@@ -1,0 +1,88 @@
+name: Simple CI
+
+on:
+  workflow_dispatch:
+#  schedule:
+#    - cron: '*/20 * * * *'  # Run every 20 minutes
+
+jobs:
+  ui-tests:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Xcode
+      run: |
+        echo "🔧 Setting up Xcode..."
+        sudo xcode-select --print-path
+        echo "✅ Using Xcode at: $(xcode-select --print-path)"
+        sudo xcodebuild -license accept 2>/dev/null || echo "License already accepted"
+
+    - name: Inject APP_ID
+      run: |
+        echo "🔧 Injecting APP_ID into code..."
+        if [[ -n "${{ vars.APP_ID }}" ]]; then
+          echo "✅ APP_ID found: ${{ vars.APP_ID }}"
+          sed -i '' 's/appId: SDKConfiguration\.Embrace\.appId/appId: "${{ vars.APP_ID }}"/g' "Embrace Ecommerce/Embrace_EcommerceApp.swift"
+          echo "✅ APP_ID injected successfully"
+        else
+          echo "❌ ERROR: APP_ID not found in repository variables"
+          exit 1
+        fi
+
+    - name: Prebuild iOS Simulator
+      run: |
+        echo "🏗️ Prebuilding iOS simulator..."
+
+        # Get the first available iPhone simulator
+        SIMULATOR_INFO=$(xcrun simctl list devices available iPhone | grep "iPhone" | head -n 1)
+        SIMULATOR_NAME=$(echo "$SIMULATOR_INFO" | sed -n 's/.*\(iPhone[^(]*\).*/\1/p' | xargs)
+        SIMULATOR_UDID=$(echo "$SIMULATOR_INFO" | sed -n 's/.*(\([^)]*\)).*/\1/p')
+
+        echo "📱 Selected simulator: $SIMULATOR_NAME"
+        echo "🆔 Simulator UDID: $SIMULATOR_UDID"
+
+        # Boot the simulator
+        echo "🚀 Booting simulator..."
+        xcrun simctl boot "$SIMULATOR_UDID" || echo "Simulator already booted"
+
+        # Wait for simulator to be ready
+        echo "⏳ Waiting for simulator to be ready..."
+        xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+
+        # Save simulator info for next step
+        echo "SIMULATOR_NAME=$SIMULATOR_NAME" >> $GITHUB_ENV
+        echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> $GITHUB_ENV
+
+        echo "✅ Simulator prebuilt and ready"
+
+    - name: Build for Testing
+      run: |
+        echo "🔨 Building for testing on simulator..."
+        echo "📱 Simulator: $SIMULATOR_NAME"
+        echo "🆔 UDID: $SIMULATOR_UDID"
+
+        xcodebuild build-for-testing \
+          -scheme "Embrace Ecommerce" \
+          -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+          -allowProvisioningUpdates \
+          -skipMacroValidation \
+          -derivedDataPath ./DerivedData
+
+        echo "✅ Build for testing completed successfully"
+
+    - name: Run UI Tests
+      run: |
+        echo "🧪 Running UI tests on prebuilt simulator..."
+        echo "📱 Simulator: $SIMULATOR_NAME"
+        echo "🆔 UDID: $SIMULATOR_UDID"
+
+        xcodebuild test-without-building \
+          -scheme "Embrace Ecommerce" \
+          -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+          -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow" \
+          -derivedDataPath ./DerivedData
+
+        echo "✅ UI tests completed successfully"
