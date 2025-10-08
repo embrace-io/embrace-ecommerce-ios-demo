@@ -36,13 +36,25 @@ jobs:
       run: |
         echo "🏗️ Prebuilding iOS simulator..."
 
-        # Get the first available iPhone simulator
-        SIMULATOR_INFO=$(xcrun simctl list devices available iPhone | grep "iPhone" | head -n 1)
-        SIMULATOR_NAME=$(echo "$SIMULATOR_INFO" | sed -n 's/.*\(iPhone[^(]*\).*/\1/p' | xargs)
-        SIMULATOR_UDID=$(echo "$SIMULATOR_INFO" | sed -n 's/.*(\([^)]*\)).*/\1/p')
+        # Get the first available iPhone simulator with proper parsing
+        SIMULATOR_LINE=$(xcrun simctl list devices available | grep "iPhone" | grep -v "unavailable" | head -n 1)
+
+        echo "📋 Raw simulator line: $SIMULATOR_LINE"
+
+        # Extract name (everything before the opening parenthesis)
+        SIMULATOR_NAME=$(echo "$SIMULATOR_LINE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*(.*//')
+
+        # Extract UDID (UUID between parentheses, before any status)
+        SIMULATOR_UDID=$(echo "$SIMULATOR_LINE" | grep -o '([A-F0-9-]*[A-F0-9])' | head -n 1 | tr -d '()')
 
         echo "📱 Selected simulator: $SIMULATOR_NAME"
         echo "🆔 Simulator UDID: $SIMULATOR_UDID"
+
+        # Validate UDID format
+        if [[ ! "$SIMULATOR_UDID" =~ ^[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$ ]]; then
+          echo "❌ ERROR: Invalid UDID format: $SIMULATOR_UDID"
+          exit 1
+        fi
 
         # Boot the simulator
         echo "🚀 Booting simulator..."
