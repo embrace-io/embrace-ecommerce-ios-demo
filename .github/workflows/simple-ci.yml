@@ -32,63 +32,17 @@ jobs:
           exit 1
         fi
 
-    - name: Prebuild iOS Simulator
+    - name: Run UI Tests
       run: |
-        echo "🏗️ Prebuilding iOS simulator..."
+        echo "🧪 Running UI tests..."
 
-        # Get the first available iPhone simulator with proper parsing
+        # Get the first available iPhone simulator
         SIMULATOR_LINE=$(xcrun simctl list devices available | grep "iPhone" | grep -v "unavailable" | head -n 1)
-
-        echo "📋 Raw simulator line: $SIMULATOR_LINE"
-
-        # Extract name (everything before the opening parenthesis)
         SIMULATOR_NAME=$(echo "$SIMULATOR_LINE" | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*(.*//')
-
-        # Extract UDID (UUID between parentheses, before any status)
         SIMULATOR_UDID=$(echo "$SIMULATOR_LINE" | grep -o '([A-F0-9-]*[A-F0-9])' | head -n 1 | tr -d '()')
 
         echo "📱 Selected simulator: $SIMULATOR_NAME"
         echo "🆔 Simulator UDID: $SIMULATOR_UDID"
-
-        # Validate UDID format
-        if [[ ! "$SIMULATOR_UDID" =~ ^[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{12}$ ]]; then
-          echo "❌ ERROR: Invalid UDID format: $SIMULATOR_UDID"
-          exit 1
-        fi
-
-        # Boot the simulator
-        echo "🚀 Booting simulator..."
-        xcrun simctl boot "$SIMULATOR_UDID" || echo "Simulator already booted"
-
-        # Wait for simulator to be ready
-        echo "⏳ Waiting for simulator to be ready..."
-        xcrun simctl bootstatus "$SIMULATOR_UDID" -b
-
-        # Additional wait for simulator services to fully initialize
-        echo "⏳ Waiting for simulator services to initialize..."
-        sleep 10
-
-        # Verify simulator is actually booted
-        BOOT_STATUS=$(xcrun simctl list devices | grep "$SIMULATOR_UDID" | grep -o "Booted" || echo "Not Booted")
-        if [[ "$BOOT_STATUS" != "Booted" ]]; then
-          echo "❌ ERROR: Simulator failed to boot properly"
-          xcrun simctl list devices | grep "$SIMULATOR_UDID"
-          exit 1
-        fi
-
-        echo "✅ Simulator status: $BOOT_STATUS"
-
-        # Save simulator info for next step
-        echo "SIMULATOR_NAME=$SIMULATOR_NAME" >> $GITHUB_ENV
-        echo "SIMULATOR_UDID=$SIMULATOR_UDID" >> $GITHUB_ENV
-
-        echo "✅ Simulator prebuilt and ready"
-
-    - name: Run UI Tests
-      run: |
-        echo "🧪 Running UI tests on prebuilt simulator..."
-        echo "📱 Simulator: $SIMULATOR_NAME"
-        echo "🆔 UDID: $SIMULATOR_UDID"
 
         xcodebuild test \
           -scheme "Embrace Ecommerce" \
