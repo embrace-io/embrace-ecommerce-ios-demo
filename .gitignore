@@ -102,3 +102,5 @@ embrace_debug.log
 
 # Claude Code
 CLAUDE.md
+.claude/settings.local.json
+.claude/*.local.json
