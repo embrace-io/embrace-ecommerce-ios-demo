@@ -1,4 +1,6 @@
 import Foundation
+import EmbraceIO
+import OpenTelemetryApi
 
 enum AddressValidationError: LocalizedError {
     case invalidStreetAddress
@@ -59,63 +61,75 @@ struct AddressSuggestion: Identifiable {
 @MainActor
 class AddressValidationService: ObservableObject {
     private let mockNetworkService: MockNetworkService
-    
+    private let embraceService = EmbraceService.shared
+
     @Published var isValidating = false
     @Published var validationResults: [String: AddressValidationResult] = [:]
-    
+
     init(mockNetworkService: MockNetworkService = .shared) {
         self.mockNetworkService = mockNetworkService
     }
-    
+
     func validateAddress(_ address: Address, simulateError: Bool = false) async throws -> AddressValidationResult {
         isValidating = true
         defer { isValidating = false }
-        
-        let span = EmbraceManager.shared.startSpan(name: "address_validation", type: .performance)
+
+        let span = Embrace.client?.buildSpan(name: "address_validation", type: .performance).startSpan()
         span?.setAttribute(key: "address.city", value: address.city)
         span?.setAttribute(key: "address.state", value: address.state)
         span?.setAttribute(key: "address.zip_code", value: address.zipCode)
-        
+        span?.setAttribute(key: "address.country", value: address.country)
+
         do {
             let result = try await performValidation(address, simulateError: simulateError)
             validationResults[address.id] = result
-            
-            span?.setAttribute(key: "validation.is_valid", value: result.isValid)
-            span?.setAttribute(key: "validation.confidence", value: result.confidence)
-            span?.setAttribute(key: "validation.has_suggestion", value: result.hasSuggestion)
-            
+
+            span?.setAttribute(key: "validation.is_valid", value: String(result.isValid))
+            span?.setAttribute(key: "validation.confidence", value: String(result.confidence))
+            span?.setAttribute(key: "validation.has_suggestion", value: String(result.hasSuggestion))
+            span?.setAttribute(key: "validation.errors_count", value: String(result.errors.count))
+
             if result.hasErrors {
-                EmbraceManager.shared.logMessage(
-                    "Address validation errors: \(result.errors.map { $0.localizedDescription })",
-                    severity: .warning,
+                embraceService.logWarning(
+                    "Address validation completed with errors",
                     properties: [
                         "address_id": address.id,
-                        "error_count": result.errors.count,
+                        "error_count": String(result.errors.count),
+                        "errors": result.errors.map { $0.localizedDescription }.joined(separator: ", "),
                         "city": address.city,
                         "state": address.state
                     ]
                 )
+            } else {
+                embraceService.logInfo(
+                    "Address validation successful",
+                    properties: [
+                        "address_id": address.id,
+                        "confidence": String(result.confidence),
+                        "has_suggestion": String(result.hasSuggestion)
+                    ]
+                )
             }
-            
-            span?.setStatus(.ok)
+
             span?.end()
             return result
-            
+
         } catch {
             span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
             span?.setAttribute(key: "error.message", value: error.localizedDescription)
-            span?.setStatus(.error, description: error.localizedDescription)
-            span?.end()
-            
-            EmbraceManager.shared.logMessage(
+            span?.end(errorCode: .failure)
+
+            embraceService.logError(
                 "Address validation failed",
-                severity: .error,
                 properties: [
                     "address_id": address.id,
-                    "error": error.localizedDescription
+                    "error_type": String(describing: type(of: error)),
+                    "error_message": error.localizedDescription,
+                    "city": address.city,
+                    "state": address.state
                 ]
             )
-            
+
             throw error
         }
     }
@@ -124,27 +138,26 @@ class AddressValidationService: ObservableObject {
         guard !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return []
         }
-        
-        let span = EmbraceManager.shared.startSpan(name: "address_suggestions_search", type: .performance)
+
+        let span = Embrace.client?.buildSpan(name: "address_suggestions_search", type: .performance).startSpan()
         span?.setAttribute(key: "search.query", value: query)
-        span?.setAttribute(key: "search.query_length", value: query.count)
-        
+        span?.setAttribute(key: "search.query_length", value: String(query.count))
+
         try await Task.sleep(nanoseconds: UInt64.random(in: 200_000_000...800_000_000))
-        
+
         let suggestions = generateMockSuggestions(for: query)
-        span?.setAttribute(key: "search.results_count", value: suggestions.count)
-        span?.setStatus(.ok)
+        span?.setAttribute(key: "search.results_count", value: String(suggestions.count))
         span?.end()
-        
-        EmbraceManager.shared.logMessage(
+
+        embraceService.logInfo(
             "Address suggestions retrieved",
-            severity: .info,
             properties: [
                 "query": query,
-                "results_count": suggestions.count
+                "results_count": String(suggestions.count),
+                "query_length": String(query.count)
             ]
         )
-        
+
         return suggestions
     }
     
@@ -297,68 +310,5 @@ class AddressValidationService: ObservableObject {
         case validWithSuggestion
         case invalidAddress
         case partialMatch
-    }
-}
-
-@MainActor
-class EmbraceManager {
-    static let shared = EmbraceManager()
-    private init() {}
-    
-    func startSpan(name: String, type: SpanType) -> MockSpan? {
-        return MockSpan(name: name, type: type)
-    }
-    
-    func logMessage(_ message: String, severity: LogSeverity, properties: [String: Any] = [:]) {
-        print("📝 [\(severity.rawValue.uppercased())] \(message)")
-        if !properties.isEmpty {
-            print("   Properties: \(properties)")
-        }
-    }
-    
-    enum SpanType {
-        case performance
-        case network
-    }
-    
-    enum LogSeverity: String {
-        case info
-        case warning
-        case error
-    }
-}
-
-class MockSpan {
-    let name: String
-    let type: EmbraceManager.SpanType
-    private var attributes: [String: Any] = [:]
-    
-    init(name: String, type: EmbraceManager.SpanType) {
-        self.name = name
-        self.type = type
-        print("🔍 Started span: \(name)")
-    }
-    
-    func setAttribute(key: String, value: Any) {
-        attributes[key] = value
-    }
-    
-    func setStatus(_ status: SpanStatus, description: String = "") {
-        print("📊 Span \(name) status: \(status)")
-        if !description.isEmpty {
-            print("   Description: \(description)")
-        }
-    }
-    
-    func end() {
-        print("✅ Ended span: \(name)")
-        if !attributes.isEmpty {
-            print("   Attributes: \(attributes)")
-        }
-    }
-    
-    enum SpanStatus {
-        case ok
-        case error
     }
 }

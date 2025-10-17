@@ -1,4 +1,6 @@
 import Foundation
+import EmbraceIO
+import OpenTelemetryApi
 
 enum ShippingCalculationError: LocalizedError {
     case invalidAddress
@@ -75,7 +77,8 @@ struct ShippingCalculationRequest {
 @MainActor
 class ShippingCalculationService: ObservableObject {
     private let mockNetworkService: MockNetworkService
-    
+    private let embraceService = EmbraceService.shared
+
     @Published var isCalculating = false
     @Published var availableMethods: [ShippingQuote] = []
     @Published var calculationError: String?
@@ -96,54 +99,52 @@ class ShippingCalculationService: ObservableObject {
         isCalculating = true
         calculationError = nil
         defer { isCalculating = false }
-        
-        let span = EmbraceManager.shared.startSpan(name: "shipping_calculation", type: .performance)
-        span?.setAttribute(key: "cart.item_count", value: request.cartItems.count)
-        span?.setAttribute(key: "cart.total_weight", value: request.totalWeight)
-        span?.setAttribute(key: "cart.total_value", value: request.totalValue)
+
+        let span = Embrace.client?.buildSpan(name: "shipping_calculation", type: .performance).startSpan()
+        span?.setAttribute(key: "cart.item_count", value: String(request.cartItems.count))
+        span?.setAttribute(key: "cart.total_weight", value: String(request.totalWeight))
+        span?.setAttribute(key: "cart.total_value", value: String(request.totalValue))
         span?.setAttribute(key: "shipping.destination_state", value: request.shippingAddress.state)
         span?.setAttribute(key: "shipping.destination_zip", value: request.shippingAddress.zipCode)
-        
+        span?.setAttribute(key: "shipping.destination_city", value: request.shippingAddress.city)
+
         do {
             let quotes = try await performShippingCalculation(request, simulateError: simulateError)
             availableMethods = quotes
-            
-            span?.setAttribute(key: "shipping.available_methods", value: quotes.count)
-            span?.setAttribute(key: "shipping.cheapest_cost", value: quotes.map { $0.adjustedCost }.min() ?? 0)
-            span?.setAttribute(key: "shipping.fastest_days", value: quotes.map { $0.method.estimatedDays }.min() ?? 0)
-            
-            span?.setStatus(.ok)
+
+            span?.setAttribute(key: "shipping.available_methods", value: String(quotes.count))
+            span?.setAttribute(key: "shipping.cheapest_cost", value: String(quotes.map { $0.adjustedCost }.min() ?? 0))
+            span?.setAttribute(key: "shipping.fastest_days", value: String(quotes.map { $0.method.estimatedDays }.min() ?? 0))
             span?.end()
-            
-            EmbraceManager.shared.logMessage(
+
+            embraceService.logInfo(
                 "Shipping calculation completed",
-                severity: .info,
                 properties: [
-                    "methods_count": quotes.count,
-                    "total_weight": request.totalWeight,
-                    "destination": "\(request.shippingAddress.city), \(request.shippingAddress.state)"
+                    "shipping.methods_count": String(quotes.count),
+                    "cart.total_weight": String(request.totalWeight),
+                    "cart.total_value": String(request.totalValue),
+                    "shipping.destination": "\(request.shippingAddress.city), \(request.shippingAddress.state)"
                 ]
             )
-            
+
             return quotes
-            
+
         } catch {
             calculationError = error.localizedDescription
             span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
             span?.setAttribute(key: "error.message", value: error.localizedDescription)
-            span?.setStatus(.error, description: error.localizedDescription)
-            span?.end()
-            
-            EmbraceManager.shared.logMessage(
+            span?.end(errorCode: .failure)
+
+            embraceService.logError(
                 "Shipping calculation failed",
-                severity: .error,
                 properties: [
-                    "error": error.localizedDescription,
-                    "cart_items": request.cartItems.count,
-                    "destination": "\(request.shippingAddress.city), \(request.shippingAddress.state)"
+                    "error.type": String(describing: type(of: error)),
+                    "error.message": error.localizedDescription,
+                    "cart.items": String(request.cartItems.count),
+                    "shipping.destination": "\(request.shippingAddress.city), \(request.shippingAddress.state)"
                 ]
             )
-            
+
             throw error
         }
     }
