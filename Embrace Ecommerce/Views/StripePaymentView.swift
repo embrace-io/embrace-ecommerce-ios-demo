@@ -298,7 +298,9 @@ struct StripePaymentView: View {
                 isDefault: false,
                 cardInfo: nil,
                 digitalWalletInfo: nil,
-                stripePaymentMethodId: paymentResult.paymentMethodId
+                stripePaymentMethodId: paymentResult.paymentMethodId,
+                storeKitProductId: nil,
+                storeKitTransactionId: nil
             )
             coordinator.selectedPaymentMethod = stripePaymentMethod
             showSuccessAlert = true

@@ -1,10 +1,12 @@
 import SwiftUI
+import StoreKit
 
 struct PaymentSelectionView: View {
     @ObservedObject var coordinator: CheckoutCoordinator
     @State private var selectedPaymentType: PaymentMethod.PaymentType = .creditCard
     @State private var showAddNewCard = false
     @State private var savedPaymentMethods: [PaymentMethod] = []
+    @StateObject private var storeKitManager = StoreKitManager.shared
     
     var body: some View {
         ScrollView {
@@ -18,7 +20,11 @@ struct PaymentSelectionView: View {
                 if selectedPaymentType == .creditCard && savedPaymentMethods.isEmpty {
                     creditCardFormSection
                 }
-                
+
+                if selectedPaymentType == .storeKit {
+                    storeKitProductsSection
+                }
+
                 Spacer(minLength: 20)
                 
                 continueButton
@@ -161,11 +167,13 @@ struct PaymentSelectionView: View {
                     isDefault: false,
                     cardInfo: nil,
                     digitalWalletInfo: DigitalWalletInfo(email: nil, displayName: "Apple Pay"),
-                    stripePaymentMethodId: nil
+                    stripePaymentMethodId: nil,
+                    storeKitProductId: nil,
+                    storeKitTransactionId: nil
                 )
                 coordinator.selectedPaymentMethod = applePayMethod
             }
-            
+
             PaymentOptionRow(
                 type: .paypal,
                 title: "PayPal",
@@ -179,7 +187,9 @@ struct PaymentSelectionView: View {
                     isDefault: false,
                     cardInfo: nil,
                     digitalWalletInfo: DigitalWalletInfo(email: "user@example.com", displayName: "PayPal"),
-                    stripePaymentMethodId: nil
+                    stripePaymentMethodId: nil,
+                    storeKitProductId: nil,
+                    storeKitTransactionId: nil
                 )
                 coordinator.selectedPaymentMethod = paypalMethod
             }
@@ -197,9 +207,22 @@ struct PaymentSelectionView: View {
                     isDefault: false,
                     cardInfo: nil,
                     digitalWalletInfo: DigitalWalletInfo(email: nil, displayName: "Stripe"),
-                    stripePaymentMethodId: nil
+                    stripePaymentMethodId: nil,
+                    storeKitProductId: nil,
+                    storeKitTransactionId: nil
                 )
                 coordinator.selectedPaymentMethod = stripeMethod
+            }
+
+            PaymentOptionRow(
+                type: .storeKit,
+                title: "StoreKit Payment",
+                icon: "cart.badge.plus",
+                isSelected: selectedPaymentType == .storeKit
+            ) {
+                selectedPaymentType = .storeKit
+                // StoreKit payment method will be set after product selection
+                coordinator.selectedPaymentMethod = nil
             }
         }
     }
@@ -229,7 +252,7 @@ struct PaymentSelectionView: View {
             Text("Card Information")
                 .font(.headline)
                 .fontWeight(.semibold)
-            
+
             CreditCardForm { cardInfo in
                 let paymentMethod = PaymentMethod(
                     id: UUID().uuidString,
@@ -237,7 +260,9 @@ struct PaymentSelectionView: View {
                     isDefault: false,
                     cardInfo: cardInfo,
                     digitalWalletInfo: nil,
-                    stripePaymentMethodId: nil
+                    stripePaymentMethodId: nil,
+                    storeKitProductId: nil,
+                    storeKitTransactionId: nil
                 )
                 coordinator.selectedPaymentMethod = paymentMethod
             }
@@ -247,7 +272,96 @@ struct PaymentSelectionView: View {
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
-    
+
+    private var storeKitProductsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Select In-App Purchase")
+                .font(.headline)
+                .fontWeight(.semibold)
+
+            if storeKitManager.isLoading {
+                ProgressView("Loading products...")
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding()
+            } else if storeKitManager.products.isEmpty {
+                VStack(spacing: 12) {
+                    Text("No products available")
+                        .foregroundColor(.secondary)
+                        .font(.subheadline)
+
+                    Button("Reload Products") {
+                        Task {
+                            await storeKitManager.loadProducts()
+                        }
+                    }
+                    .foregroundColor(.accentColor)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding()
+            } else {
+                // Show suggested product first
+                if let suggestedProduct = storeKitManager.suggestedProduct(for: coordinator.orderData.total) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Recommended for your cart")
+                            .font(.caption)
+                            .foregroundColor(.accentColor)
+                            .fontWeight(.medium)
+
+                        StoreKitProductRow(
+                            product: suggestedProduct,
+                            isSelected: coordinator.selectedPaymentMethod?.storeKitProductId == suggestedProduct.id,
+                            isSuggested: true
+                        ) {
+                            selectStoreKitProduct(suggestedProduct)
+                        }
+                    }
+
+                    Divider()
+                        .padding(.vertical, 8)
+                }
+
+                // Show all products
+                VStack(spacing: 8) {
+                    ForEach(storeKitManager.products, id: \.id) { product in
+                        StoreKitProductRow(
+                            product: product,
+                            isSelected: coordinator.selectedPaymentMethod?.storeKitProductId == product.id,
+                            isSuggested: false
+                        ) {
+                            selectStoreKitProduct(product)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .task {
+            if storeKitManager.products.isEmpty {
+                await storeKitManager.loadProducts()
+            }
+        }
+    }
+
+    private func selectStoreKitProduct(_ product: StoreKit.Product) {
+        let storeKitMethod = PaymentMethod(
+            id: UUID().uuidString,
+            type: .storeKit,
+            isDefault: false,
+            cardInfo: nil,
+            digitalWalletInfo: DigitalWalletInfo(
+                email: nil,
+                displayName: "StoreKit - \(product.displayName)"
+            ),
+            stripePaymentMethodId: nil,
+            storeKitProductId: product.id,
+            storeKitTransactionId: nil
+        )
+        coordinator.selectedPaymentMethod = storeKitMethod
+    }
+
     private var continueButton: some View {
         VStack(spacing: 12) {
             Button(action: {
@@ -292,7 +406,9 @@ struct PaymentSelectionView: View {
                     holderName: "John Doe"
                 ),
                 digitalWalletInfo: nil,
-                stripePaymentMethodId: nil
+                stripePaymentMethodId: nil,
+                storeKitProductId: nil,
+                storeKitTransactionId: nil
             ),
             PaymentMethod(
                 id: "2",
@@ -306,7 +422,9 @@ struct PaymentSelectionView: View {
                     holderName: "John Doe"
                 ),
                 digitalWalletInfo: nil,
-                stripePaymentMethodId: nil
+                stripePaymentMethodId: nil,
+                storeKitProductId: nil,
+                storeKitTransactionId: nil
             )
         ]
         
@@ -483,7 +601,7 @@ struct CreditCardForm: View {
 struct AddNewCardView: View {
     let onCardAdded: (PaymentMethod) -> Void
     @Environment(\.dismiss) private var dismiss
-    
+
     var body: some View {
         NavigationView {
             VStack(spacing: 24) {
@@ -491,7 +609,7 @@ struct AddNewCardView: View {
                     .font(.title2)
                     .fontWeight(.semibold)
                     .padding(.top)
-                
+
                 CreditCardForm { cardInfo in
                     let paymentMethod = PaymentMethod(
                         id: UUID().uuidString,
@@ -499,12 +617,14 @@ struct AddNewCardView: View {
                         isDefault: false,
                         cardInfo: cardInfo,
                         digitalWalletInfo: nil,
-                        stripePaymentMethodId: nil
+                        stripePaymentMethodId: nil,
+                        storeKitProductId: nil,
+                        storeKitTransactionId: nil
                     )
                     onCardAdded(paymentMethod)
                 }
                 .padding()
-                
+
                 Spacer()
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -516,6 +636,69 @@ struct AddNewCardView: View {
                 }
             }
         }
+    }
+}
+
+struct StoreKitProductRow: View {
+    let product: StoreKit.Product
+    let isSelected: Bool
+    let isSuggested: Bool
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        Text(product.displayName)
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+
+                        if isSuggested {
+                            Text("SUGGESTED")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.accentColor.opacity(0.2))
+                                .foregroundColor(.accentColor)
+                                .cornerRadius(4)
+                        }
+                    }
+
+                    Text(product.description)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .lineLimit(2)
+                }
+
+                Spacer()
+
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(product.displayPrice)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.accentColor)
+
+                    if isSelected {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.accentColor)
+                    } else {
+                        Image(systemName: "circle")
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .padding()
+            .background(isSelected ? Color.accentColor.opacity(0.1) : Color(.systemGray6))
+            .cornerRadius(10)
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(isSuggested ? Color.accentColor : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 

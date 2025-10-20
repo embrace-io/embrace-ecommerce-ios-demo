@@ -12,8 +12,9 @@ struct SDKConfiguration {
     // MARK: - Embrace Configuration
     
     struct Embrace {
-        // TODO: Replace with your actual Embrace App ID from the dashboard
-        static let appId = "YOUR_EMBRACE_APP_ID"
+        // REQUIRED: Replace with your Embrace App ID from dash.embrace.io
+        // Get your App ID: https://dash.embrace.io -> Create New App -> Copy App ID
+        static let appId = "YOUR_EMBRACE_APP_ID"  // TODO: Replace this!
         
         // Development settings for comprehensive telemetry
         static let logLevel = "info"
@@ -39,15 +40,16 @@ struct SDKConfiguration {
     }
     
     // MARK: - Mixpanel Configuration
-    
+
     struct Mixpanel {
         // TODO: Replace with your actual Mixpanel project token
+        // Get your token from: https://mixpanel.com/settings/project
         static let projectToken = "YOUR_MIXPANEL_PROJECT_TOKEN"
         static let trackAutomaticEvents = true
-        
+
         // Development fallback
         static var isConfigured: Bool {
-            return projectToken != "YOUR_MIXPANEL_PROJECT_TOKEN"
+            return projectToken != "YOUR_MIXPANEL_PROJECT_TOKEN" && !projectToken.isEmpty
         }
     }
     
@@ -99,36 +101,36 @@ struct SDKConfiguration {
     
     static func validateConfiguration() -> [String] {
         var warnings: [String] = []
-        
-        if Embrace.appId == "YOUR_EMBRACE_APP_ID" {
-            warnings.append("⚠️ Embrace App ID not configured - using placeholder")
+
+        if Embrace.appId == "YOUR_EMBRACE_APP_ID" || Embrace.appId.isEmpty {
+            warnings.append("WARNING: Embrace App ID not configured - using placeholder")
         }
-        
+
         if !Mixpanel.isConfigured {
-            warnings.append("⚠️ Mixpanel project token not configured - using mock")
+            warnings.append("WARNING: Mixpanel project token not configured - using mock")
         }
-        
+
         if Stripe.publishableKey.hasPrefix("pk_test_51234567890") {
-            warnings.append("⚠️ Stripe publishable key not configured - using placeholder")
+            warnings.append("WARNING: Stripe publishable key not configured - using placeholder")
         }
-        
+
         return warnings
     }
     
     static func printConfigurationStatus() {
-        print("\n🔧 SDK Configuration Status:")
+        print("\nSDK Configuration Status:")
         print("=============================")
-        
+
         let warnings = validateConfiguration()
-        
+
         if warnings.isEmpty {
-            print("✅ All SDKs configured properly")
+            print("All SDKs configured properly")
         } else {
             print("Configuration warnings:")
             warnings.forEach { print($0) }
             print("\nNote: App will still function with placeholder values for testing")
         }
-        
+
         print("\nSDK Versions:")
         print("- Embrace SDK: 6.13.0")
         print("- Firebase SDK: 12.1.0")

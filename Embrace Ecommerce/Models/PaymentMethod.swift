@@ -7,6 +7,8 @@ struct PaymentMethod: Codable, Identifiable {
     let cardInfo: CardInfo?
     let digitalWalletInfo: DigitalWalletInfo?
     let stripePaymentMethodId: String?
+    let storeKitProductId: String?
+    let storeKitTransactionId: String?
     
     enum PaymentType: String, Codable {
         case creditCard = "credit_card"
@@ -14,6 +16,7 @@ struct PaymentMethod: Codable, Identifiable {
         case applePay = "apple_pay"
         case paypal = "paypal"
         case stripe = "stripe"
+        case storeKit = "storekit"
     }
     
     enum CodingKeys: String, CodingKey {
@@ -22,6 +25,8 @@ struct PaymentMethod: Codable, Identifiable {
         case cardInfo = "card_info"
         case digitalWalletInfo = "digital_wallet_info"
         case stripePaymentMethodId = "stripe_payment_method_id"
+        case storeKitProductId = "storekit_product_id"
+        case storeKitTransactionId = "storekit_transaction_id"
     }
 }
 

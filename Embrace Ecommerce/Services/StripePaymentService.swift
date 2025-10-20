@@ -32,7 +32,8 @@ class StripePaymentService: ObservableObject {
     private func getPublishableKey() -> String? {
         // In production, get this from your app's configuration/environment
         // For testing, you can use a test publishable key
-        return "pk_test_YOUR_STRIPE_PUBLISHABLE_KEY"
+        // Get your test key from: https://dashboard.stripe.com/test/apikeys
+        return "YOUR_STRIPE_TEST_PUBLISHABLE_KEY"
     }
     
     // MARK: - Payment Processing

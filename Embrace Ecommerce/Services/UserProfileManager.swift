@@ -500,7 +500,9 @@ class UserProfileManager: ObservableObject {
                     holderName: "John Doe"
                 ),
                 digitalWalletInfo: nil,
-                stripePaymentMethodId: nil
+                stripePaymentMethodId: nil,
+                storeKitProductId: nil,
+                storeKitTransactionId: nil
             ),
             PaymentMethod(
                 id: UUID().uuidString,
@@ -511,7 +513,9 @@ class UserProfileManager: ObservableObject {
                     email: nil,
                     displayName: "Apple Pay"
                 ),
-                stripePaymentMethodId: nil
+                stripePaymentMethodId: nil,
+                storeKitProductId: nil,
+                storeKitTransactionId: nil
             )
         ]
     }

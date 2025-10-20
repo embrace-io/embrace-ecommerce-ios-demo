@@ -3,83 +3,80 @@ import UIKit
 
 struct CheckoutView: View {
     @EnvironmentObject private var cartManager: CartManager
-    @StateObject private var coordinator: CheckoutCoordinator
-    @State private var navigationPath = NavigationPath()
-    
-    init() {
-        let cartManager = CartManager()
-        self._coordinator = StateObject(wrappedValue: CheckoutCoordinator(cartManager: cartManager))
-    }
-    
-    init(cartManager: CartManager) {
-        self._coordinator = StateObject(wrappedValue: CheckoutCoordinator(cartManager: cartManager))
-    }
-    
+    @EnvironmentObject private var navigationCoordinator: NavigationCoordinator
+    @State private var coordinator: CheckoutCoordinator?
+    @State private var navigateToShipping = false
+    @State private var navigateToPayment = false
+    @State private var navigateToConfirmation = false
+
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            CartReviewView(coordinator: coordinator)
-                .accessibilityIdentifier("checkoutCartReviewView")
-                .navigationTitle("Checkout")
-                .navigationBarTitleDisplayMode(.inline)
-                .navigationDestination(for: CheckoutCoordinator.CheckoutStep.self) { step in
-                    destinationView(for: step)
-                }
-                .onReceive(coordinator.$currentStep) { step in
-                    updateNavigationPath(for: step)
-                }
-                .onAppear {
-                    setupInitialOrderData()
-                }
-        }
-        .accessibilityIdentifier("checkoutView")
-    }
-    
-    @ViewBuilder
-    private func destinationView(for step: CheckoutCoordinator.CheckoutStep) -> some View {
-        switch step {
-        case .cartReview:
-            CartReviewView(coordinator: coordinator)
-                .accessibilityIdentifier("checkoutCartReviewStep")
-        case .shipping:
-            ShippingInformationViewControllerWrapper(coordinator: coordinator)
-                .accessibilityIdentifier("checkoutShippingStep")
-        case .payment:
-            if coordinator.selectedPaymentMethod?.type == .stripe {
-                StripePaymentView(coordinator: coordinator)
-                    .accessibilityIdentifier("checkoutStripePaymentStep")
+        Group {
+            if let coordinator = coordinator {
+                CartReviewView(coordinator: coordinator)
+                    .accessibilityIdentifier("checkoutCartReviewView")
+                    .navigationTitle("Checkout")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .accessibilityIdentifier("checkoutView")
+                    .navigationDestination(isPresented: $navigateToShipping) {
+                        ShippingInformationViewControllerWrapper(coordinator: coordinator)
+                            .navigationTitle("Shipping")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .accessibilityIdentifier("checkoutShippingStep")
+                            .navigationDestination(isPresented: $navigateToPayment) {
+                                PaymentSelectionView(coordinator: coordinator)
+                                    .navigationTitle("Payment")
+                                    .navigationBarTitleDisplayMode(.inline)
+                                    .accessibilityIdentifier("checkoutPaymentStep")
+                                    .navigationDestination(isPresented: $navigateToConfirmation) {
+                                        OrderConfirmationViewControllerWrapper(
+                                            coordinator: coordinator,
+                                            cartManager: cartManager
+                                        )
+                                        .navigationBarBackButtonHidden(true)
+                                        .accessibilityIdentifier("checkoutConfirmationStep")
+                                    }
+                            }
+                    }
+                    .onReceive(coordinator.$currentStep) { step in
+                        updateNavigationForStep(step)
+                    }
             } else {
-                PaymentSelectionView(coordinator: coordinator)
-                    .accessibilityIdentifier("checkoutPaymentSelectionStep")
+                ProgressView("Loading checkout...")
+                    .onAppear {
+                        initializeCoordinator()
+                    }
             }
-        case .confirmation:
-            OrderConfirmationViewControllerWrapper(
-                coordinator: coordinator,
-                cartManager: cartManager
-            )
-            .accessibilityIdentifier("checkoutConfirmationStep")
         }
     }
-    
-    private func updateNavigationPath(for step: CheckoutCoordinator.CheckoutStep) {
+
+    private func updateNavigationForStep(_ step: CheckoutCoordinator.CheckoutStep) {
         switch step {
         case .cartReview:
-            navigationPath = NavigationPath()
+            navigateToShipping = false
+            navigateToPayment = false
+            navigateToConfirmation = false
         case .shipping:
-            if navigationPath.isEmpty {
-                navigationPath.append(step)
-            }
+            navigateToShipping = true
+            navigateToPayment = false
+            navigateToConfirmation = false
         case .payment:
-            if navigationPath.count < 2 {
-                navigationPath.append(step)
-            }
+            navigateToShipping = true
+            navigateToPayment = true
+            navigateToConfirmation = false
         case .confirmation:
-            if navigationPath.count < 3 {
-                navigationPath.append(step)
-            }
+            navigateToShipping = true
+            navigateToPayment = true
+            navigateToConfirmation = true
         }
     }
     
+    private func initializeCoordinator() {
+        coordinator = CheckoutCoordinator(cartManager: cartManager)
+        setupInitialOrderData()
+    }
+
     private func setupInitialOrderData() {
+        guard let coordinator = coordinator else { return }
         coordinator.orderData.items = cartManager.cart.items.compactMap { cartItem in
             guard let product = MockDataService.shared.getProduct(by: cartItem.productId) else { return nil }
             return OrderItem(
@@ -111,17 +108,22 @@ struct ShippingInformationViewControllerWrapper: UIViewControllerRepresentable {
 struct OrderConfirmationViewControllerWrapper: UIViewControllerRepresentable {
     let coordinator: CheckoutCoordinator
     let cartManager: CartManager
-    
+    @EnvironmentObject var navigationCoordinator: NavigationCoordinator
+
     func makeUIViewController(context: Context) -> UINavigationController {
         let confirmationVC = OrderConfirmationViewController(
             coordinator: coordinator,
             cartManager: cartManager
         )
+        confirmationVC.navigationCoordinator = navigationCoordinator
         return UINavigationController(rootViewController: confirmationVC)
     }
-    
+
     func updateUIViewController(_ uiViewController: UINavigationController, context: Context) {
-        // No updates needed for this implementation
+        // Update the navigation coordinator reference if needed
+        if let confirmationVC = uiViewController.viewControllers.first as? OrderConfirmationViewController {
+            confirmationVC.navigationCoordinator = navigationCoordinator
+        }
     }
 }
 

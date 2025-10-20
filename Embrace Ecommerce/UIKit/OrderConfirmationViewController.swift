@@ -5,6 +5,7 @@ class OrderConfirmationViewController: UIViewController {
     private let coordinator: CheckoutCoordinator
     private let cartManager: CartManager
     private let embraceService = EmbraceService.shared
+    weak var navigationCoordinator: NavigationCoordinator?
     
     private var scrollView: UIScrollView!
     private var contentView: UIView!
@@ -219,7 +220,10 @@ class OrderConfirmationViewController: UIViewController {
         )
 
         alert.addAction(UIAlertAction(title: "Continue Shopping", style: .default) { _ in
-            self.navigationController?.popToRootViewController(animated: true)
+            // Navigate to home tab and dismiss checkout
+            self.navigationCoordinator?.switchTab(to: .home)
+            self.navigationCoordinator?.navigateToRoot()
+            self.navigationController?.dismiss(animated: true, completion: nil)
         })
 
         present(alert, animated: true)

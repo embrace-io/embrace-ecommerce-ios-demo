@@ -47,9 +47,8 @@ struct Embrace_EcommerceApp: App {
             print("✅ Mixpanel configuration completed")
             
             // Configure Google Sign-In
-            // Temporarily commented out to debug crash
-            // configureGoogleSignIn()
-            print("⚠️ Google Sign-In configuration temporarily disabled for debugging")
+            configureGoogleSignIn()
+            print("✅ Google Sign-In configuration completed")
             
             // Initialize Stripe
             configureStripe()

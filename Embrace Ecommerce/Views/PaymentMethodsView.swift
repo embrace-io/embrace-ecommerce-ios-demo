@@ -149,9 +149,11 @@ struct PaymentMethodRowView: View {
             return "globe"
         case .stripe:
             return "creditcard.and.123"
+        case .storeKit:
+            return "cart.badge.plus"
         }
     }
-    
+
     private var paymentMethodColor: Color {
         switch paymentMethod.type {
         case .creditCard, .debitCard:
@@ -162,6 +164,8 @@ struct PaymentMethodRowView: View {
             return .indigo
         case .stripe:
             return .purple
+        case .storeKit:
+            return .green
         }
     }
     

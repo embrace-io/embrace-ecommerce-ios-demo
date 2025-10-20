@@ -1,0 +1,106 @@
+{
+  "identifier" : "EmbraceEcommerce",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "9.99",
+      "familyShareable" : false,
+      "internalID" : "6736965124",
+      "localizations" : [
+        {
+          "description" : "Single item purchase for your order",
+          "displayName" : "Single Item",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.embrace.ecommerce.single_item",
+      "referenceName" : "Single Item Purchase",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "29.99",
+      "familyShareable" : false,
+      "internalID" : "6736965125",
+      "localizations" : [
+        {
+          "description" : "Small cart purchase (2-3 items)",
+          "displayName" : "Small Cart",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.embrace.ecommerce.small_cart",
+      "referenceName" : "Small Cart Purchase",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "49.99",
+      "familyShareable" : false,
+      "internalID" : "6736965126",
+      "localizations" : [
+        {
+          "description" : "Medium cart purchase (4-6 items)",
+          "displayName" : "Medium Cart",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.embrace.ecommerce.medium_cart",
+      "referenceName" : "Medium Cart Purchase",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "99.99",
+      "familyShareable" : false,
+      "internalID" : "6736965127",
+      "localizations" : [
+        {
+          "description" : "Large cart purchase (7+ items)",
+          "displayName" : "Large Cart",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.embrace.ecommerce.large_cart",
+      "referenceName" : "Large Cart Purchase",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : false,
+      "internalID" : "6736965128",
+      "localizations" : [
+        {
+          "description" : "Premium shipping upgrade",
+          "displayName" : "Premium Shipping",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.embrace.ecommerce.premium_shipping",
+      "referenceName" : "Premium Shipping",
+      "type" : "Consumable"
+    },
+    {
+      "displayPrice" : "0.99",
+      "familyShareable" : false,
+      "internalID" : "6736965129",
+      "localizations" : [
+        {
+          "description" : "Donation or tip for great service",
+          "displayName" : "Tip",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "com.embrace.ecommerce.tip",
+      "referenceName" : "Customer Tip",
+      "type" : "Consumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6736965123",
+    "_developerTeamID" : "YOUR_TEAM_ID",
+    "_lastSynchronizedDate" : 760190400.0
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}

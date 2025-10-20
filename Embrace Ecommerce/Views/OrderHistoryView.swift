@@ -518,7 +518,9 @@ struct OrderDetailView: View {
         case .paypal:
             return "globe"
         case .stripe:
-            return "creditcard" 
+            return "creditcard"
+        case .storeKit:
+            return "cart.badge.plus"
         }
     }
 }

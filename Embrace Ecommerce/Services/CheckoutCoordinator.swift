@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import UIKit
+import StoreKit
 
 @MainActor
 class CheckoutCoordinator: ObservableObject {
@@ -10,11 +11,12 @@ class CheckoutCoordinator: ObservableObject {
     @Published var selectedPaymentMethod: PaymentMethod?
     @Published var selectedShippingMethod: ShippingMethod?
     @Published var orderData: OrderData
-    
+
     private let cartManager: CartManager
     private let dataService = MockDataService.shared
     private let analytics = MixpanelAnalyticsService.shared
     private let embraceService = EmbraceService.shared
+    private let storeKitManager = StoreKitManager.shared
     
     enum CheckoutStep: Int, CaseIterable, Hashable {
         case cartReview = 0
@@ -145,15 +147,37 @@ class CheckoutCoordinator: ObservableObject {
     func placeOrder() async -> Result<Order, Error> {
         guard canProceedFromCurrentStep(),
               let shippingAddress = selectedShippingAddress,
-              let paymentMethod = selectedPaymentMethod else {
+              var paymentMethod = selectedPaymentMethod else {
             return .failure(CheckoutError.missingRequiredData)
         }
-        
+
         do {
-            if paymentMethod.type == .stripe {
+            // Process payment based on payment type
+            switch paymentMethod.type {
+            case .stripe:
                 try await processStripePayment()
+
+            case .storeKit:
+                // Process StoreKit payment
+                let transaction = try await processStoreKitPayment()
+                // Update payment method with transaction ID
+                paymentMethod = PaymentMethod(
+                    id: paymentMethod.id,
+                    type: paymentMethod.type,
+                    isDefault: paymentMethod.isDefault,
+                    cardInfo: paymentMethod.cardInfo,
+                    digitalWalletInfo: paymentMethod.digitalWalletInfo,
+                    stripePaymentMethodId: paymentMethod.stripePaymentMethodId,
+                    storeKitProductId: paymentMethod.storeKitProductId,
+                    storeKitTransactionId: transaction != nil ? String(transaction!.id) : nil
+                )
+                selectedPaymentMethod = paymentMethod
+
+            default:
+                // Other payment methods don't require processing yet
+                break
             }
-            
+
             let order = Order(
                 id: UUID().uuidString,
                 userId: nil,
@@ -162,7 +186,7 @@ class CheckoutCoordinator: ObservableObject {
                 shippingAddress: shippingAddress,
                 billingAddress: selectedBillingAddress ?? shippingAddress,
                 paymentMethod: paymentMethod,
-                status: paymentMethod.type == .stripe ? .processing : .pending,
+                status: determineOrderStatus(for: paymentMethod.type),
                 subtotal: orderData.subtotal,
                 tax: orderData.tax,
                 shipping: orderData.shipping,
@@ -181,6 +205,15 @@ class CheckoutCoordinator: ObservableObject {
             return .failure(error)
         }
     }
+
+    private func determineOrderStatus(for paymentType: PaymentMethod.PaymentType) -> Order.OrderStatus {
+        switch paymentType {
+        case .stripe, .storeKit:
+            return .processing
+        default:
+            return .pending
+        }
+    }
     
     private func processStripePayment() async throws {
         // This method would handle any additional Stripe payment processing
@@ -188,7 +221,54 @@ class CheckoutCoordinator: ObservableObject {
         // In a real app, you might want to confirm the payment intent here
         return
     }
-    
+
+    private func processStoreKitPayment() async throws -> StoreKit.Transaction? {
+        guard let paymentMethod = selectedPaymentMethod,
+              paymentMethod.type == .storeKit,
+              let productId = paymentMethod.storeKitProductId else {
+            throw CheckoutError.missingRequiredData
+        }
+
+        embraceService.addBreadcrumb(message: "STOREKIT_PAYMENT_INITIATED")
+
+        // Find the product
+        guard let product = storeKitManager.product(for: productId) else {
+            embraceService.logError("StoreKit product not found", properties: [
+                "storekit.product_id": productId
+            ])
+            throw CheckoutError.paymentFailed
+        }
+
+        // Purchase the product
+        do {
+            let transaction = try await storeKitManager.purchase(product)
+
+            if let transaction = transaction {
+                embraceService.addBreadcrumb(message: "STOREKIT_PAYMENT_SUCCESS")
+                embraceService.logInfo("StoreKit payment completed", properties: [
+                    "storekit.product_id": productId,
+                    "storekit.transaction_id": String(transaction.id),
+                    "order.total": String(orderData.total)
+                ])
+            } else {
+                embraceService.addBreadcrumb(message: "STOREKIT_PAYMENT_CANCELLED")
+                embraceService.logWarning("StoreKit payment was cancelled or pending", properties: [
+                    "storekit.product_id": productId
+                ])
+                throw CheckoutError.paymentFailed
+            }
+
+            return transaction
+        } catch {
+            embraceService.addBreadcrumb(message: "STOREKIT_PAYMENT_ERROR")
+            embraceService.logError("StoreKit payment failed", properties: [
+                "storekit.product_id": productId,
+                "error.message": error.localizedDescription
+            ])
+            throw CheckoutError.paymentFailed
+        }
+    }
+
     private func generateOrderNumber() -> String {
         let timestamp = Int(Date().timeIntervalSince1970)
         return "ORD-\(timestamp)"

@@ -104,3 +104,35 @@ embrace_debug.log
 CLAUDE.md
 .claude/settings.local.json
 .claude/*.local.json
+
+# === SENSITIVE DATA - NEVER COMMIT ===
+
+# Google Services Configuration Files
+# These contain API keys and should be generated per developer/environment
+GoogleService-Info.plist
+**/GoogleService-Info.plist
+!GoogleService-Info.plist.example
+
+# Environment Configuration
+.env
+.env.*
+!.env.example
+
+# Credentials and Secrets
+**/credentials.json
+**/secrets.json
+**/config.secret.swift
+**/APIKeys.swift
+
+# Firebase
+firebase.json
+.firebaserc
+
+# Certificates and Provisioning Profiles
+*.mobileprovision
+*.cer
+*.p12
+*.certSigningRequest
+
+# Local Configuration (customer-specific)
+**/SDKConfiguration.local.swift
