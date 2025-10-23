@@ -76,8 +76,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
 
     /// Sends the app to background to trigger Embrace session uploads
     private func sendAppToBackground() {
-        // Send app to background by pressing home button
-        XCUIDevice.shared.press(.home)
+        // Send app to background by opening Settings app
+        let settingsApp = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+        settingsApp.activate()
 
         // Wait to allow Embrace SDK time to upload sessions
         Thread.sleep(forTimeInterval: 5.0)
