@@ -25,7 +25,7 @@ jobs:
         echo "🔧 Injecting APP_ID into code..."
         if [[ -n "${{ vars.APP_ID }}" ]]; then
           echo "✅ APP_ID found: ${{ vars.APP_ID }}"
-          sed -i '' 's/appId: SDKConfiguration\.Embrace\.appId/appId: "${{ vars.APP_ID }}"/g' "Embrace Ecommerce/Embrace_EcommerceApp.swift"
+          sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "Embrace Ecommerce/Services/SDKConfiguration.swift"
           echo "✅ APP_ID injected successfully"
         else
           echo "❌ ERROR: APP_ID not found in repository variables"
