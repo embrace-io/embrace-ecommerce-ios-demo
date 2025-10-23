@@ -2,8 +2,8 @@ name: Simple CI
 
 on:
   workflow_dispatch:
-#  schedule:
-#    - cron: '*/20 * * * *'  # Run every 20 minutes
+  schedule:
+    - cron: '*/20 * * * *'  # Run every 20 minutes
 
 jobs:
   ui-tests:
