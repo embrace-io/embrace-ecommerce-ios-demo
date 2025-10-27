@@ -1,0 +1,40 @@
+name: Xcode - Integration Testing
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/25 * * * *'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.release.id || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ui-tests:
+    timeout-minutes: 24
+    runs-on: macos-latest
+
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Set up Xcode
+      run: |
+        sudo xcode-select --print-path
+
+    - name: Set Embrace appId
+      run: |
+        if [[ -n "${{ vars.APP_ID }}" ]]; then
+          sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "Embrace Ecommerce/Services/SDKConfiguration.swift"
+        else
+          echo "APP_ID not found in repository variables"
+          exit 1
+        fi
+
+    - name: Run UI Tests
+      run: |
+        xcodebuild test \
+          -scheme "Embrace Ecommerce" \
+          -destination "platform=iOS Simulator,name=iPhone 16 Pro" \
+          -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow" \
+          -allowProvisioningUpdates \
+          -skipMacroValidation
