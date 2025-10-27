@@ -52,7 +52,7 @@ jobs:
         echo ""
 
     - name: Cache derived data and Swift packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: |
           ~/Library/Developer/Xcode/DerivedData
