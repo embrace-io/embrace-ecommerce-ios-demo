@@ -3,7 +3,7 @@ name: Xcode - Integration Testing
 on:
   workflow_dispatch:
   schedule:
-    - cron: '*/25 * * * *'
+    - cron: '*/40 * * * *'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.release.id || github.ref }}
