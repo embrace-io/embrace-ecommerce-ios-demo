@@ -122,7 +122,7 @@ struct Embrace_EcommerceApp: App {
             
             // Set initial session properties from configuration
             for (key, value) in SDKConfiguration.Embrace.sessionProperties {
-                EmbraceService.shared.addSessionProperty(key: key, value: value, permanent: true)
+                EmbraceService.shared.addSessionProperty(key: key, value: value)
             }
             EmbraceService.shared.addSessionProperty(key: "third_party_sdks", value: "firebase,mixpanel,stripe,google_signin", permanent: true)
             
