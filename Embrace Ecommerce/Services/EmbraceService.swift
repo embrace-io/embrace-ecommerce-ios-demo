@@ -95,12 +95,12 @@ final class EmbraceService: TelemetryService {
     
     func addSessionProperty(key: String, value: String, permanent: Bool = false) {
         // Note: Session property API needs to be checked for Embrace 6.x
-        // Embrace.client?.addSessionProperty(key, value: value, permanent: permanent)
+         Embrace.client?.addSessionProperty(key, value: value, permanent: permanent)
     }
     
     func removeSessionProperty(key: String) {
         // Note: Session property API needs to be checked for Embrace 6.x
-        // Embrace.client?.removeSessionProperty(key)
+         Embrace.client?.removeSessionProperty(key)
     }
     
     // MARK: - Network Monitoring
