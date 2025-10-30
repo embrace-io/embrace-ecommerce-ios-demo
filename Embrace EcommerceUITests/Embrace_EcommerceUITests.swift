@@ -81,6 +81,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
         print("📤 [Guest Auth] Sending app to background to trigger Embrace session upload...")
         sendAppToBackground()
         print("✅ [Guest Auth] Background trigger complete")
+        bringAppToForeground()
     }
 
     // MARK: - Helper Methods
@@ -92,9 +93,21 @@ final class Embrace_EcommerceUITests: XCTestCase {
         settingsApp.activate()
 
         // Wait to allow Embrace SDK time to upload sessions
-        Thread.sleep(forTimeInterval: 5.0)
+        Thread.sleep(forTimeInterval: 8.0)
     }
 
+    /// Sends the app to foreground to trigger Embrace session uploads for background session
+    private func bringAppToForeground() {
+        // Bring app to foreground
+        app.activate()
+
+        // Wait for the app state to transition
+        Thread.sleep(forTimeInterval: 1.0)
+
+        // Wait to allow Embrace SDK time to upload background sessions
+        Thread.sleep(forTimeInterval: 8.0)
+    }
+    
     @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
