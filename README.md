@@ -2,6 +2,19 @@
 
 A test iOS e-commerce app built with SwiftUI, integrating Stripe for payment processing.
 
+## 🚀 Onboarding to Embrace
+
+If this is your first time using Embrace and you want to try it out in an iOS app, follow these steps:
+
+1. Get your Embrace App ID from the [Embrace dashboard](https://dash.embrace.io)
+2. Run the onboarding script:
+   ```bash
+   bash scripts/onboarding-script.sh
+   ```
+3. Follow the prompts to configure your app with your Embrace credentials
+
+The script will show you demo data in the Embrace dashboard. You can navigate the dash to understand how Embrace captures sessions and lets you dig into your app's performance.
+
 ## 💳 Stripe Testing Information
 
 This app is configured for **test mode only** - no real payments will be processed.
