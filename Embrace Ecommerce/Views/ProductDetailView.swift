@@ -81,6 +81,7 @@ struct SwiftUIProductDetailView: View {
             }
             .padding()
         }
+        .crashTestButton(location: "ProductDetailView")
         .accessibilityIdentifier("productDetailView")
         .navigationTitle("Product Details")
         .navigationBarTitleDisplayMode(.inline)

@@ -31,6 +31,7 @@ struct CheckoutView: View {
                     setupInitialOrderData()
                 }
         }
+        .crashTestButton(location: "CheckoutView")
         .accessibilityIdentifier("checkoutView")
     }
     

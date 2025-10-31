@@ -92,6 +92,7 @@ struct ProductListView: View {
                     .accessibilityIdentifier("productListErrorOverlay")
             }
         }
+        .crashTestButton(location: "ProductListView")
         .accessibilityIdentifier("productListView")
         .navigationTitle(category ?? "All Products")
         .navigationBarTitleDisplayMode(.large)

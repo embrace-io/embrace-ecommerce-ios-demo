@@ -29,6 +29,7 @@ struct HomeView: View {
                         .accessibilityIdentifier("homeErrorOverlay")
                 }
             }
+            .crashTestButton(location: "HomeView")
             .accessibilityIdentifier("homeView")
             .navigationTitle("Embrace Store")
             .navigationBarTitleDisplayMode(.large)

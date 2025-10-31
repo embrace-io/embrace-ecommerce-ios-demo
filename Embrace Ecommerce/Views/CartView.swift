@@ -21,6 +21,7 @@ struct CartView: View {
                     .accessibilityIdentifier("cartContentView")
             }
         }
+        .crashTestButton(location: "CartView")
         .accessibilityIdentifier("cartView")
         .navigationTitle("Cart")
             .onAppear {
