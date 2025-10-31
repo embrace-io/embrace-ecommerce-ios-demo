@@ -11,9 +11,9 @@ If this is your first time using Embrace and you want to try it out in an iOS ap
    ```bash
    bash scripts/onboarding-script.sh
    ```
-3. Follow the prompts to configure your app with your Embrace credentials
+3. Follow the prompts to configure this demo app with your Embrace credentials
 
-The script will show you demo data in the Embrace dashboard. You can navigate the dash to understand how Embrace captures sessions and lets you dig into your app's performance.
+The script will show you demo data in the Embrace dashboard. You can navigate around in the dash to understand how Embrace captures sessions and lets you dig into your app's performance.
 
 ## 💳 Stripe Testing Information
 
