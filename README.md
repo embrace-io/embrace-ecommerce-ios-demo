@@ -2,7 +2,7 @@
 
 A test iOS e-commerce app built with SwiftUI, integrating Stripe for payment processing.
 
-## 🚀 Trying out Embrace?
+## 🚀 Trying Embrace?
 
 If this is your first time using Embrace and you want to try it out in an iOS app, follow these steps:
 
