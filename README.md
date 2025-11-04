@@ -6,13 +6,14 @@ A test iOS e-commerce app built with SwiftUI, integrating Stripe for payment pro
 
 If this is your first time using Embrace and you want to try it out in an iOS app, follow these steps:
 
-1. Clone this repository to your local device, and `cd` into it from the Terminal application (or other similar command line tool). **Note** Ensure that your local Xcode version can point to iOS 18.0 apps.
-3. Get the Embrace App ID for your iOS app. This will be available in the [Projects and Apps](https://dash.embrace.io/settings/projects-and-apps) section of the [Embrace dashboard](https://dash.embrace.io).
-4. In Terminal, run the onboarding script:
+1. Clone this repository to your local device, and `cd` into it from the Terminal application (or other similar command line tool).
+**Note** Ensure that your local Xcode version can point to iOS 18.0 apps.
+1. Get the Embrace App ID for your iOS app. This will be available in the [Projects and Apps](https://dash.embrace.io/settings/projects-and-apps) section of the [Embrace dashboard](https://dash.embrace.io).
+1. In Terminal, run the onboarding script:
    ```bash
    bash scripts/onboarding-script.sh
    ```
-5. Follow the prompts to configure this demo app with your Embrace credentials
+1. Follow the prompts to configure this demo app with your Embrace credentials
 
 The script will show you demo data in the Embrace dashboard. You can navigate around in the dash to understand how Embrace captures sessions and lets you dig into your app's performance.
 
