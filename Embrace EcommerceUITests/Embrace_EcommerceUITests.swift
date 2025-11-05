@@ -17,10 +17,11 @@ final class Embrace_EcommerceUITests: XCTestCase {
         // Configure the app with launch environment variables
         app = XCUIApplication()
         app.launchEnvironment = [
-            "UI_TESTING": "1",
-            "DISABLE_NETWORK_CALLS": "1", // Disable app network calls but allow Embrace SDK
-            "USE_MOCK_DATA": "1",
-            "ALLOW_EMBRACE_NETWORK": "1" // Allow Embrace SDK network requests
+            "UI_TESTING": "1", // NOT IN USE.
+            "DISABLE_NETWORK_CALLS": "1", // NOT IN USE. Disable app network calls but allow Embrace SDK
+            "USE_MOCK_DATA": "1", // NOT IN USE.
+            "ALLOW_EMBRACE_NETWORK": "1", // NOT IN USE. Allow Embrace SDK network requests
+            "RUN_SOURCE": runSource // Sends information about how session was run
         ]
         app.launch()
 
