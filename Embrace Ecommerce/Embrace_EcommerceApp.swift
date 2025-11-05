@@ -125,6 +125,13 @@ struct Embrace_EcommerceApp: App {
                 EmbraceService.shared.addSessionProperty(key: key, value: value)
             }
             EmbraceService.shared.addSessionProperty(key: "third_party_sdks", value: "firebase,mixpanel,stripe,google_signin", permanent: true)
+
+            var runSource = "Simulator"
+            if let sessionRunSource = ProcessInfo.processInfo.environment["RUN_SOURCE"] {
+                runSource = sessionRunSource
+            }
+
+            EmbraceService.shared.addSessionProperty(key: "session_run_source", value: runSource)
             
         } catch let error {
             print("❌ Error starting Embrace: \(error.localizedDescription)")

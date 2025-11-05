@@ -199,6 +199,12 @@ xcodebuild build-for-testing \
 
 echo "✅ Build completed successfully"
 
+# Step 6.5: Update UITest file to set RUN_SOURCE to "onboard_script"
+echo ""
+echo "📝 Configuring UITest to use onboard_script as RUN_SOURCE..."
+sed -i '' 's/"RUN_SOURCE": "UITest"/"RUN_SOURCE": "onboard_script"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
+echo "✅ UITest configured"
+
 # Step 7: Run UI Tests sequentially (boot one, test it, clean up, repeat)
 echo ""
 echo "================================================"
@@ -318,14 +324,17 @@ rm -rf test_results_clone_*.xcresult 2>/dev/null || true
 rm -f test_output_clone_*.log 2>/dev/null || true
 echo "✅ Result bundles and test logs cleaned up"
 
-# Final Step: Restore SDK configuration to original state
+# Final Step: Restore SDK configuration and UITest file to original state
 echo ""
-echo "🔄 Restoring SDKConfiguration.swift to original state..."
+echo "🔄 Restoring files to original state..."
 
 # Replace the App ID back to the placeholder
 sed -i '' "s/static let appId = \"$EMBRACE_APP_ID\"/static let appId = \"YOUR_EMBRACE_APP_ID\"/" "$SDK_CONFIG_FILE"
 
-echo "✅ SDK configuration restored to placeholder value"
+# Restore UITest RUN_SOURCE back to "UITest"
+sed -i '' 's/"RUN_SOURCE": "onboard_script"/"RUN_SOURCE": "UITest"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
+
+echo "✅ Files restored to original state"
 
 # Final cleanup: Kill all simulator processes
 echo ""
@@ -342,7 +351,7 @@ echo ""
 echo "What to do next:"
 echo ""
 echo "  1️⃣  Open your Embrace dashboard - https://dash.embrace.io/app/$EMBRACE_APP_ID"
-echo "  2️⃣  Look for sessions from $NUM_CLONES different devices"
+echo "  2️⃣  Look for sessions from $NUM_CLONES different device(s)"
 echo "  3️⃣  Explore the telemetry data, crashes, and user sessions"
 echo "  4️⃣  Try integrating Embrace into your own iOS app!"
 echo ""

@@ -30,6 +30,12 @@ jobs:
           exit 1
         fi
 
+    - name: Configure UITest RUN_SOURCE
+      run: |
+        echo "📝 Configuring UITest to use ci-xcode-integration as RUN_SOURCE..."
+        sed -i '' 's/"RUN_SOURCE": "UITest"/"RUN_SOURCE": "ci-xcode-integration"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
+        echo "✅ UITest configured"
+
     - name: Run UI Tests
       run: |
         xcodebuild test \
