@@ -21,7 +21,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
             "DISABLE_NETWORK_CALLS": "1", // NOT IN USE. Disable app network calls but allow Embrace SDK
             "USE_MOCK_DATA": "1", // NOT IN USE.
             "ALLOW_EMBRACE_NETWORK": "1", // NOT IN USE. Allow Embrace SDK network requests
-            "RUN_SOURCE": runSource // Sends information about how session was run
+            "RUN_SOURCE": "UITest" // Sends information about how session was run
         ]
         app.launch()
 

@@ -140,6 +140,12 @@ jobs:
 
         echo "✅ Build completed successfully"
 
+    - name: Configure UITest RUN_SOURCE
+      run: |
+        echo "📝 Configuring UITest to use ci-xcode as RUN_SOURCE..."
+        sed -i '' 's/"RUN_SOURCE": "UITest"/"RUN_SOURCE": "ci-xcode"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
+        echo "✅ UITest configured"
+
     - name: Run UI Tests on multiple devices
       run: |
         echo "🧪 Starting UI Test execution on multiple devices..."
