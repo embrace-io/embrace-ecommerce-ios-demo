@@ -178,6 +178,12 @@ echo "⏳ Waiting for device to be ready..."
 xcrun simctl bootstatus "${CLONE_UDIDS[0]}" -b > /dev/null 2>&1 || true
 echo "✅ Device is ready"
 
+# Step 5.5: Update UITest file to set RUN_SOURCE to "onboard_script" BEFORE building
+echo ""
+echo "📝 Configuring UITest to use onboard_script as RUN_SOURCE..."
+sed -i '' 's/"RUN_SOURCE": "UITest"/"RUN_SOURCE": "onboard_script"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
+echo "✅ UITest configured"
+
 # Step 6: Build for Testing (once, reused for all clones)
 echo ""
 echo "Building the app with Embrace SDK..."
@@ -198,12 +204,6 @@ xcodebuild build-for-testing \
   CODE_SIGNING_REQUIRED=NO
 
 echo "✅ Build completed successfully"
-
-# Step 6.5: Update UITest file to set RUN_SOURCE to "onboard_script"
-echo ""
-echo "📝 Configuring UITest to use onboard_script as RUN_SOURCE..."
-sed -i '' 's/"RUN_SOURCE": "UITest"/"RUN_SOURCE": "onboard_script"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
-echo "✅ UITest configured"
 
 # Step 7: Run UI Tests sequentially (boot one, test it, clean up, repeat)
 echo ""
