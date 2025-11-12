@@ -2,12 +2,9 @@ name: Onboarding - Generate Demo Sessions
 
 on:
   workflow_dispatch:
-    inputs:
-      num_devices:
-        description: 'Number of simulator devices to test'
-        required: false
-        default: '4'
-        type: string
+
+env:
+  NUM_DEVICES: 4
 
 jobs:
   onboarding-demo:
@@ -53,7 +50,7 @@ jobs:
         xcodebuild -showsdks | grep iOS || echo "No iOS SDKs found"
         echo "🔍 Simulator runtimes:"
         xcrun simctl list runtimes | grep iOS || echo "No iOS runtimes found"
-        echo "🔢 Number of devices to test: ${{ inputs.num_devices || '4' }}"
+        echo "🔢 Number of devices to test: ${{ env.NUM_DEVICES }}"
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
 
@@ -153,7 +150,7 @@ for runtime, devices in data['devices'].items():
     - name: Create Simulator Clones
       id: create_clones
       run: |
-        NUM_CLONES="${{ inputs.num_devices || '4' }}"
+        NUM_CLONES="${{ env.NUM_DEVICES }}"
         DEVICE_TYPE="${{ steps.find_simulator.outputs.device_type }}"
         RUNTIME="${{ steps.find_simulator.outputs.runtime }}"
         SIMULATOR="iPhone 16 Pro"
