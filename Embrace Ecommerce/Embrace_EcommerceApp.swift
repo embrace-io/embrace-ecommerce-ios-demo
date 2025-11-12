@@ -126,6 +126,7 @@ struct Embrace_EcommerceApp: App {
             }
             EmbraceService.shared.addSessionProperty(key: "third_party_sdks", value: "firebase,mixpanel,stripe,google_signin", permanent: true)
 
+            // TODO: Break into own function
             var runSource = "Simulator"
             if let sessionRunSource = ProcessInfo.processInfo.environment["RUN_SOURCE"] {
                 runSource = sessionRunSource
