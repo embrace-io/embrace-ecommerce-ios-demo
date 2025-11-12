@@ -2,17 +2,21 @@ name: Onboarding - Generate Demo Sessions
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: '0 */2 * * *'  # Run every 2 hours
 
 env:
-  NUM_DEVICES: 4
+  PROJECT_NAME: "Embrace Ecommerce"
+  NUM_DEVICES: 10
 
 jobs:
   onboarding-demo:
     runs-on: macos-latest
+    timeout-minutes: 119
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Configure App with Repository Variables
       run: |
@@ -35,6 +39,12 @@ jobs:
         fi
         echo ""
 
+        # Set RUN_SOURCE to ci_action
+        echo "📝 Configuring UITest to use ci_action as RUN_SOURCE..."
+        sed -i '' 's/"RUN_SOURCE": "[^"]*"/"RUN_SOURCE": "ci_action"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
+        echo "✅ RUN_SOURCE set to ci_action"
+        echo ""
+
     - name: Set up Xcode
       run: |
         sudo xcode-select --print-path
@@ -54,15 +64,16 @@ jobs:
         echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
         echo ""
 
-    - name: Cache derived data and Swift packages
-      uses: actions/cache@v3
+    - name: Cache DerivedData, SPM dependencies, and SwiftPM
+      uses: actions/cache@v4
       with:
         path: |
           ~/Library/Developer/Xcode/DerivedData
           ~/Library/Caches/org.swift.swiftpm
-        key: ${{ runner.os }}-onboarding-cache-${{ hashFiles('**/*.xcodeproj/project.pbxproj', '**/*.swift', '**/Package.resolved') }}
+          ~/.swiftpm
+        key: ${{ runner.os }}-xcode-cache-${{ hashFiles('**/Project.xcodeproj/project.pbxproj', '**/Package.resolved', '**/*.swift') }}
         restore-keys: |
-          ${{ runner.os }}-onboarding-cache-
+          ${{ runner.os }}-xcode-cache-
 
     - name: Resolve Swift Package dependencies
       run: |
@@ -189,12 +200,6 @@ for runtime, devices in data['devices'].items():
         echo "✅ All $NUM_CLONES simulators created successfully"
         echo "clone_udids=$CLONE_UDIDS" >> $GITHUB_OUTPUT
         echo "num_clones=$NUM_CLONES" >> $GITHUB_OUTPUT
-
-    - name: Configure UITest RUN_SOURCE
-      run: |
-        echo "📝 Configuring UITest to use onboarding-ci as RUN_SOURCE..."
-        sed -i '' 's/"RUN_SOURCE": "UITest"/"RUN_SOURCE": "onboarding-ci"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
-        echo "✅ UITest configured"
 
     - name: Build for Testing
       run: |
@@ -362,22 +367,3 @@ for runtime, devices in data['devices'].items():
         xcrun simctl shutdown all 2>/dev/null || true
         echo "✅ All Simulator processes stopped"
         echo "✅ Cleanup complete"
-
-    - name: Onboarding Complete
-      if: success()
-      run: |
-        echo ""
-        echo "================================================"
-        echo "🎉 Onboarding Complete!"
-        echo "================================================"
-        echo ""
-        echo "What to do next:"
-        echo ""
-        echo "  1️⃣  Open your Embrace dashboard - https://dash.embrace.io/app/${{ vars.APP_ID }}"
-        echo "  2️⃣  Look for sessions from ${{ steps.create_clones.outputs.num_clones }} different device(s)"
-        echo "  3️⃣  Explore the telemetry data, crashes, and user sessions"
-        echo "  4️⃣  Try integrating Embrace into your own iOS app!"
-        echo ""
-        echo "Questions? Check out our docs at embrace.io/docs"
-        echo ""
-        echo "================================================"
