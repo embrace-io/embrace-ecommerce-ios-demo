@@ -2,8 +2,8 @@ name: Onboarding - Generate Demo Sessions
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 */2 * * *'  # Run every 2 hours
+  # schedule:
+  #   - cron: '0 */2 * * *'  # Run every 2 hours
 
 env:
   PROJECT_NAME: "Embrace Ecommerce"
