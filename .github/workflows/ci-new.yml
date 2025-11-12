@@ -133,21 +133,21 @@ jobs:
         # Extract device type and runtime from the base simulator
         echo "🔍 Extracting device type and runtime information..."
 
-        DEVICE_INFO=$(xcrun simctl list devices -j | python3 <<PYTHON_EOF
-import sys, json
-data = json.load(sys.stdin)
-target_udid = "$SIMULATOR_UDID"
-for runtime, devices in data["devices"].items():
-    for device in devices:
-        if device["udid"] == target_udid:
-            print(device["deviceTypeIdentifier"])
-            print(runtime)
-            sys.exit(0)
-PYTHON_EOF
-)
+        DEVICE_INFO=$(xcrun simctl list devices -j | python3 <<EOF
+        import sys, json
+        data = json.load(sys.stdin)
+        target_udid = "$SIMULATOR_UDID"
+        for runtime, devices in data["devices"].items():
+            for device in devices:
+                if device["udid"] == target_udid:
+                    print(device["deviceTypeIdentifier"])
+                    print(runtime)
+                    sys.exit(0)
+        EOF
+        )
 
-        DEVICE_TYPE=$(echo "$DEVICE_INFO" | sed -n '1p')
-        RUNTIME=$(echo "$DEVICE_INFO" | sed -n '2p')
+        DEVICE_TYPE=$(echo "$DEVICE_INFO" | awk 'NR==1')
+        RUNTIME=$(echo "$DEVICE_INFO" | awk 'NR==2')
 
         if [[ -z "$DEVICE_TYPE" || -z "$RUNTIME" ]]; then
           echo "❌ Could not extract device type or runtime"
