@@ -201,7 +201,9 @@ xcodebuild build-for-testing \
   -quiet \
   CODE_SIGNING_ALLOWED=NO \
   CODE_SIGN_IDENTITY="" \
-  CODE_SIGNING_REQUIRED=NO
+  CODE_SIGNING_REQUIRED=NO \
+  SWIFT_SUPPRESS_WARNINGS=YES \
+  GCC_WARN_INHIBIT_ALL_WARNINGS=YES
 
 echo "✅ Build completed successfully"
 
