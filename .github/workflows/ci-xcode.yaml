@@ -139,7 +139,8 @@ jobs:
         xcodebuild build-for-testing \
           -scheme "Embrace Ecommerce" \
           -destination "$build_destination" \
-          -derivedDataPath ~/Library/Developer/Xcode/DerivedData || {
+          -derivedDataPath ~/Library/Developer/Xcode/DerivedData \
+          -skipMacroValidation || {
           echo "❌ ERROR: Build failed!"
           exit 1
         }
@@ -244,7 +245,8 @@ jobs:
             -scheme "Embrace Ecommerce" \
             -destination "$destination" \
             -derivedDataPath ~/Library/Developer/Xcode/DerivedData \
-            -only-testing:"Embrace EcommerceUITests"; then
+            -only-testing:"Embrace EcommerceUITests" \
+            -skipMacroValidation; then
             echo "✅ PASSED: Tests completed successfully on $device"
             passed_count=$((passed_count + 1))
           else
