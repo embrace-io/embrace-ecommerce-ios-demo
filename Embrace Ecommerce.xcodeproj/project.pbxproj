@@ -511,7 +511,7 @@
 			repositoryURL = "https://github.com/embrace-io/embrace-apple-sdk/";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 6.13.0;
+				minimumVersion = 6.14.1;
 			};
 		};
 		701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {

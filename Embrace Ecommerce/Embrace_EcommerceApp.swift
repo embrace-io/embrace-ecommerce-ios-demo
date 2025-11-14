@@ -60,7 +60,7 @@ struct Embrace_EcommerceApp: App {
             
             // Log successful initialization
             EmbraceService.shared.logInfo("App initialization completed", properties: [
-                "embrace_version": "6.13.0",
+                "embrace_version": "6.15.0",
                 "app_version": Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "unknown",
                 "configuration_warnings": SDKConfiguration.validateConfiguration().joined(separator: ", ")
             ])
