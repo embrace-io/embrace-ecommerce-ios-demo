@@ -3,272 +3,91 @@ name: Xcode - CI
 on:
   workflow_dispatch:
 
+env:
+  PROJECT_NAME: "Embrace Ecommerce"
+  XCODE_VERSION: "16.4"
+
 jobs:
-  ui-tests:
+  xcode-ci:
     runs-on: macos-latest
+    timeout-minutes: 50
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
     - name: Configure App with Repository Variables
       run: |
-        echo "🔧 Configuring app with repository variables..."
         # Check if APP_ID variable exists
         if [[ -n "${{ vars.APP_ID }}" ]]; then
-          echo "✅ APP_ID found in repository variables: ${{ vars.APP_ID }}"
-          # Update the appId in Embrace_EcommerceApp.swift
-          echo "📝 Updating appId in Embrace_EcommerceApp.swift..."
-          # Use sed to replace the line containing 'appId: SDKConfiguration.Embrace.appId'
-          sed -i '' 's/appId: SDKConfiguration\.Embrace\.appId/appId: "${{ vars.APP_ID }}"/g' "Embrace Ecommerce/Embrace_EcommerceApp.swift"
-          echo "✅ Updated appId to use repository variable"
-          # Show the updated line for verification
-          echo "📋 Updated line:"
-          grep -n "appId:" "Embrace Ecommerce/Embrace_EcommerceApp.swift" || echo "⚠️ Could not find appId line"
+          sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "Embrace Ecommerce/Services/SDKConfiguration.swift"
+          echo "✅ APP_ID configured"
         else
           echo "❌ ERROR: APP_ID variable not found in repository variables"
-          echo "   Please add APP_ID as a repository variable before running this workflow."
-          echo "   Go to Settings → Secrets and variables → Actions → Variables tab"
           exit 1
         fi
-        echo ""
+
+        # Set RUN_SOURCE to ci_action
+        if sed -i '' 's/"RUN_SOURCE": "[^"]*"/"RUN_SOURCE": "ci_action"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"; then
+          echo "✅ RUN_SOURCE set to ci_action"
+        else
+          echo "⚠️ WARNING: Failed to set RUN_SOURCE"
+        fi
 
     - name: Set up Xcode
       run: |
-        sudo xcode-select --print-path
+        sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
 
-    - name: Environment Information
+    - name: Find and Boot Simulator
+      id: setup_simulator
       run: |
-        echo "🔧 ENVIRONMENT INFORMATION"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "🖥️  Runner OS: ${{ runner.os }}"
-        echo "📅 Date: $(date)"
-        echo "🛠️  Xcode Version: $(xcodebuild -version | head -1)"
-        echo "📱 Available SDK versions:"
-        xcodebuild -showsdks | grep iOS || echo "No iOS SDKs found"
-        echo "🔍 Simulator runtimes:"
-        xcrun simctl list runtimes | grep iOS || echo "No iOS runtimes found"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo ""
+        # Get valid destination from xcodebuild
+        DESTINATION_LINE=$(xcodebuild -showdestinations -project "${{ env.PROJECT_NAME }}.xcodeproj" -scheme "${{ env.PROJECT_NAME }}" 2>&1 | grep "iPhone" | grep "platform:iOS Simulator" | head -1)
 
-    - name: Cache derived data and Swift packages
-      uses: actions/cache@v3
-      with:
-        path: |
-          ~/Library/Developer/Xcode/DerivedData
-          ~/Library/Caches/org.swift.swiftpm
-        key: ${{ runner.os }}-xcode-cache-${{ hashFiles('**/*.xcodeproj/project.pbxproj', '**/*.swift', '**/Package.resolved') }}
-        restore-keys: |
-          ${{ runner.os }}-xcode-cache-
-
-    - name: Resolve Swift Package dependencies
-      run: |
-        echo "📦 Resolving Swift Package dependencies..."
-        xcodebuild -resolvePackageDependencies \
-          -scheme "Embrace Ecommerce" \
-          -derivedDataPath ~/Library/Developer/Xcode/DerivedData || {
-          echo "❌ ERROR: Failed to resolve Swift Package dependencies"
-          exit 1
-        }
-        echo "✅ Swift Package dependencies resolved"
-        echo ""
-
-    - name: Configure UITest RUN_SOURCE
-      run: |
-        echo "📝 Configuring UITest to use ci-xcode as RUN_SOURCE..."
-        sed -i '' 's/"RUN_SOURCE": "UITest"/"RUN_SOURCE": "ci-xcode"/' "Embrace EcommerceUITests/Embrace_EcommerceUITests.swift"
-        echo "✅ UITest configured"
-
-    - name: Build for testing (once for all devices)
-      run: |
-        echo "🔍 Discovering available destinations for building..."
-
-        # Show all available destinations first
-        echo "📱 All available destinations:"
-        xcodebuild -showdestinations -scheme "Embrace Ecommerce" || {
-          echo "❌ ERROR: Failed to get destinations for scheme 'Embrace Ecommerce'"
-          echo "Available schemes:"
-          xcodebuild -list
-          exit 1
-        }
-
-        echo ""
-        echo "🎯 Filtering for iOS Simulator destinations..."
-
-        # Get any available iOS simulator for building
-        echo "🔍 Searching for available simulators..."
-        available_destinations=$(xcodebuild -showdestinations -scheme "Embrace Ecommerce" | grep "platform:iOS Simulator")
-        echo "Raw destinations found:"
-        echo "$available_destinations"
-        echo ""
-
-        # Extract a simple iPhone simulator destination
-        selected_line=$(echo "$available_destinations" | \
-          grep -E "platform:iOS Simulator.*name:iPhone" | \
-          head -1)
-
-        if [[ -n "$selected_line" ]]; then
-          # Extract each field independently regardless of order
-          device_name=$(echo "$selected_line" | sed -n 's/.*name:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          os_version=$(echo "$selected_line" | sed -n 's/.*OS:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          platform=$(echo "$selected_line" | sed -n 's/.*platform:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-
-          # Construct the destination string
-          build_destination="platform=${platform},name=${device_name},OS=${os_version}"
-
-          echo "🔍 Parsed fields:"
-          echo "  Platform: '$platform'"
-          echo "  Device: '$device_name'"
-          echo "  OS: '$os_version'"
-        else
-          build_destination=""
-        fi
-
-        if [[ -z "$build_destination" ]] || [[ "$build_destination" == *"platform="* && "$build_destination" != *"name="* ]]; then
-          echo "❌ ERROR: Failed to parse simulator destination"
-          echo "No suitable iOS simulator destination found for building"
+        if [[ -z "$DESTINATION_LINE" ]]; then
+          echo "❌ No iPhone simulator found"
           exit 1
         fi
 
-        echo "✅ Selected build destination: $build_destination"
-        echo ""
-        echo "🔨 Starting build-for-testing..."
-        echo "Command: xcodebuild build-for-testing -scheme 'Embrace Ecommerce' -destination '$build_destination'"
-        echo ""
+        # Extract the ID from the destination line
+        SIMULATOR_UDID=$(echo "$DESTINATION_LINE" | grep -o 'id:[A-F0-9-]*' | cut -d: -f2)
 
+        if [[ -z "$SIMULATOR_UDID" ]]; then
+          echo "❌ Could not extract simulator ID"
+          exit 1
+        fi
+
+        echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
+
+        # Boot the simulator
+        xcrun simctl boot "$SIMULATOR_UDID" 2>/dev/null || true
+        xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+
+    - name: Build for Testing
+      run: |
         xcodebuild build-for-testing \
-          -scheme "Embrace Ecommerce" \
-          -destination "$build_destination" \
-          -derivedDataPath ~/Library/Developer/Xcode/DerivedData \
-          -skipMacroValidation || {
-          echo "❌ ERROR: Build failed!"
-          exit 1
-        }
+          -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+          -scheme "${{ env.PROJECT_NAME }}" \
+          -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+          -configuration Debug \
+          -enableCodeCoverage NO \
+          -allowProvisioningUpdates \
+          -skipMacroValidation \
+          CODE_SIGNING_ALLOWED=NO \
+          CODE_SIGN_IDENTITY="" \
+          CODE_SIGNING_REQUIRED=NO
 
-        echo "✅ Build completed successfully"
-
-    - name: Run UI Tests on multiple devices
+    - name: Run UI Test
       run: |
-        echo "🧪 Starting UI Test execution on multiple devices..."
-        echo ""
+        xcodebuild test-without-building \
+          -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+          -scheme "${{ env.PROJECT_NAME }}" \
+          -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+          -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/testFlow"
 
-        # Get device info with OS versions
-        echo "🔍 Discovering iOS simulator devices with OS versions..."
-
-        # Create temp file with device info
-        echo "📱 Getting destination list from xcodebuild..."
-        xcodebuild -showdestinations -scheme "Embrace Ecommerce" | \
-          grep "platform:iOS Simulator" | \
-          grep -E "(iPhone|iPad)" | \
-          grep -v "Any iOS Simulator Device" > /tmp/device_destinations.txt || {
-          echo "❌ ERROR: Failed to get device destinations"
-          exit 1
-        }
-
-        echo "📝 Raw device destinations found:"
-        cat /tmp/device_destinations.txt | head -5
-        echo "... (showing first 5 entries)"
-        echo ""
-
-        # Extract device info and create a simple list
-        echo "🔄 Processing device information..."
-        processed_count=0
-        while IFS= read -r line; do
-          # Extract device name and OS version more carefully
-          device_name=$(echo "$line" | sed -n 's/.*name:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-          os_version=$(echo "$line" | sed -n 's/.*OS:\([^,}]*\).*/\1/p' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-
-          # Validate we have both values and device name is iPhone/iPad
-          if [[ -n "$device_name" ]] && [[ -n "$os_version" ]] && [[ "$device_name" =~ ^(iPhone|iPad) ]]; then
-            # Clean up any quotes or extra spaces
-            device_name=$(echo "$device_name" | sed 's/["'"'"']//g')
-            os_version=$(echo "$os_version" | sed 's/["'"'"']//g')
-
-            echo "$device_name|$os_version"
-            processed_count=$((processed_count + 1))
-          fi
-        done < /tmp/device_destinations.txt | sort -u -t'|' -k1,1 > /tmp/device_os_list.txt
-
-        echo "✅ Processed $processed_count device entries"
-        echo ""
-
-        # Check if we found any devices
-        device_count=$(wc -l < /tmp/device_os_list.txt)
-        if [[ $device_count -eq 0 ]]; then
-          echo "❌ ERROR: No valid iOS simulator devices found!"
-          echo "Debug info:"
-          echo "- Raw destinations file size: $(wc -l < /tmp/device_destinations.txt) lines"
-          echo "- Processed devices file size: $(wc -l < /tmp/device_os_list.txt) lines"
-          exit 1
-        fi
-
-        echo "📱 Available devices with OS versions (found $device_count total):"
-        cat /tmp/device_os_list.txt | while IFS='|' read -r device os; do
-          echo "  ✓ $device (OS: $os)"
-        done
-        echo ""
-
-        # Test on up to 5 devices
-        max_devices=5
-        actual_test_count=$(( device_count < max_devices ? device_count : max_devices ))
-        echo "🎯 Will test on $actual_test_count devices (max: $max_devices)"
-        echo ""
-
-        tested_count=0
-        failed_count=0
-        passed_count=0
-
-        cat /tmp/device_os_list.txt | head -$max_devices | while IFS='|' read -r device os_version; do
-          tested_count=$((tested_count + 1))
-
-          # Validate device and OS are not empty
-          if [[ -z "$device" ]] || [[ -z "$os_version" ]]; then
-            echo "❌ ERROR: Empty device name or OS version - skipping"
-            echo "  Device: '$device'"
-            echo "  OS Version: '$os_version'"
-            failed_count=$((failed_count + 1))
-            continue
-          fi
-
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "🧪 TEST $tested_count/$actual_test_count: $device (OS: $os_version)"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "📱 Device: $device"
-          echo "📊 OS Version: $os_version"
-          echo "🎯 Target: Embrace EcommerceUITests"
-          echo ""
-
-          destination="platform=iOS Simulator,name=$device,OS=$os_version"
-          echo "🚀 Executing: xcodebuild test-without-building with destination: $destination"
-
-          if xcodebuild test-without-building \
-            -scheme "Embrace Ecommerce" \
-            -destination "$destination" \
-            -derivedDataPath ~/Library/Developer/Xcode/DerivedData \
-            -only-testing:"Embrace EcommerceUITests" \
-            -skipMacroValidation; then
-            echo "✅ PASSED: Tests completed successfully on $device"
-            passed_count=$((passed_count + 1))
-          else
-            echo "❌ FAILED: Tests failed on $device (OS: $os_version)"
-            failed_count=$((failed_count + 1))
-            echo "📝 Note: Continuing with remaining devices..."
-          fi
-          echo ""
-        done
-
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "📊 FINAL RESULTS"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo "🔢 Total devices found: $device_count"
-        echo "🧪 Devices tested: $actual_test_count"
-        echo "✅ Passed: $passed_count"
-        echo "❌ Failed: $failed_count"
-        echo ""
-
-        if [[ $passed_count -gt 0 ]]; then
-          echo "🎉 SUCCESS: At least one device passed tests"
-        else
-          echo "💥 FAILURE: No devices passed tests"
-          exit 1
-        fi
+    - name: Cleanup
+      if: always()
+      run: |
+        killall Simulator 2>/dev/null || true
+        xcrun simctl shutdown all 2>/dev/null || true
+        xcrun simctl delete "${{ steps.setup_simulator.outputs.simulator_udid }}" 2>/dev/null || true
