@@ -108,18 +108,70 @@ struct Embrace_EcommerceApp: App {
     
     private func configureEmbrace() {
         do {
-            // Create basic Embrace configuration  
+            // Capture timing for custom startup spans
+            let sdkSetupStartTime = Date()
+
+            // Create basic Embrace configuration
             let options = Embrace.Options(
                 appId: SDKConfiguration.Embrace.appId,
                 logLevel: .info
             )
-            
+
             try Embrace
                 .setup(options: options)
                 .start()
-                
+
+            let sdkSetupEndTime = Date()
+
             print("✅ Embrace SDK initialized successfully")
-            
+
+            // MARK: - Startup Instrumentation Examples
+
+            // Example 1: Add attributes to the startup trace
+            Embrace.client?.startupInstrumentation.addAttributesToTrace([
+                "ecommerce_mode": "production",
+                "third_party_sdk_count": "4",
+                "custom_initialization": "true"
+            ])
+            print("✅ Added attributes to startup trace")
+
+            // Example 2: Record a completed child span for SDK setup
+            // This demonstrates tracking a specific initialization step
+            let recordSuccess = Embrace.client?.startupInstrumentation.recordCompletedChildSpan(
+                name: "third-party-sdk-initialization",
+                type: .startup,
+                startTime: sdkSetupStartTime,
+                endTime: sdkSetupEndTime,
+                attributes: [
+                    "sdk_names": "embrace,mixpanel,stripe",
+                    "initialization_order": "sequential"
+                ]
+            )
+            print("✅ Recorded completed startup span: \(recordSuccess ?? false)")
+
+            // Example 3: Build and manually control a span for configuration loading
+            if let configSpan = Embrace.client?.startupInstrumentation.buildChildSpan(
+                name: "app-configuration-loading",
+                type: .startup,
+                startTime: Date(),
+                attributes: [
+                    "config_source": "embedded",
+                    "environment": "debug"
+                ]
+            )?.startSpan() {
+
+                // Simulate configuration loading work
+                // In a real app, this would be actual configuration logic
+                Thread.sleep(forTimeInterval: 0.01)
+
+                // You can add events to the span
+                configSpan.addEvent(name: "configuration_validated")
+
+                // End the span when done
+                configSpan.end()
+                print("✅ Completed manual startup span")
+            }
+
             // Set initial session properties from configuration
             for (key, value) in SDKConfiguration.Embrace.sessionProperties {
                 EmbraceService.shared.addSessionProperty(key: key, value: value)
@@ -132,7 +184,7 @@ struct Embrace_EcommerceApp: App {
             }
 
             EmbraceService.shared.addSessionProperty(key: "session_run_source", value: runSource)
-            
+
         } catch let error {
             print("❌ Error starting Embrace: \(error.localizedDescription)")
             // Still continue app initialization even if Embrace fails
