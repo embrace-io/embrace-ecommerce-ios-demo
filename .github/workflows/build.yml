@@ -1,0 +1,120 @@
+name: Build Test Artifacts
+
+# Triggers on push to main or manual dispatch
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: "Embrace Ecommerce"
+  SCHEME_NAME: "Embrace Ecommerce"
+  XCODE_VERSION: "16.4"
+  DERIVED_DATA_PATH: "DerivedData"
+
+# Prevent multiple builds from running simultaneously
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build for Testing
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+          xcodebuild -version
+          swift --version
+
+      - name: Configure Embrace App ID
+        run: |
+          if [[ -n "${{ vars.APP_ID }}" ]]; then
+            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
+            echo "Embrace APP_ID configured"
+          else
+            echo "ERROR: APP_ID variable not found in repository variables"
+            echo "Please add APP_ID to your repository variables at: Settings > Secrets and variables > Actions > Variables"
+            exit 1
+          fi
+
+      - name: Cache Swift Package Manager dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/*/SourcePackages/checkouts
+            .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('${{ env.PROJECT_NAME }}.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Find simulator
+        id: find_simulator
+        run: |
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone 16" | grep -v "Plus\|Pro" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          if [[ -z "$SIMULATOR_UDID" ]]; then
+            echo "iPhone 16 simulator not found, trying any iPhone"
+            SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          fi
+          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
+          echo "Found simulator: $SIMULATOR_UDID"
+
+      - name: Build for testing
+        run: |
+          xcodebuild build-for-testing \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.find_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+            -configuration Debug \
+            -skipMacroValidation \
+            -allowProvisioningUpdates \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Prepare artifacts
+        id: prepare_artifacts
+        run: |
+          # Find the xctestrun file
+          XCTESTRUN_FILE=$(find "${{ env.DERIVED_DATA_PATH }}/Build/Products" -name "*.xctestrun" | head -1)
+          echo "Found xctestrun: $XCTESTRUN_FILE"
+          echo "xctestrun_file=$XCTESTRUN_FILE" >> $GITHUB_OUTPUT
+
+          # List build products for verification
+          echo "Build products:"
+          ls -la "${{ env.DERIVED_DATA_PATH }}/Build/Products/"
+
+      - name: Upload test artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-build-artifacts
+          path: |
+            ${{ env.DERIVED_DATA_PATH }}/Build/Products/
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Upload xctestrun file
+        uses: actions/upload-artifact@v4
+        with:
+          name: xctestrun-file
+          path: ${{ env.DERIVED_DATA_PATH }}/Build/Products/*.xctestrun
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Build summary
+        run: |
+          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Project:** ${{ env.PROJECT_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Xcode:** ${{ env.XCODE_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifacts:** test-build-artifacts, xctestrun-file" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Artifacts are available for 7 days for use by scheduled test workflows." >> $GITHUB_STEP_SUMMARY
