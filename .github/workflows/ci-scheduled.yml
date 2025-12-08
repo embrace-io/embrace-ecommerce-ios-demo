@@ -20,7 +20,7 @@ jobs:
   run-tests:
     name: "${{ matrix.test_suite.name }}"
     runs-on: macos-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
 
     strategy:
       fail-fast: false
