@@ -79,7 +79,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: full-matrix-build
           path: DerivedData/Build/Products/
