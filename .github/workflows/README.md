@@ -1,56 +1,98 @@
 # GitHub Workflows Documentation
 
-This directory contains CI/CD workflows for the Embrace Ecommerce iOS application.
+This directory contains CI/CD workflows for the Embrace Ecommerce iOS application, designed to generate diverse sessions for the Embrace dashboard.
 
-## Workflows Overview
+## Architecture Overview
 
-### 1. `ci-optimized.yaml` - Optimized CI Pipeline ⭐ **RECOMMENDED**
+```
+Push to main
+     |
+     v
++------------+
+| build.yml  |  Build once, upload artifacts
++------------+
+     |
+     +----------------+----------------+
+     |                                 |
+     v                                 v
++-----------------+          +-------------------+
+| ci-scheduled.yml|          | ci-full-matrix.yml|
+| Every 3 hours   |          | Manual trigger    |
+| 1 device        |          | 3+ devices        |
+| 3 tests         |          | 5 tests           |
++-----------------+          +-------------------+
+```
 
-**Purpose**: Comprehensive testing across multiple devices and test suites with optimized build times.
+## Workflows
 
-**Key Features**:
-- ✅ **Matrix Testing**: Tests run on iPhone 16 and iPhone 16 Pro
-- ✅ **Multiple Test Suites**: Runs both authentication flow and main flow tests
-- ✅ **Dependency Caching**: Caches SwiftPM dependencies for faster builds
-- ✅ **Optimized Build Process**: Build once, test multiple times
-- ✅ **Better Output Formatting**: Uses xcpretty for cleaner logs
-- ✅ **Proper Cleanup**: Ensures simulators are properly shut down
+### 1. `build.yml` - Build Artifacts
 
-**Triggers**:
-- Manual dispatch via GitHub Actions UI
-- Pull requests to `main` branch
-- Optional: Scheduled runs (commented out by default)
-
-**Test Configurations**:
-| Test Suite | Target | RUN_SOURCE |
-|------------|--------|------------|
-| Authentication Guest Flow | `testAuthenticationGuestFlow` | `ci-optimized-auth` |
-| Main Flow | `testFlow` | `ci-optimized-flow` |
-
-**Environment Variables Required**:
-- `APP_ID` - Your Embrace App ID (set in Repository Variables)
-
----
-
-### 2. `ci-xcode-integration.yaml` - Integration Testing
-
-**Purpose**: Scheduled integration testing for authentication flows.
+**Purpose**: Builds the app and uploads test artifacts for reuse by other workflows.
 
 **Triggers**:
-- Every 40 minutes via cron schedule
+- Push to `main` branch
 - Manual dispatch
 
-**Test**: `testAuthenticationGuestFlow` on iPhone 16 Pro
+**What it does**:
+1. Configures Embrace APP_ID
+2. Builds using `xcodebuild build-for-testing`
+3. Uploads build artifacts (retained for 7 days)
+
+**Artifacts produced**:
+- `test-build-artifacts` - Full build products
+- `xctestrun-file` - Test configuration
 
 ---
 
-### 3. `ci-xcode.yaml` - Basic CI
+### 2. `ci-scheduled.yml` - Scheduled Tests (Lightweight)
 
-**Purpose**: Manual CI testing with dynamic simulator selection.
+**Purpose**: Maintains steady flow of diverse sessions to the Embrace dashboard.
 
-**Triggers**: Manual dispatch only
+**Triggers**:
+- Every 3 hours (cron: `0 */3 * * *`)
+- Manual dispatch
 
-**Test**: `testFlow` with automatic simulator selection
+**Configuration**:
+| Test | RUN_SOURCE |
+|------|------------|
+| Guest Auth | `scheduled-auth` |
+| Browse Products | `scheduled-browse` |
+| Search | `scheduled-search` |
+
+**Device**: iPhone 16 (single device for efficiency)
+
+**Session output**: ~24 sessions/day (8 runs x 3 tests)
+
+**Key feature**: Downloads pre-built artifacts from `build.yml` when available, falls back to building from source if not.
+
+---
+
+### 3. `ci-full-matrix.yml` - Full Matrix Tests
+
+**Purpose**: Comprehensive testing across multiple devices and all test suites. Use before demos or for thorough validation.
+
+**Triggers**:
+- Manual dispatch only
+- Optional input: `include_ipad` (adds iPad tests)
+
+**Device Matrix**:
+| Device | Type |
+|--------|------|
+| iPhone 16 | Standard |
+| iPhone 16 Pro | Pro tier |
+| iPhone SE (3rd generation) | Compact |
+| iPad (optional) | Tablet |
+
+**Test Matrix**:
+| Test | RUN_SOURCE Pattern |
+|------|-------------------|
+| Guest Auth | `matrix-auth-{device}` |
+| Browse Flow | `matrix-browse-{device}` |
+| Add to Cart | `matrix-cart-{device}` |
+| Search Flow | `matrix-search-{device}` |
+| Main Flow | `matrix-main-{device}` |
+
+**Session output**: 15 unique sessions per run (3 devices x 5 tests), or 18 with iPad enabled.
 
 ---
 
@@ -58,128 +100,89 @@ This directory contains CI/CD workflows for the Embrace Ecommerce iOS applicatio
 
 ### Required Repository Variables
 
-1. Go to your repository Settings
+1. Go to repository **Settings**
 2. Navigate to: **Secrets and variables > Actions > Variables**
-3. Add the following variable:
+3. Add:
    - `APP_ID`: Your Embrace App ID
 
 ### Running Workflows
 
-#### Manual Trigger
-1. Go to the **Actions** tab in your repository
-2. Select the workflow you want to run (e.g., "Xcode - Optimized CI")
+**Scheduled (automatic)**:
+- `ci-scheduled.yml` runs every 3 hours automatically
+
+**Manual trigger**:
+1. Go to **Actions** tab
+2. Select the workflow
 3. Click **Run workflow**
-4. Select the branch and click **Run workflow**
+4. For `ci-full-matrix.yml`, optionally check "Include iPad"
 
-#### Automatic Triggers
-- `ci-optimized.yaml`: Automatically runs on PRs to main
-- `ci-xcode-integration.yaml`: Runs every 40 minutes
+---
 
-### Enabling Scheduled Runs for Optimized CI
+## Available Test Methods
 
-To enable scheduled runs for `ci-optimized.yaml`:
+| Test Method | Description | User Journey |
+|-------------|-------------|--------------|
+| `testAuthenticationGuestFlow` | Guest login flow | Auth -> Guest -> Home |
+| `testBrowseFlow` | Product browsing | Home -> Products -> Detail |
+| `testAddToCartFlow` | Shopping cart | Home -> Product -> Cart |
+| `testSearchFlow` | Search functionality | Home -> Search -> Results |
+| `testFlow` | Adaptive main flow | Detects screen, performs action |
 
-1. Open `.github/workflows/ci-optimized.yaml`
-2. Uncomment the schedule section:
-```yaml
-schedule:
-  - cron: '0 */2 * * *'  # Runs every 2 hours
-```
+---
 
-## Matrix Strategy Explained
+## Session Diversity
 
-The optimized workflow uses a matrix strategy to run tests across multiple configurations:
+Each workflow generates sessions with unique `RUN_SOURCE` values for easy filtering in the Embrace dashboard:
 
-```yaml
-matrix:
-  xcode_version: ["16.4"]
-  device: ["iPhone 16", "iPhone 16 Pro"]
-  test_suite: [auth_flow, main_flow]
-```
+**Scheduled sessions**:
+- `scheduled-auth`
+- `scheduled-browse`
+- `scheduled-search`
 
-This creates **4 parallel jobs**:
-- iPhone 16 + Authentication Flow
-- iPhone 16 + Main Flow
-- iPhone 16 Pro + Authentication Flow
-- iPhone 16 Pro + Main Flow
+**Full matrix sessions** (examples):
+- `matrix-auth-16`
+- `matrix-browse-16-pro`
+- `matrix-cart-se-3rd-generation`
+- `matrix-search-ipad`
 
-## Customization
-
-### Adding More Devices
-
-Edit the `device` matrix in `ci-optimized.yaml`:
-
-```yaml
-device:
-  - "iPhone 16"
-  - "iPhone 16 Pro"
-  - "iPhone 16 Plus"  # Add new device
-  - "iPad Pro 13-inch (M4)"  # Add iPad
-```
-
-### Adding More Test Suites
-
-Add new test configurations to the `test_suite` matrix:
-
-```yaml
-test_suite:
-  - name: "Your Test Name"
-    target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testYourTest"
-    run_source: "ci-your-test"
-```
-
-### Adjusting Timeout
-
-Change the `timeout-minutes` value:
-
-```yaml
-timeout-minutes: 45  # Increase or decrease as needed
-```
+---
 
 ## Troubleshooting
 
 ### Build Failures
 
 **Simulator Not Found**:
-- Check available simulators in Xcode
-- Update the `device` names in the matrix to match available simulators
+- Verify device names match available simulators in Xcode
+- Check `xcrun simctl list devices available`
 
 **APP_ID Not Configured**:
 - Ensure `APP_ID` is set in repository variables
-- Verify the sed command path matches your project structure
-
-**Cache Issues**:
-- Clear cache by going to Actions > Caches and deleting old caches
-- The workflow will rebuild the cache on the next run
+- Check Settings > Secrets and variables > Actions > Variables
 
 ### Test Failures
 
-**RUN_SOURCE Configuration**:
-- Ensure the `RUN_SOURCE` property exists in `Embrace EcommerceUITests/Embrace_EcommerceUITests.swift`
-- Verify the sed command path is correct
+**Artifacts Not Found** (ci-scheduled.yml):
+- Workflow falls back to building from source
+- Ensure `build.yml` has run successfully at least once
 
-**Code Signing**:
-- Tests run with `CODE_SIGNING_ALLOWED=NO` for CI environments
-- This is expected and correct for simulator testing
+**RUN_SOURCE Issues**:
+- Verify `RUN_SOURCE` exists in test file launch environment
+- Check sed command paths match project structure
 
-## Performance Tips
+---
 
-1. **Use the optimized workflow** for comprehensive testing
-2. **Enable caching** to speed up subsequent runs (already enabled)
-3. **Adjust matrix strategy** to balance coverage vs. runtime
-4. **Use `fail-fast: false`** to see all test results even if one fails
+## Cost Considerations
 
-## Migration from Old Workflows
+This repository is **public**, so GitHub Actions minutes are unlimited. The architecture is still optimized for efficiency:
 
-If you want to deprecate the older workflows:
+- **build.yml**: Runs once per push, artifacts shared
+- **ci-scheduled.yml**: Lightweight, reuses artifacts
+- **ci-full-matrix.yml**: Manual only, avoids unnecessary runs
 
-1. Test `ci-optimized.yaml` thoroughly
-2. Archive old workflow files (rename with `.disabled` extension)
-3. Update any documentation or badges that reference old workflows
+---
 
-## Questions?
+## Links
 
-For questions about:
-- **Embrace SDK**: Contact your Embrace support team
-- **GitHub Actions**: See [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- **Xcode CI/CD**: See [Xcode Build Settings Reference](https://developer.apple.com/documentation/xcode)
+- [Embrace Documentation](https://embrace.io/docs/)
+- [GitHub Actions Documentation](https://docs.github.com/en/actions)
+- [Android Demo Repository](https://github.com/embrace-io/embrace-ecommerce-android-demo)
