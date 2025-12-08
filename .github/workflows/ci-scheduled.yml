@@ -46,19 +46,22 @@ jobs:
           xcodebuild -version
 
       - name: Download build artifacts
-        uses: dawidd6/action-download-artifact@v6
-        with:
-          workflow: build.yml
-          name: test-build-artifacts
-          path: DerivedData/Build/Products
-          search_artifacts: true
-          workflow_conclusion: success
-        continue-on-error: true
-        id: download_artifacts
-
-      - name: Check if artifacts were downloaded
         id: check_artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          echo "Attempting to download artifacts from build.yml workflow..."
+
+          # Get the latest successful build.yml run
+          RUN_ID=$(gh run list --workflow=build.yml --status=success --limit=1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
+
+          if [[ -n "$RUN_ID" ]]; then
+            echo "Found successful build run: $RUN_ID"
+            mkdir -p DerivedData/Build/Products
+            gh run download "$RUN_ID" --name test-build-artifacts --dir DerivedData/Build/Products 2>/dev/null || true
+          fi
+
+          # Check if artifacts were downloaded
           if [[ -d "DerivedData/Build/Products" ]] && [[ -n "$(ls -A DerivedData/Build/Products 2>/dev/null)" ]]; then
             echo "artifacts_found=true" >> $GITHUB_OUTPUT
             echo "Artifacts downloaded successfully"
