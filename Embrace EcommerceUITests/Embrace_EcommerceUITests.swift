@@ -57,6 +57,36 @@ final class Embrace_EcommerceUITests: XCTestCase {
     }
 
     @MainActor
+    func testAuthenticationGuestFlow() throws {
+        print("Starting authentication guest flow test")
+
+        // Verify we start on the authentication screen
+        let currentScreen = detectCurrentScreen()
+        XCTAssertEqual(currentScreen, .authentication, "Expected to start on authentication screen")
+        print("Verified: Starting on authentication screen")
+
+        // Tap the guest button to continue as guest
+        let guestSuccess = tapGuestButton()
+        XCTAssertTrue(guestSuccess, "Failed to complete guest authentication")
+        print("Completed: Guest authentication flow")
+
+        // Verify we navigated away from authentication
+        let newScreen = detectCurrentScreen()
+        XCTAssertNotEqual(newScreen, .authentication, "Should have navigated away from authentication screen")
+        print("Verified: Navigated to \(newScreen.rawValue)")
+
+        // Send app to background to trigger Embrace session upload
+        print("Sending app to background to trigger Embrace session upload...")
+        sendAppToBackground()
+        print("Background trigger complete")
+
+        // Bring app back to foreground to trigger upload of backgrounded session
+        print("Bringing app to foreground to trigger session upload...")
+        bringAppToForeground()
+        print("Foreground trigger complete")
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
