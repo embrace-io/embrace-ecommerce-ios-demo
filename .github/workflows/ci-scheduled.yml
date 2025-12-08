@@ -1,0 +1,140 @@
+name: Scheduled Tests (Lightweight)
+
+# Runs every 3 hours to maintain steady session flow to dashboard
+on:
+  schedule:
+    - cron: '0 */3 * * *'
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: "Embrace Ecommerce"
+  SCHEME_NAME: "Embrace Ecommerce"
+  XCODE_VERSION: "16.4"
+  DEVICE_NAME: "iPhone 16"
+
+concurrency:
+  group: scheduled-tests
+  cancel-in-progress: true
+
+jobs:
+  run-tests:
+    name: "${{ matrix.test_suite.name }}"
+    runs-on: macos-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test_suite:
+          - name: "Guest Auth"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow"
+            run_source: "scheduled-auth"
+          - name: "Browse Products"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
+            run_source: "scheduled-browse"
+          - name: "Search"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testSearchFlow"
+            run_source: "scheduled-search"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+          xcodebuild -version
+
+      - name: Download build artifacts
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          workflow: build.yml
+          name: test-build-artifacts
+          path: DerivedData/Build/Products
+          search_artifacts: true
+          workflow_conclusion: success
+        continue-on-error: true
+        id: download_artifacts
+
+      - name: Check if artifacts were downloaded
+        id: check_artifacts
+        run: |
+          if [[ -d "DerivedData/Build/Products" ]] && [[ -n "$(ls -A DerivedData/Build/Products 2>/dev/null)" ]]; then
+            echo "artifacts_found=true" >> $GITHUB_OUTPUT
+            echo "Artifacts downloaded successfully"
+            ls -la DerivedData/Build/Products/
+          else
+            echo "artifacts_found=false" >> $GITHUB_OUTPUT
+            echo "No artifacts found, will build from source"
+          fi
+
+      - name: Configure Embrace App ID
+        run: |
+          if [[ -n "${{ vars.APP_ID }}" ]]; then
+            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
+            echo "Embrace APP_ID configured"
+          else
+            echo "ERROR: APP_ID variable not found"
+            exit 1
+          fi
+
+      - name: Configure RUN_SOURCE
+        run: |
+          sed -i '' 's/"RUN_SOURCE": "[^"]*"/"RUN_SOURCE": "${{ matrix.test_suite.run_source }}"/' "${{ env.PROJECT_NAME }}UITests/Embrace_EcommerceUITests.swift"
+          echo "RUN_SOURCE set to ${{ matrix.test_suite.run_source }}"
+
+      - name: Setup simulator
+        id: setup_simulator
+        run: |
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          if [[ -z "$SIMULATOR_UDID" ]]; then
+            echo "Simulator not found, trying any iPhone"
+            SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          fi
+          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
+          echo "Found simulator: $SIMULATOR_UDID"
+
+          xcrun simctl boot "$SIMULATOR_UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+          echo "Simulator booted"
+
+      - name: Build for testing (fallback if no artifacts)
+        if: steps.check_artifacts.outputs.artifacts_found != 'true'
+        run: |
+          echo "Building from source (no cached artifacts available)"
+          xcodebuild build-for-testing \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "DerivedData" \
+            -configuration Debug \
+            -skipMacroValidation \
+            -allowProvisioningUpdates \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Run test - ${{ matrix.test_suite.name }}
+        run: |
+          xcodebuild test-without-building \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "DerivedData" \
+            -only-testing:"${{ matrix.test_suite.target }}" \
+            -resultBundlePath "TestResults-${{ matrix.test_suite.run_source }}"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.test_suite.run_source }}
+          path: TestResults-${{ matrix.test_suite.run_source }}.xcresult
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: |
+          killall Simulator 2>/dev/null || true
+          xcrun simctl shutdown "${{ steps.setup_simulator.outputs.simulator_udid }}" 2>/dev/null || true
