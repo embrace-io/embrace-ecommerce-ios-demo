@@ -1,0 +1,271 @@
+name: Full Matrix Tests
+
+# Manual trigger only - use for comprehensive testing before demos or releases
+on:
+  workflow_dispatch:
+    inputs:
+      include_ipad:
+        description: 'Include iPad in device matrix'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  PROJECT_NAME: "Embrace Ecommerce"
+  SCHEME_NAME: "Embrace Ecommerce"
+  XCODE_VERSION: "16.4"
+
+concurrency:
+  group: full-matrix-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build for Testing
+    runs-on: macos-latest
+    timeout-minutes: 25
+
+    outputs:
+      simulator_udid: ${{ steps.find_simulator.outputs.simulator_udid }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+          xcodebuild -version
+
+      - name: Configure Embrace App ID
+        run: |
+          if [[ -n "${{ vars.APP_ID }}" ]]; then
+            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
+            echo "Embrace APP_ID configured"
+          else
+            echo "ERROR: APP_ID variable not found"
+            exit 1
+          fi
+
+      - name: Cache Swift Package Manager dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData/*/SourcePackages/checkouts
+            .build
+          key: ${{ runner.os }}-spm-${{ hashFiles('${{ env.PROJECT_NAME }}.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Find simulator
+        id: find_simulator
+        run: |
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone 16" | grep -v "Plus\|Pro" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
+          echo "Found simulator: $SIMULATOR_UDID"
+
+      - name: Build for testing
+        run: |
+          xcodebuild build-for-testing \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.find_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "DerivedData" \
+            -configuration Debug \
+            -skipMacroValidation \
+            -allowProvisioningUpdates \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-matrix-build
+          path: DerivedData/Build/Products/
+          retention-days: 1
+
+  test:
+    name: "${{ matrix.device }} - ${{ matrix.test_suite.name }}"
+    needs: build
+    runs-on: macos-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        device:
+          - "iPhone 16"
+          - "iPhone 16 Pro"
+          - "iPhone SE (3rd generation)"
+        test_suite:
+          - name: "Guest Auth"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow"
+            run_source: "matrix-auth"
+          - name: "Browse Flow"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
+            run_source: "matrix-browse"
+          - name: "Add to Cart"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testAddToCartFlow"
+            run_source: "matrix-cart"
+          - name: "Search Flow"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testSearchFlow"
+            run_source: "matrix-search"
+          - name: "Main Flow"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testFlow"
+            run_source: "matrix-main"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: full-matrix-build
+          path: DerivedData/Build/Products
+
+      - name: Configure Embrace App ID
+        run: |
+          if [[ -n "${{ vars.APP_ID }}" ]]; then
+            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
+          fi
+
+      - name: Configure RUN_SOURCE
+        run: |
+          # Create device-specific RUN_SOURCE
+          DEVICE_SHORT=$(echo "${{ matrix.device }}" | sed 's/iPhone //g' | sed 's/ /-/g' | sed 's/(//g' | sed 's/)//g' | tr '[:upper:]' '[:lower:]')
+          RUN_SOURCE="${{ matrix.test_suite.run_source }}-${DEVICE_SHORT}"
+          sed -i '' "s/\"RUN_SOURCE\": \"[^\"]*\"/\"RUN_SOURCE\": \"${RUN_SOURCE}\"/" "${{ env.PROJECT_NAME }}UITests/Embrace_EcommerceUITests.swift"
+          echo "RUN_SOURCE set to ${RUN_SOURCE}"
+
+      - name: Setup simulator
+        id: setup_simulator
+        run: |
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "${{ matrix.device }}" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          if [[ -z "$SIMULATOR_UDID" ]]; then
+            echo "Simulator '${{ matrix.device }}' not found"
+            exit 1
+          fi
+          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
+          echo "Found simulator: $SIMULATOR_UDID"
+
+          xcrun simctl boot "$SIMULATOR_UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+          echo "Simulator booted"
+
+      - name: Run test
+        run: |
+          xcodebuild test-without-building \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "DerivedData" \
+            -only-testing:"${{ matrix.test_suite.target }}"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          killall Simulator 2>/dev/null || true
+          xcrun simctl shutdown "${{ steps.setup_simulator.outputs.simulator_udid }}" 2>/dev/null || true
+
+  # Optional iPad tests - only runs if include_ipad is true
+  test-ipad:
+    name: "iPad - ${{ matrix.test_suite.name }}"
+    if: ${{ inputs.include_ipad == true }}
+    needs: build
+    runs-on: macos-latest
+    timeout-minutes: 15
+
+    strategy:
+      fail-fast: false
+      matrix:
+        test_suite:
+          - name: "Guest Auth"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow"
+            run_source: "matrix-auth-ipad"
+          - name: "Browse Flow"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
+            run_source: "matrix-browse-ipad"
+          - name: "Search Flow"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testSearchFlow"
+            run_source: "matrix-search-ipad"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: full-matrix-build
+          path: DerivedData/Build/Products
+
+      - name: Configure Embrace App ID
+        run: |
+          if [[ -n "${{ vars.APP_ID }}" ]]; then
+            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
+          fi
+
+      - name: Configure RUN_SOURCE
+        run: |
+          sed -i '' "s/\"RUN_SOURCE\": \"[^\"]*\"/\"RUN_SOURCE\": \"${{ matrix.test_suite.run_source }}\"/" "${{ env.PROJECT_NAME }}UITests/Embrace_EcommerceUITests.swift"
+          echo "RUN_SOURCE set to ${{ matrix.test_suite.run_source }}"
+
+      - name: Setup iPad simulator
+        id: setup_simulator
+        run: |
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPad" | grep -v "mini" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          if [[ -z "$SIMULATOR_UDID" ]]; then
+            echo "iPad simulator not found"
+            exit 1
+          fi
+          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
+          echo "Found iPad simulator: $SIMULATOR_UDID"
+
+          xcrun simctl boot "$SIMULATOR_UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+
+      - name: Run test
+        run: |
+          xcodebuild test-without-building \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "DerivedData" \
+            -only-testing:"${{ matrix.test_suite.target }}"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          killall Simulator 2>/dev/null || true
+          xcrun simctl shutdown "${{ steps.setup_simulator.outputs.simulator_udid }}" 2>/dev/null || true
+
+  summary:
+    name: Test Summary
+    needs: [build, test]
+    if: always()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## Full Matrix Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Configuration" >> $GITHUB_STEP_SUMMARY
+          echo "- **Devices:** iPhone 16, iPhone 16 Pro, iPhone SE (3rd generation)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tests:** Guest Auth, Browse Flow, Add to Cart, Search Flow, Main Flow" >> $GITHUB_STEP_SUMMARY
+          echo "- **Total combinations:** 15 (3 devices x 5 tests)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Session Diversity" >> $GITHUB_STEP_SUMMARY
+          echo "Each test generates a unique session with RUN_SOURCE format: \`matrix-{test}-{device}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Check individual job results above for pass/fail status." >> $GITHUB_STEP_SUMMARY
