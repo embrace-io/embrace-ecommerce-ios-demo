@@ -114,6 +114,9 @@ jobs:
           - name: "Main Flow"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testFlow"
             run_source: "matrix-main"
+          - name: "Multi-Session Timeline"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testMultiSessionTimeline"
+            run_source: "matrix-timeline"
 
     steps:
       - name: Checkout code

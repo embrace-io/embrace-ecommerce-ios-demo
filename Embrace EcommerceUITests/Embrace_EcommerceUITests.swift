@@ -289,6 +289,102 @@ final class Embrace_EcommerceUITests: XCTestCase {
     }
 
     @MainActor
+    func testMultiSessionTimeline() throws {
+        // This test creates multiple sessions within 5 minutes to demonstrate
+        // Embrace's session timeline stitching feature
+        print("Starting multi-session timeline test")
+
+        // SESSION 1: Authentication
+        let initialScreen = detectCurrentScreen()
+        if initialScreen == .authentication {
+            let authSuccess = tapGuestButton()
+            XCTAssertTrue(authSuccess, "Failed to complete guest authentication")
+            print("Session 1: Completed guest authentication")
+        }
+
+        Thread.sleep(forTimeInterval: 3.0)
+        print("Session 1: Ending - going to background")
+        sendAppToBackground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // SESSION 2: Browse products
+        print("Session 2: Starting - coming to foreground")
+        bringAppToForeground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Navigate to a product
+        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_'")).firstMatch
+        if productCard.waitForExistence(timeout: 5.0) && productCard.isHittable {
+            productCard.tap()
+            print("Session 2: Tapped featured product")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        print("Session 2: Ending - going to background")
+        sendAppToBackground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // SESSION 3: View cart
+        print("Session 3: Starting - coming to foreground")
+        bringAppToForeground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Navigate to cart tab
+        let cartTab = app.tabBars.buttons["Cart"].firstMatch
+        if cartTab.waitForExistence(timeout: 5.0) && cartTab.isHittable {
+            cartTab.tap()
+            print("Session 3: Navigated to cart")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        print("Session 3: Ending - going to background")
+        sendAppToBackground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // SESSION 4: Search
+        print("Session 4: Starting - coming to foreground")
+        bringAppToForeground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Navigate to search tab
+        let searchTab = app.tabBars.buttons["Search"].firstMatch
+        if searchTab.waitForExistence(timeout: 5.0) && searchTab.isHittable {
+            searchTab.tap()
+            print("Session 4: Navigated to search")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        print("Session 4: Ending - going to background")
+        sendAppToBackground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // SESSION 5: Profile
+        print("Session 5: Starting - coming to foreground")
+        bringAppToForeground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Navigate to profile tab
+        let profileTab = app.tabBars.buttons["Profile"].firstMatch
+        if profileTab.waitForExistence(timeout: 5.0) && profileTab.isHittable {
+            profileTab.tap()
+            print("Session 5: Navigated to profile")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Final background to end all sessions
+        print("Session 5: Ending - final background")
+        sendAppToBackground()
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Bring back to foreground to trigger upload of all sessions
+        print("Bringing to foreground to trigger session uploads")
+        bringAppToForeground()
+        Thread.sleep(forTimeInterval: 2.0)
+
+        print("Multi-session timeline test complete - should see 5+ sessions stitched together")
+    }
+
+    @MainActor
     func testLaunchPerformance() throws {
         // This measures how long it takes to launch your application.
         measure(metrics: [XCTApplicationLaunchMetric()]) {
