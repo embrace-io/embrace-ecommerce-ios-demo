@@ -111,6 +111,7 @@ jobs:
       - name: Run all tests sequentially (creates stitched sessions)
         env:
           SIMULATOR_UDID: ${{ steps.setup_simulator.outputs.simulator_udid }}
+          DERIVED_DATA_PATH: DerivedData
         run: |
           chmod +x scripts/run-all-tests.sh
 
