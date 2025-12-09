@@ -1,0 +1,140 @@
+name: One Simulator (Session Stitching)
+
+# Runs all tests sequentially on ONE simulator to create multiple sessions
+# for the same device. This enables session stitching in the Embrace dashboard.
+# Similar to Android's one-emulator.yml approach.
+
+on:
+  schedule:
+    # Run every 2 hours to match Android cadence
+    - cron: '0 */2 * * *'
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: "Embrace Ecommerce"
+  SCHEME_NAME: "Embrace Ecommerce"
+  XCODE_VERSION: "16.4"
+  DEVICE_NAME: "iPhone 16"
+
+concurrency:
+  group: one-simulator-tests
+  cancel-in-progress: false
+
+jobs:
+  run-all-tests:
+    name: "Run All Tests (Stitched Sessions)"
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+          xcodebuild -version
+
+      - name: Download build artifacts
+        id: check_artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "Attempting to download artifacts from build.yml workflow..."
+
+          # Get the latest successful build.yml run
+          RUN_ID=$(gh run list --workflow=build.yml --status=success --limit=1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
+
+          if [[ -n "$RUN_ID" ]]; then
+            echo "Found successful build run: $RUN_ID"
+            mkdir -p DerivedData/Build/Products
+            gh run download "$RUN_ID" --name test-build-artifacts --dir DerivedData/Build/Products 2>/dev/null || true
+          fi
+
+          # Check if artifacts were downloaded
+          if [[ -d "DerivedData/Build/Products" ]] && [[ -n "$(ls -A DerivedData/Build/Products 2>/dev/null)" ]]; then
+            echo "artifacts_found=true" >> $GITHUB_OUTPUT
+            echo "Artifacts downloaded successfully"
+            ls -la DerivedData/Build/Products/
+          else
+            echo "artifacts_found=false" >> $GITHUB_OUTPUT
+            echo "No artifacts found, will build from source"
+          fi
+
+      - name: Configure Embrace App ID
+        run: |
+          if [[ -n "${{ vars.APP_ID }}" ]]; then
+            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
+            echo "Embrace APP_ID configured"
+          else
+            echo "ERROR: APP_ID variable not found"
+            exit 1
+          fi
+
+      - name: Configure RUN_SOURCE
+        run: |
+          # Set RUN_SOURCE to indicate this is a stitched session run
+          sed -i '' 's/"RUN_SOURCE": "[^"]*"/"RUN_SOURCE": "one-simulator-stitched"/' "${{ env.PROJECT_NAME }}UITests/Embrace_EcommerceUITests.swift"
+          echo "RUN_SOURCE set to one-simulator-stitched"
+
+      - name: Setup simulator
+        id: setup_simulator
+        run: |
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          if [[ -z "$SIMULATOR_UDID" ]]; then
+            echo "Simulator not found, trying any iPhone"
+            SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          fi
+          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
+          echo "Found simulator: $SIMULATOR_UDID"
+
+          xcrun simctl boot "$SIMULATOR_UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+          echo "Simulator booted"
+
+      - name: Build for testing (fallback if no artifacts)
+        if: steps.check_artifacts.outputs.artifacts_found != 'true'
+        run: |
+          echo "Building from source (no cached artifacts available)"
+          xcodebuild build-for-testing \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "DerivedData" \
+            -configuration Debug \
+            -skipMacroValidation \
+            -allowProvisioningUpdates \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+
+      - name: Run all tests sequentially (creates stitched sessions)
+        env:
+          SIMULATOR_UDID: ${{ steps.setup_simulator.outputs.simulator_udid }}
+        run: |
+          chmod +x scripts/run-all-tests.sh
+
+          # Export variables needed by the script
+          export PROJECT_NAME="${{ env.PROJECT_NAME }}"
+          export SCHEME="${{ env.SCHEME_NAME }}"
+
+          # Run all tests on the SAME simulator
+          # This creates multiple sessions for one device (session stitching)
+          ./scripts/run-all-tests.sh
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stitched-session-results
+          path: |
+            result-*.txt
+            result-*.xcresult
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: |
+          killall Simulator 2>/dev/null || true
+          xcrun simctl shutdown "${{ steps.setup_simulator.outputs.simulator_udid }}" 2>/dev/null || true
