@@ -391,4 +391,237 @@ final class Embrace_EcommerceUITests: XCTestCase {
             XCUIApplication().launch()
         }
     }
+
+    // MARK: - Additional Test Variations for Session Diversity
+    // These tests create different user journeys to generate diverse sessions
+    // similar to Android's CheckoutFlowTestsSuccess, CheckoutFlowTestsFailure, etc.
+
+    @MainActor
+    func testQuickBrowseAndLeave() throws {
+        // Simulates a user who quickly browses and leaves
+        // Creates a short session with minimal interaction
+        print("Starting quick browse and leave test")
+
+        // Complete authentication first if needed
+        let initialScreen = detectCurrentScreen()
+        if initialScreen == .authentication {
+            let authSuccess = tapGuestButton()
+            XCTAssertTrue(authSuccess, "Failed to complete guest authentication")
+        }
+
+        // Wait for home view
+        let homeView = app.descendants(matching: .any)["homeView"].firstMatch
+        XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "Home view did not load")
+
+        // Brief pause to simulate looking at home screen
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Send app to background (user leaves quickly)
+        print("User leaving quickly - going to background")
+        sendAppToBackground()
+
+        // Bring back to trigger session upload
+        bringAppToForeground()
+        print("Quick browse and leave test complete")
+    }
+
+    @MainActor
+    func testAbandonedCartFlow() throws {
+        // Simulates a user who adds to cart but abandons checkout
+        // Similar to Android's full_checkout_abandoned test
+        print("Starting abandoned cart flow test")
+
+        // Complete authentication first if needed
+        let initialScreen = detectCurrentScreen()
+        if initialScreen == .authentication {
+            let authSuccess = tapGuestButton()
+            XCTAssertTrue(authSuccess, "Failed to complete guest authentication")
+        }
+
+        // Wait for home view
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Tap on a featured product
+        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_'")).firstMatch
+        if productCard.waitForExistence(timeout: 5.0) && productCard.isHittable {
+            productCard.tap()
+            print("Tapped: Featured product")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Add to cart
+        let addToCartButton = app.descendants(matching: .any)["productDetailAddToCartButton"].firstMatch
+        if addToCartButton.waitForExistence(timeout: 5.0) && addToCartButton.isHittable {
+            addToCartButton.tap()
+            print("Tapped: Add to Cart")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Navigate to cart
+        let cartTab = app.tabBars.buttons["Cart"].firstMatch
+        if cartTab.waitForExistence(timeout: 5.0) && cartTab.isHittable {
+            cartTab.tap()
+            print("Navigated to cart")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // User abandons - goes to background without completing checkout
+        print("User abandoning cart - going to background")
+        sendAppToBackground()
+
+        // Bring back to trigger session upload
+        bringAppToForeground()
+        print("Abandoned cart flow test complete")
+    }
+
+    @MainActor
+    func testProfileViewFlow() throws {
+        // Simulates a user who views their profile
+        print("Starting profile view flow test")
+
+        // Complete authentication first if needed
+        let initialScreen = detectCurrentScreen()
+        if initialScreen == .authentication {
+            let authSuccess = tapGuestButton()
+            XCTAssertTrue(authSuccess, "Failed to complete guest authentication")
+        }
+
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Navigate to profile tab
+        let profileTab = app.tabBars.buttons["Profile"].firstMatch
+        if profileTab.waitForExistence(timeout: 5.0) && profileTab.isHittable {
+            profileTab.tap()
+            print("Navigated to profile")
+            Thread.sleep(forTimeInterval: 3.0)
+        }
+
+        // Interact with profile elements if available
+        let profileView = app.descendants(matching: .any)["profileView"].firstMatch
+        if profileView.waitForExistence(timeout: 5.0) {
+            print("Profile view loaded")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Send app to background
+        print("Ending profile session - going to background")
+        sendAppToBackground()
+
+        // Bring back to trigger session upload
+        bringAppToForeground()
+        print("Profile view flow test complete")
+    }
+
+    @MainActor
+    func testRepeatProductBrowsing() throws {
+        // Simulates a user browsing multiple products
+        // Creates activity similar to Android's checkout tests with multiple interactions
+        print("Starting repeat product browsing test")
+
+        // Complete authentication first if needed
+        let initialScreen = detectCurrentScreen()
+        if initialScreen == .authentication {
+            let authSuccess = tapGuestButton()
+            XCTAssertTrue(authSuccess, "Failed to complete guest authentication")
+        }
+
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Browse first product
+        let productCards = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_'"))
+        if productCards.count > 0 {
+            let firstProduct = productCards.element(boundBy: 0)
+            if firstProduct.waitForExistence(timeout: 5.0) && firstProduct.isHittable {
+                firstProduct.tap()
+                print("Viewing product 1")
+                Thread.sleep(forTimeInterval: 2.0)
+
+                // Go back to home
+                let backButton = app.navigationBars.buttons.element(boundBy: 0)
+                if backButton.exists && backButton.isHittable {
+                    backButton.tap()
+                    Thread.sleep(forTimeInterval: 1.0)
+                }
+            }
+        }
+
+        // Browse new arrivals section if available
+        let newArrivals = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeNewArrival_'"))
+        if newArrivals.count > 0 {
+            let arrival = newArrivals.element(boundBy: 0)
+            if arrival.waitForExistence(timeout: 5.0) && arrival.isHittable {
+                arrival.tap()
+                print("Viewing new arrival")
+                Thread.sleep(forTimeInterval: 2.0)
+            }
+        }
+
+        // Send app to background
+        print("Ending browsing session - going to background")
+        sendAppToBackground()
+
+        // Bring back to trigger session upload
+        bringAppToForeground()
+        print("Repeat product browsing test complete")
+    }
+
+    @MainActor
+    func testHomeToSearchToCartFlow() throws {
+        // Simulates a comprehensive user journey through multiple app areas
+        // Creates rich session data with many screen transitions
+        print("Starting home-search-cart flow test")
+
+        // Complete authentication first if needed
+        let initialScreen = detectCurrentScreen()
+        if initialScreen == .authentication {
+            let authSuccess = tapGuestButton()
+            XCTAssertTrue(authSuccess, "Failed to complete guest authentication")
+        }
+
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Step 1: Browse home
+        print("Step 1: Viewing home screen")
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Step 2: Go to search
+        let searchTab = app.tabBars.buttons["Search"].firstMatch
+        if searchTab.waitForExistence(timeout: 5.0) && searchTab.isHittable {
+            searchTab.tap()
+            print("Step 2: Navigated to search")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Step 3: Interact with search/categories if available
+        let categoryButton = app.buttons["categoryButton_Electronics"].firstMatch
+        if categoryButton.waitForExistence(timeout: 3.0) && categoryButton.isHittable {
+            categoryButton.tap()
+            print("Step 3: Selected category")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Step 4: Go to cart
+        let cartTab = app.tabBars.buttons["Cart"].firstMatch
+        if cartTab.waitForExistence(timeout: 5.0) && cartTab.isHittable {
+            cartTab.tap()
+            print("Step 4: Navigated to cart")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Step 5: Back to home
+        let homeTab = app.tabBars.buttons["Home"].firstMatch
+        if homeTab.waitForExistence(timeout: 5.0) && homeTab.isHittable {
+            homeTab.tap()
+            print("Step 5: Back to home")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Send app to background
+        print("Ending comprehensive flow - going to background")
+        sendAppToBackground()
+
+        // Bring back to trigger session upload
+        bringAppToForeground()
+        print("Home-search-cart flow test complete")
+    }
 }
