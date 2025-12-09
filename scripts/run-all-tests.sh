@@ -76,9 +76,12 @@ for i in "${!TESTS[@]}"; do
         2>&1 | tee "result-$test_method.txt" | grep --line-buffered -E "(Test Suite|Test Case|passed|failed|Testing started)" || true; then
 
         # Check if test actually passed by looking at the log
-        if grep -q "Test Suite.*passed" "result-$test_method.txt" 2>/dev/null; then
+        if grep -q "Test case.*$test_method.*passed" "result-$test_method.txt" 2>/dev/null; then
             echo "✅ $test_method PASSED"
             PASSED=$((PASSED + 1))
+        elif grep -q "Test case.*$test_method.*failed" "result-$test_method.txt" 2>/dev/null; then
+            echo "❌ $test_method FAILED"
+            FAILED=$((FAILED + 1))
         else
             echo "⚠️  $test_method completed with unknown status"
             FAILED=$((FAILED + 1))
