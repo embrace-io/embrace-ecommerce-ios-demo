@@ -35,6 +35,9 @@ jobs:
           - name: "Search"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testSearchFlow"
             run_source: "scheduled-search"
+          - name: "Multi-Session Timeline"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testMultiSessionTimeline"
+            run_source: "scheduled-timeline"
 
     steps:
       - name: Checkout code
