@@ -10,6 +10,7 @@ set -e
 PROJECT_NAME="${PROJECT_NAME:-Embrace Ecommerce}"
 SCHEME="${SCHEME:-Embrace Ecommerce}"
 SIMULATOR_UDID="${SIMULATOR_UDID:-}"
+DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-DerivedData}"
 
 # Define all test methods to run sequentially
 # Each test will create a new session on the same device
@@ -46,6 +47,7 @@ fi
 echo "📱 Simulator UDID: $SIMULATOR_UDID"
 echo "📂 Project: $PROJECT_NAME"
 echo "🔧 Scheme: $SCHEME"
+echo "📁 Derived Data: $DERIVED_DATA_PATH"
 echo "🧪 Tests to run: ${#TESTS[@]}"
 echo ""
 
@@ -68,6 +70,7 @@ for i in "${!TESTS[@]}"; do
         -project "$PROJECT_NAME.xcodeproj" \
         -scheme "$SCHEME" \
         -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
+        -derivedDataPath "$DERIVED_DATA_PATH" \
         -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/$test_method" \
         -resultBundlePath "result-$test_method.xcresult" \
         2>&1 | tee "result-$test_method.txt" | grep --line-buffered -E "(Test Suite|Test Case|passed|failed|Testing started)" || true; then
