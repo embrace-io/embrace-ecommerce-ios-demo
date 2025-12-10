@@ -1,9 +1,11 @@
 name: Scheduled Tests (Lightweight)
 
-# Runs every 3 hours to maintain steady session flow to dashboard
+# Runs every 2 hours to maintain steady session flow to dashboard
+# Creates non-stitched sessions (1 session per device) to complement
+# one-simulator.yml which creates stitched sessions
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    - cron: '0 */2 * * *'
   workflow_dispatch:
 
 env:
@@ -26,18 +28,12 @@ jobs:
       fail-fast: false
       matrix:
         test_suite:
-          - name: "Guest Auth"
-            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow"
-            run_source: "scheduled-auth"
+          # Single test to create 1 non-stitched timeline per run
+          # Combined with one-simulator.yml (1 stitched timeline per run)
+          # this achieves ~50% stitched / 50% non-stitched sessions
           - name: "Browse Products"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
             run_source: "scheduled-browse"
-          - name: "Search"
-            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testSearchFlow"
-            run_source: "scheduled-search"
-          - name: "Multi-Session Timeline"
-            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testMultiSessionTimeline"
-            run_source: "scheduled-timeline"
 
     steps:
       - name: Checkout code
