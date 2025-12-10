@@ -308,23 +308,45 @@ final class EmbraceService: TelemetryService {
     
     func trackSearchPerformed(query: String, resultCount: Int, filters: [String: String]?) {
         let span = Embrace.client?.buildSpan(name: "search_performed", type: .performance).startSpan()
-        
+
         span?.setAttribute(key: "search.query", value: query)
         span?.setAttribute(key: "search.result_count", value: String(resultCount))
-        
+
         if let filters = filters {
             for (key, value) in filters {
                 span?.setAttribute(key: "search.filter.\(key)", value: value)
             }
         }
-        
+
         var properties = ["query": query, "result_count": String(resultCount)]
         if let filters = filters {
             properties.merge(filters) { $1 }
         }
-        
+
         trackUserAction("search", screen: "search", properties: properties)
-        
+
         span?.end()
+    }
+
+    // MARK: - Crash Simulation (For Testing/Demo Purposes)
+
+    /// Forces a crash in the app for testing Embrace crash reporting.
+    /// This logs an error event before triggering the crash so it can be correlated in the dashboard.
+    func forceEmbraceCrash() {
+        let randomExperiment = ["A", "B", "C", "D"].randomElement() ?? "A"
+        let attributes = [
+            "experiment": randomExperiment,
+            "trigger": "manual_crash_button"
+        ]
+
+        Embrace.client?.log(
+            "Forcing a crash for testing",
+            severity: .error,
+            attributes: attributes
+        )
+
+        addBreadcrumb(message: "User triggered intentional crash")
+
+        Embrace.client?.crash()
     }
 }

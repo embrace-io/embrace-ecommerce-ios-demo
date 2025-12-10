@@ -138,6 +138,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
             print("Viewed: Product detail")
         }
 
+        // ~20% chance to crash the app to demonstrate Embrace crash reporting
+        calculateAndCreateCrash()
+
         // Send app to background to trigger Embrace session upload
         print("Sending app to background to trigger Embrace session upload...")
         sendAppToBackground()
@@ -209,6 +212,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
         XCTAssertTrue(cartView.waitForExistence(timeout: 5.0), "Cart view did not load")
         print("Verified: Cart view loaded")
 
+        // ~20% chance to crash the app to demonstrate Embrace crash reporting
+        calculateAndCreateCrash()
+
         // Send app to background to trigger Embrace session upload
         print("Sending app to background to trigger Embrace session upload...")
         sendAppToBackground()
@@ -277,6 +283,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
             Thread.sleep(forTimeInterval: 2.0)
         }
 
+        // ~20% chance to crash the app to demonstrate Embrace crash reporting
+        calculateAndCreateCrash()
+
         // Send app to background to trigger Embrace session upload
         print("Sending app to background to trigger Embrace session upload...")
         sendAppToBackground()
@@ -336,6 +345,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
             print("Session 3: Navigated to cart")
             Thread.sleep(forTimeInterval: 2.0)
         }
+
+        // ~20% chance to crash during session 3 to demonstrate crash in stitched timeline
+        calculateAndCreateCrash()
 
         print("Session 3: Ending - going to background")
         sendAppToBackground()
@@ -465,6 +477,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
             Thread.sleep(forTimeInterval: 2.0)
         }
 
+        // ~20% chance to crash during abandoned cart flow
+        calculateAndCreateCrash()
+
         // User abandons - goes to background without completing checkout
         print("User abandoning cart - going to background")
         sendAppToBackground()
@@ -556,6 +571,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
             }
         }
 
+        // ~20% chance to crash during repeat browsing
+        calculateAndCreateCrash()
+
         // Send app to background
         print("Ending browsing session - going to background")
         sendAppToBackground()
@@ -615,6 +633,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
             print("Step 5: Back to home")
             Thread.sleep(forTimeInterval: 2.0)
         }
+
+        // ~20% chance to crash during comprehensive flow
+        calculateAndCreateCrash()
 
         // Send app to background
         print("Ending comprehensive flow - going to background")
