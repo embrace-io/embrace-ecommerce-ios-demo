@@ -6,8 +6,9 @@ name: One Simulator (Session Stitching)
 
 on:
   schedule:
-    # Run every 2 hours to match Android cadence
-    - cron: '0 */2 * * *'
+    # Run every 2 hours (offset by 1 hour from ci-scheduled.yml)
+    # Combined with ci-scheduled.yml, this achieves ~50% stitched / 50% non-stitched
+    - cron: '30 */2 * * *'
   workflow_dispatch:
 
 env:
