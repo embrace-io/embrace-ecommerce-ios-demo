@@ -103,6 +103,25 @@ struct ProfileView: View {
                 )
                 .accessibilityIdentifier("profileNetworkDebugRow")
 
+                Button(action: {
+                    EmbraceService.shared.forceEmbraceCrash()
+                }) {
+                    HStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.red)
+                            .frame(width: 24)
+                        Text("Force Crash (Testing)")
+                            .foregroundColor(.red)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .accessibilityIdentifier("force-crash-button")
+
                 ProfileMenuRow(
                     icon: "questionmark.circle",
                     title: "Help & Support",
