@@ -20,6 +20,7 @@ TESTS=(
     "testAuthenticationGuestFlow"
     "testBrowseFlow"
     "testAddToCartFlow"
+    "testCheckoutFlow"
     "testSearchFlow"
     "testQuickBrowseAndLeave"
     "testAbandonedCartFlow"
