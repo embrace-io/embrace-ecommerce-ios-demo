@@ -584,6 +584,134 @@ final class Embrace_EcommerceUITests: XCTestCase {
     }
 
     @MainActor
+    func testCheckoutFlow() throws {
+        // Exercises the full checkout flow to trigger all 4 user journey breadcrumbs:
+        // CHECKOUT_STARTED → CHECKOUT_SHIPPING_COMPLETED → CHECKOUT_PAYMENT_COMPLETED
+        // → PLACE_ORDER_INITIATED → ORDER_PLACED_SUCCESS
+        print("Starting checkout flow test")
+
+        // Step 1: Authenticate as guest if needed
+        let initialScreen = detectCurrentScreen()
+        if initialScreen == .authentication {
+            let authSuccess = tapGuestButton()
+            XCTAssertTrue(authSuccess, "Failed to complete guest authentication")
+            print("Completed: Guest authentication")
+        }
+
+        // Step 2: Wait for home view and tap on a featured product
+        let homeView = app.descendants(matching: .any)["homeView"].firstMatch
+        XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "Home view did not load")
+        Thread.sleep(forTimeInterval: 2.0)
+
+        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_'")).firstMatch
+        if productCard.waitForExistence(timeout: 5.0) {
+            productCard.tap()
+            print("Tapped: Featured product")
+        } else {
+            let newArrivalCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
+            if newArrivalCard.waitForExistence(timeout: 5.0) {
+                newArrivalCard.tap()
+                print("Tapped: New arrival product")
+            }
+        }
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Step 3: Add product to cart
+        let addToCartButton = app.descendants(matching: .any)["productDetailAddToCartButton"].firstMatch
+        if addToCartButton.waitForExistence(timeout: 5.0) {
+            addToCartButton.tap()
+            print("Tapped: Add to Cart")
+            Thread.sleep(forTimeInterval: 1.0)
+        }
+
+        // Step 4: Navigate to cart tab
+        let cartTab = app.descendants(matching: .any)["cartTab"].firstMatch
+        if cartTab.waitForExistence(timeout: 5.0) {
+            cartTab.tap()
+        } else {
+            let cartTabBar = app.tabBars.buttons["Cart"].firstMatch
+            if cartTabBar.waitForExistence(timeout: 5.0) {
+                cartTabBar.tap()
+            }
+        }
+        print("Navigated to cart")
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Step 5: Tap "Proceed to Checkout" → triggers CHECKOUT_STARTED
+        let proceedButton = app.descendants(matching: .any)["cartProceedToCheckoutButton"].firstMatch
+        XCTAssertTrue(proceedButton.waitForExistence(timeout: 5.0), "Proceed to Checkout button not found")
+        proceedButton.tap()
+        print("Tapped: Proceed to Checkout (CHECKOUT_STARTED)")
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Step 6: Cart Review → tap "Continue to Shipping"
+        let continueToShipping = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Continue to Shipping'")).firstMatch
+        if continueToShipping.waitForExistence(timeout: 5.0) {
+            continueToShipping.tap()
+            print("Tapped: Continue to Shipping")
+        }
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Step 7: Shipping → select an address
+        let selectAddressButton = app.descendants(matching: .any)["selectAddressButton"].firstMatch
+        if selectAddressButton.waitForExistence(timeout: 5.0) {
+            selectAddressButton.tap()
+            print("Tapped: Select Address")
+            Thread.sleep(forTimeInterval: 1.0)
+        }
+
+        // Step 8: Shipping → select a shipping method
+        let shippingMethod = app.descendants(matching: .any)["shippingMethodstandardView"].firstMatch
+        if shippingMethod.waitForExistence(timeout: 5.0) {
+            shippingMethod.tap()
+            print("Tapped: Standard Shipping method")
+            Thread.sleep(forTimeInterval: 1.0)
+        }
+
+        // Step 9: Tap "Continue to Payment" → triggers CHECKOUT_SHIPPING_COMPLETED
+        let continueToPayment = app.descendants(matching: .any)["continueToPaymentButton"].firstMatch
+        if continueToPayment.waitForExistence(timeout: 5.0) {
+            continueToPayment.tap()
+            print("Tapped: Continue to Payment (CHECKOUT_SHIPPING_COMPLETED)")
+        }
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Step 10: Payment → saved card auto-selected, tap "Review Order" → triggers CHECKOUT_PAYMENT_COMPLETED
+        let reviewOrder = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Review Order'")).firstMatch
+        if reviewOrder.waitForExistence(timeout: 5.0) {
+            reviewOrder.tap()
+            print("Tapped: Review Order (CHECKOUT_PAYMENT_COMPLETED)")
+        }
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Step 11: Order Confirmation → tap "Place Order" → triggers PLACE_ORDER_INITIATED + ORDER_PLACED_SUCCESS
+        let placeOrderButton = app.descendants(matching: .any)["placeOrderButton"].firstMatch
+        if placeOrderButton.waitForExistence(timeout: 10.0) {
+            placeOrderButton.tap()
+            print("Tapped: Place Order (PLACE_ORDER_INITIATED → ORDER_PLACED_SUCCESS)")
+        }
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Step 12: Dismiss the success alert
+        let continueShoppingButton = app.alerts.buttons["Continue Shopping"].firstMatch
+        if continueShoppingButton.waitForExistence(timeout: 5.0) {
+            continueShoppingButton.tap()
+            print("Tapped: Continue Shopping (order placed successfully)")
+        }
+        Thread.sleep(forTimeInterval: 2.0)
+
+        // Send app to background to trigger Embrace session upload
+        print("Sending app to background to trigger Embrace session upload...")
+        sendAppToBackground()
+        print("Background trigger complete")
+
+        // Bring app back to foreground to trigger upload of backgrounded session
+        print("Bringing app to foreground to trigger session upload...")
+        bringAppToForeground()
+        print("Foreground trigger complete")
+    }
+
+    @MainActor
     func testHomeToSearchToCartFlow() throws {
         // Simulates a comprehensive user journey through multiple app areas
         // Creates rich session data with many screen transitions
