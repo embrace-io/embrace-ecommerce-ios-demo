@@ -277,10 +277,13 @@ class AuthenticationManager: ObservableObject {
         
         span?.setAttribute(key: "auth.method", value: "guest")
         span?.setAttribute(key: "auth.provider", value: "mock")
-        
+
+        // Login Flow Start: USER_LOGIN_STARTED breadcrumb
+        embraceService.addBreadcrumb(message: "USER_LOGIN_STARTED_GUEST")
+
         // Simulate brief delay for consistency
         try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
-        
+
         let guestUser = AuthenticatedUser(
             id: "guest_\(UUID().uuidString)",
             email: "guest@example.com",
@@ -294,8 +297,12 @@ class AuthenticationManager: ObservableObject {
         )
         
         analytics.trackUserSignIn(method: "guest", success: true)
+
+        // Login Flow Success: USER_LOGIN_SUCCESS breadcrumb
+        embraceService.addBreadcrumb(message: "USER_LOGIN_SUCCESS_GUEST")
+
         await handleSuccessfulAuthentication(user: guestUser, span: span)
-        
+
         await MainActor.run {
             isLoading = false
         }
@@ -316,7 +323,10 @@ class AuthenticationManager: ObservableObject {
         
         span?.setAttribute(key: "auth.method", value: "biometric")
         span?.setAttribute(key: "user.id", value: userId)
-        
+
+        // Login Flow Start: USER_LOGIN_STARTED breadcrumb
+        embraceService.addBreadcrumb(message: "USER_LOGIN_STARTED_BIOMETRIC")
+
         let result = await biometricManager.authenticateWithBiometrics(
             reason: "Sign in to your account"
         )
@@ -339,14 +349,26 @@ class AuthenticationManager: ObservableObject {
                 )
                 
                 analytics.trackUserSignIn(method: "biometric", success: true)
+
+                // Login Flow Success: USER_LOGIN_SUCCESS breadcrumb
+                embraceService.addBreadcrumb(message: "USER_LOGIN_SUCCESS_BIOMETRIC")
+
                 await handleSuccessfulAuthentication(user: updatedUser, span: span)
             } else {
                 analytics.trackUserSignIn(method: "biometric", success: false)
+
+                // Login Flow Failure: USER_LOGIN_FAILED breadcrumb
+                embraceService.addBreadcrumb(message: "USER_LOGIN_FAILED_BIOMETRIC")
+
                 await handleAuthenticationError(.unknownError("User not found"), span: span)
             }
             
         case .failure(let error):
             analytics.trackUserSignIn(method: "biometric", success: false)
+
+            // Login Flow Failure: USER_LOGIN_FAILED breadcrumb
+            embraceService.addBreadcrumb(message: "USER_LOGIN_FAILED_BIOMETRIC")
+
             await handleAuthenticationError(error, span: span)
         }
         
