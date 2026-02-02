@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import EmbraceIO
 
 struct CheckoutView: View {
     @EnvironmentObject private var cartManager: CartManager
@@ -32,6 +33,7 @@ struct CheckoutView: View {
                 }
         }
         .accessibilityIdentifier("checkoutView")
+        .embraceTrace("CheckoutView")
     }
     
     @ViewBuilder

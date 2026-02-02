@@ -1,4 +1,5 @@
 import SwiftUI
+import EmbraceIO
 
 struct HomeView: View {
     @EnvironmentObject private var navigationCoordinator: NavigationCoordinator
@@ -42,6 +43,7 @@ struct HomeView: View {
                 loadInitialData()
             }
         }
+        .embraceTrace("HomeView")
     }
     
     private var mainContent: some View {
