@@ -50,6 +50,7 @@ struct CartView: View {
             .onAppear {
                 trackCartView()
             }
+        .embraceTrace("CartView")
     }
     
     private var emptyCartView: some View {

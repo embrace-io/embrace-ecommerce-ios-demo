@@ -1,4 +1,5 @@
 import SwiftUI
+import EmbraceIO
 
 struct SearchView: View {
     @EnvironmentObject private var navigationCoordinator: NavigationCoordinator
@@ -35,6 +36,7 @@ struct SearchView: View {
                 loadRecentSearches()
             }
         }
+        .embraceTrace("SearchView")
     }
     
     private var searchBar: some View {

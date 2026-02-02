@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import EmbraceIO
 
 struct ProductDetailView: UIViewControllerRepresentable {
     let productId: String
@@ -91,6 +92,7 @@ struct SwiftUIProductDetailView: View {
             addedToCartOverlay,
             alignment: .center
         )
+        .embraceTrace("ProductDetailView")
     }
     
     private func productImageSection(_ product: Product) -> some View {

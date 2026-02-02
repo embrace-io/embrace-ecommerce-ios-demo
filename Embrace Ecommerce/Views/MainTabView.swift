@@ -1,4 +1,5 @@
 import SwiftUI
+import EmbraceIO
 
 struct MainTabView: View {
     @StateObject private var navigationCoordinator = NavigationCoordinator()
@@ -68,6 +69,7 @@ struct MainTabView: View {
             .tag(Tab.profile)
         }
         .accessibilityIdentifier("mainTabView")
+        .embraceTrace("MainTabView")
         .environmentObject(navigationCoordinator)
         .environmentObject(cartManager)
     }
