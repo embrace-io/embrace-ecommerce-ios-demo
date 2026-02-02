@@ -1,4 +1,5 @@
 import SwiftUI
+import EmbraceIO
 
 struct ProfileView: View {
     @EnvironmentObject private var navigationCoordinator: NavigationCoordinator
@@ -22,6 +23,7 @@ struct ProfileView: View {
                 destinationView(for: destination)
             }
         }
+        .embraceTrace("ProfileView")
     }
     
     

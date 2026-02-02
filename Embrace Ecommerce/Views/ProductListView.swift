@@ -1,4 +1,5 @@
 import SwiftUI
+import EmbraceIO
 
 enum ViewType: String, CaseIterable {
     case grid = "Grid"
@@ -117,6 +118,7 @@ struct ProductListView: View {
         .onChange(of: searchText) { _, newValue in
             filterProducts()
         }
+        .embraceTrace("ProductListView")
     }
     
     private var loadingView: some View {
