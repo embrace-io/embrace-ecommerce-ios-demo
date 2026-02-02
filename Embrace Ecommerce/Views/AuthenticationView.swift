@@ -1,5 +1,6 @@
 import SwiftUI
 import GoogleSignInSwift
+import EmbraceIO
 
 struct AuthenticationView: View {
     @EnvironmentObject private var authManager: AuthenticationManager
@@ -123,6 +124,7 @@ struct AuthenticationView: View {
                 EmailAuthenticationView(isSignUp: $showingSignUp)
             }
         }
+        .embraceTrace("AuthenticationView")
     }
     
     private var canShowBiometricAuth: Bool {
