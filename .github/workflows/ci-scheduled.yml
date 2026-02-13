@@ -119,10 +119,21 @@ jobs:
 
       - name: Upload dSYMs to Embrace (fallback build only)
         if: steps.check_artifacts.outputs.artifacts_found != 'true'
-        uses: embrace-io/action-symbol-upload@v1
-        with:
-          app_id: ${{ vars.APP_ID }}
-          api_token: ${{ secrets.EMBRACE_API_TOKEN }}
+        env:
+          EMBRACE_APP: ${{ vars.APP_ID }}
+          EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
+        run: |
+          curl -sL -o embrace_support.zip https://downloads.embrace.io/embrace_support.zip
+          unzip -o embrace_support.zip
+          chmod +x embrace_symbol_upload.darwin
+
+          find "DerivedData/Build/Products" -type d -name "*.dSYM" -print0 | while IFS= read -r -d '' dsym_dir; do
+            echo "Working on: ${dsym_dir}"
+            find "${dsym_dir}/Contents/Resources/DWARF" -type f -print0 2>/dev/null | while IFS= read -r -d '' dwarf_file; do
+              echo "Uploading: ${dwarf_file}"
+              ./embrace_symbol_upload.darwin --dsym "${dwarf_file}" || echo "Warning: upload failed for ${dwarf_file}, continuing..."
+            done
+          done
 
       - name: Run test - ${{ matrix.test_suite.name }}
         run: |
