@@ -119,7 +119,7 @@ jobs:
 
       - name: Upload dSYMs to Embrace (fallback build only)
         if: steps.check_artifacts.outputs.artifacts_found != 'true'
-        uses: embrace-io/action-symbol-upload@v2
+        uses: embrace-io/action-symbol-upload@v1
         with:
           app_id: ${{ vars.APP_ID }}
           api_token: ${{ secrets.EMBRACE_API_TOKEN }}
