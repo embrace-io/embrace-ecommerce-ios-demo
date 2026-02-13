@@ -3,7 +3,9 @@
 //  Embrace EcommerceUITests
 //
 //  Crash simulation logic for testing Embrace crash reporting.
-//  Approximately 20% of sessions will experience an intentional crash.
+//  Approximately 35% of sessions will experience an intentional crash.
+//  The app randomly selects from 5 different crash types so they appear
+//  as distinct crash groups on the Embrace dashboard.
 //
 
 import XCTest
@@ -12,12 +14,13 @@ import XCTest
 
 extension Embrace_EcommerceUITests {
 
-    /// Crash probability threshold (20%)
-    /// Values 80-99 trigger a crash (20 out of 100 possible values)
-    private static let crashProbabilityThreshold = 79
+    /// Crash probability threshold (35%)
+    /// Values 65-99 trigger a crash (35 out of 100 possible values)
+    private static let crashProbabilityThreshold = 64
 
     /// Calculates whether to trigger a crash based on probability.
-    /// Approximately 20% of calls will result in a crash.
+    /// Approximately 35% of calls will result in a crash.
+    /// The crash type is randomly selected in the app's EmbraceService.
     /// Call this at appropriate points in test flows to simulate real-world crash scenarios.
     func calculateAndCreateCrash() {
         let probability = Int.random(in: 0...99)
