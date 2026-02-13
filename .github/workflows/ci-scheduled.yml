@@ -114,7 +114,15 @@ jobs:
             -allowProvisioningUpdates \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_REQUIRED=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf-with-dsym
+
+      - name: Upload dSYMs to Embrace (fallback build only)
+        if: steps.check_artifacts.outputs.artifacts_found != 'true'
+        uses: embrace-io/action-symbol-upload@v2
+        with:
+          app_id: ${{ vars.APP_ID }}
+          api_token: ${{ secrets.EMBRACE_API_TOKEN }}
 
       - name: Run test - ${{ matrix.test_suite.name }}
         run: |

@@ -330,23 +330,71 @@ final class EmbraceService: TelemetryService {
 
     // MARK: - Crash Simulation (For Testing/Demo Purposes)
 
+    enum CrashType: String, CaseIterable {
+        case embraceSDK = "embrace_sdk_crash"
+        case forceUnwrapNil = "force_unwrap_nil"
+        case arrayOutOfBounds = "array_index_out_of_bounds"
+        case fatalError = "fatal_error_crash"
+        case implicitlyUnwrappedOptional = "implicitly_unwrapped_optional"
+    }
+
     /// Forces a crash in the app for testing Embrace crash reporting.
-    /// This logs an error event before triggering the crash so it can be correlated in the dashboard.
+    /// Randomly selects from different crash types so they appear as
+    /// distinct crash groups on the Embrace dashboard.
     func forceEmbraceCrash() {
-        let randomExperiment = ["A", "B", "C", "D"].randomElement() ?? "A"
-        let attributes = [
-            "experiment": randomExperiment,
+        let crashType = CrashType.allCases.randomElement() ?? .embraceSDK
+        let attributes: [String: String] = [
+            "crash_type": crashType.rawValue,
             "trigger": "manual_crash_button"
         ]
 
         Embrace.client?.log(
-            "Forcing a crash for testing",
+            "Forcing crash: \(crashType.rawValue)",
             severity: .error,
             attributes: attributes
         )
 
-        addBreadcrumb(message: "User triggered intentional crash")
+        addBreadcrumb(message: "User triggered intentional crash: \(crashType.rawValue)")
 
+        switch crashType {
+        case .embraceSDK:
+            triggerEmbraceSDKCrash()
+        case .forceUnwrapNil:
+            triggerForceUnwrapNilCrash()
+        case .arrayOutOfBounds:
+            triggerArrayIndexOutOfBoundsCrash()
+        case .fatalError:
+            triggerFatalErrorCrash()
+        case .implicitlyUnwrappedOptional:
+            triggerImplicitlyUnwrappedOptionalCrash()
+        }
+    }
+
+    /// Crash via Embrace SDK's built-in crash method (SIGABRT).
+    private func triggerEmbraceSDKCrash() {
         Embrace.client?.crash()
+    }
+
+    /// Crash by force-unwrapping a nil Optional (EXC_BAD_INSTRUCTION).
+    private func triggerForceUnwrapNilCrash() {
+        let nilValue: String? = nil
+        _ = nilValue!
+    }
+
+    /// Crash by accessing an out-of-bounds array index (EXC_BAD_INSTRUCTION).
+    private func triggerArrayIndexOutOfBoundsCrash() {
+        let array = [1, 2, 3]
+        _ = array[10]
+    }
+
+    /// Crash via fatalError with a descriptive message (SIGABRT).
+    private func triggerFatalErrorCrash() {
+        fatalError("Intentional crash: simulated unrecoverable error in checkout flow")
+    }
+
+    /// Crash by using an implicitly unwrapped optional that is nil (EXC_BAD_INSTRUCTION).
+    private func triggerImplicitlyUnwrappedOptionalCrash() {
+        let value: String! = nil
+        _ = value.count
     }
 }
