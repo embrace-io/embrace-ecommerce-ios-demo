@@ -25,8 +25,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
         ]
         app.launch()
 
-        // Wait for Embrace SDK to fully initialize
-        Thread.sleep(forTimeInterval: 3.0)
+        // Wait for Embrace SDK to fully initialize and send any
+        // previous crash session data from a prior run
+        Thread.sleep(forTimeInterval: 10.0)
     }
 
     override func tearDownWithError() throws {
