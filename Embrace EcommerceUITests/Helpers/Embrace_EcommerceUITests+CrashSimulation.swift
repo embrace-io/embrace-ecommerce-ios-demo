@@ -27,10 +27,17 @@ extension Embrace_EcommerceUITests {
         print("🎲 Crash probability roll: \(probability) (threshold: >\(Self.crashProbabilityThreshold) to crash)")
 
         if probability > Self.crashProbabilityThreshold {
-            print("💥 Probability check passed - triggering intentional crash")
+            print("Probability check passed - flushing session data before crash")
+
+            // Flush session data BEFORE crashing so the session is uploaded
+            // to the Embrace dashboard alongside the crash report.
+            sendAppToBackground()
+            bringAppToForeground()
+
+            print("Session data flushed - triggering intentional crash")
             tapCrashButton()
         } else {
-            print("✅ No crash this session (probability: \(probability))")
+            print("No crash this session (probability: \(probability))")
         }
     }
 
