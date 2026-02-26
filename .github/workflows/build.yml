@@ -112,7 +112,7 @@ jobs:
           ls -la "${{ env.DERIVED_DATA_PATH }}/Build/Products/"
 
       - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: test-build-artifacts
           path: |
@@ -121,7 +121,7 @@ jobs:
           if-no-files-found: error
 
       - name: Upload xctestrun file
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: xctestrun-file
           path: ${{ env.DERIVED_DATA_PATH }}/Build/Products/*.xctestrun
