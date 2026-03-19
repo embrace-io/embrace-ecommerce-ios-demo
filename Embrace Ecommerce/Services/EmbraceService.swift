@@ -8,6 +8,7 @@
 import Foundation
 import EmbraceIO
 import OpenTelemetryApi
+import EmbraceOTelInternal
 
 protocol TelemetryService {
     func logInfo(_ message: String, properties: [String: String]?)
@@ -304,6 +305,51 @@ final class EmbraceService: TelemetryService {
         ])
     }
     
+    // MARK: - Standalone Session Events
+
+    /// Adds standalone SpanEvents directly to the current session span,
+    /// without requiring a user-created span. Tests the `add(events:)` API.
+    func addStandaloneEvents() {
+        print("[EmbraceService] addStandaloneEvents() called")
+
+        let events: [RecordingSpanEvent] = [
+            RecordingSpanEvent(
+                name: "standalone.user_action",
+                timestamp: Date(),
+                attributes: [
+                    "action": .string("button_tap"),
+                    "screen": .string("profile")
+                ]
+            ),
+            RecordingSpanEvent(
+                name: "standalone.checkpoint",
+                timestamp: Date(),
+                attributes: [
+                    "checkpoint": .string("test_milestone"),
+                    "sequence": .int(1)
+                ]
+            ),
+            RecordingSpanEvent(
+                name: "standalone.custom_event",
+                timestamp: Date(),
+                attributes: [
+                    "source": .string("standalone_events_test"),
+                    "priority": .string("high")
+                ]
+            )
+        ]
+
+        print("[EmbraceService] Adding \(events.count) standalone events to session span")
+        print("[EmbraceService] Embrace.client is \(Embrace.client == nil ? "nil" : "available")")
+
+        Embrace.client?.add(events: events)
+
+        print("[EmbraceService] add(events:) called successfully")
+        logInfo("Standalone events added to session span", properties: [
+            "event_count": "\(events.count)"
+        ])
+    }
+
     // MARK: - Search Tracking
     
     func trackSearchPerformed(query: String, resultCount: Int, filters: [String: String]?) {

@@ -1,0 +1,15 @@
+{
+    "Simulator Target Bundle": "com.embrace.org.Embrace-Ecommerce",
+    "aps": {
+        "alert": {
+            "title": "Flash Sale!",
+            "subtitle": "Limited time offer",
+            "body": "50% off all electronics - tap to shop now"
+        },
+        "badge": 1,
+        "sound": "default",
+        "category": "PROMO"
+    },
+    "deep_link": "/products/electronics",
+    "campaign_id": "ford-push-test-001"
+}

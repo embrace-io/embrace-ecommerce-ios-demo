@@ -106,6 +106,25 @@ struct ProfileView: View {
                 .accessibilityIdentifier("profileNetworkDebugRow")
 
                 Button(action: {
+                    EmbraceService.shared.addStandaloneEvents()
+                }) {
+                    HStack {
+                        Image(systemName: "list.bullet.rectangle")
+                            .foregroundColor(.purple)
+                            .frame(width: 24)
+                        Text("Test Standalone Events")
+                            .foregroundColor(.purple)
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.vertical, 4)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .accessibilityIdentifier("test-standalone-events-button")
+
+                Button(action: {
                     EmbraceService.shared.forceEmbraceCrash()
                 }) {
                     HStack {

@@ -11,9 +11,50 @@ import GoogleSignIn
 import Stripe
 import Firebase
 import Mixpanel
+import UserNotifications
+
+// MARK: - AppDelegate for Push Notification handling
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+
+    func application(
+        _ application: UIApplication,
+        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
+    ) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            print("[Push] Authorization granted: \(granted), error: \(String(describing: error))")
+        }
+        application.registerForRemoteNotifications()
+        return true
+    }
+
+    // Called when a push arrives while the app is in the foreground
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        let userInfo = notification.request.content.userInfo
+        print("[Push] willPresent - notification received in foreground: \(userInfo)")
+        completionHandler([.banner, .sound, .badge])
+    }
+
+    // Called when the user taps a notification
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
+        let userInfo = response.notification.request.content.userInfo
+        print("[Push] didReceive - user tapped notification: \(userInfo)")
+        completionHandler()
+    }
+}
 
 @main
 struct Embrace_EcommerceApp: App {
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+
     init() {
         print("🚀 Starting app initialization...")
 
@@ -108,9 +149,18 @@ struct Embrace_EcommerceApp: App {
     
     private func configureEmbrace() {
         do {
-            // Create basic Embrace configuration  
+            // Build capture services: defaults + push notification capture with data
+            let services = CaptureServiceBuilder()
+                .addDefaults()
+                .add(.pushNotification(
+                    options: PushNotificationCaptureService.Options(captureData: true)
+                ))
+                .build()
+
             let options = Embrace.Options(
                 appId: SDKConfiguration.Embrace.appId,
+                captureServices: services,
+                crashReporter: nil,
                 logLevel: .info
             )
             
