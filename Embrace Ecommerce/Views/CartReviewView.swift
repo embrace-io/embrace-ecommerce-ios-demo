@@ -150,7 +150,8 @@ struct CartReviewView: View {
                 .cornerRadius(12)
             }
             .disabled(!coordinator.canProceedFromCurrentStep())
-            
+            .accessibilityIdentifier("continueToShippingButton")
+
             if !coordinator.canProceedFromCurrentStep() {
                 Text("Add items to cart to continue")
                     .font(.caption)
