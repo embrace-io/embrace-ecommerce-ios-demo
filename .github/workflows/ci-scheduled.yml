@@ -31,6 +31,12 @@ jobs:
           - name: "Browse Products"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
             run_source: "scheduled-browse"
+          - name: "Guest Auth"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow"
+            run_source: "scheduled-auth"
+          - name: "Checkout Flow"
+            target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testCheckoutFlow"
+            run_source: "scheduled-checkout"
 
     steps:
       - name: Checkout code

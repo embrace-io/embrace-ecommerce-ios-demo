@@ -81,7 +81,11 @@ jobs:
       - name: Setup simulator
         id: setup_simulator
         run: |
-          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep -w "${{ env.DEVICE_NAME }}" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          if [[ -z "$SIMULATOR_UDID" ]]; then
+            echo "Exact match not found, trying partial match"
+            SIMULATOR_UDID=$(xcrun simctl list devices available | grep "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro\|e " | head -1 | grep -o '[A-F0-9-]\{36\}')
+          fi
           if [[ -z "$SIMULATOR_UDID" ]]; then
             echo "Simulator not found, trying any iPhone"
             SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')

@@ -269,7 +269,8 @@ struct PaymentSelectionView: View {
                 .cornerRadius(12)
             }
             .disabled(!coordinator.canProceedFromCurrentStep())
-            
+            .accessibilityIdentifier("reviewOrderButton")
+
             Button("Back to Shipping") {
                 coordinator.goToPreviousStep()
             }
