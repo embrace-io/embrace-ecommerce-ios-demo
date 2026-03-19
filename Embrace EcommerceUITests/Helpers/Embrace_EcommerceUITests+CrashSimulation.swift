@@ -4,8 +4,8 @@
 //
 //  Crash simulation logic for testing Embrace crash reporting.
 //  Approximately 35% of sessions will experience an intentional crash.
-//  The app randomly selects from 5 different crash types so they appear
-//  as distinct crash groups on the Embrace dashboard.
+//  All crashes use Embrace.client?.crash() to ensure proper session
+//  association. Crash type labels are logged as attributes for grouping.
 //
 
 import XCTest
