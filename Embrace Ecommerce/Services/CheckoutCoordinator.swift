@@ -79,6 +79,8 @@ class CheckoutCoordinator: ObservableObject {
         case .payment:
             // Flow 1 End: CHECKOUT_SHIPPING_COMPLETED
             embraceService.addBreadcrumb(message: "CHECKOUT_SHIPPING_COMPLETED")
+            // Flow 2 Start: distinct event so it doesn't collide with Flow 1's end
+            embraceService.addBreadcrumb(message: "SHIPPING_TO_PAYMENT_STARTED")
         case .confirmation:
             // Flow 2 End: CHECKOUT_PAYMENT_COMPLETED
             embraceService.addBreadcrumb(message: "CHECKOUT_PAYMENT_COMPLETED")
