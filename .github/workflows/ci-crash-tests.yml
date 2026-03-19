@@ -1,0 +1,167 @@
+name: Crash Tests
+
+# Dedicated workflow that deterministically triggers crashes and flushes
+# the crash reports on the same simulator. Runs 5 crash+flush cycles to
+# populate all 5 crash types on the Embrace dashboard.
+
+on:
+  schedule:
+    - cron: '15 */3 * * *'
+  workflow_dispatch:
+
+env:
+  PROJECT_NAME: "Embrace Ecommerce"
+  SCHEME_NAME: "Embrace Ecommerce"
+  XCODE_VERSION: "16.4"
+  DEVICE_NAME: "iPhone 16"
+
+concurrency:
+  group: crash-tests
+  cancel-in-progress: true
+
+jobs:
+  crash-and-flush:
+    name: "Crash Tests (5 cycles)"
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
+          xcodebuild -version
+
+      - name: Configure Embrace App ID
+        run: |
+          if [[ -n "${{ vars.APP_ID }}" ]]; then
+            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
+            echo "Embrace APP_ID configured"
+          else
+            echo "ERROR: APP_ID variable not found"
+            exit 1
+          fi
+
+      - name: Configure RUN_SOURCE
+        run: |
+          sed -i '' 's/"RUN_SOURCE": "[^"]*"/"RUN_SOURCE": "crash-test"/' "${{ env.PROJECT_NAME }}UITests/Embrace_EcommerceUITests.swift"
+          echo "RUN_SOURCE set to crash-test"
+
+      - name: Cache SPM dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            DerivedData/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
+
+      - name: Setup simulator
+        id: setup_simulator
+        run: |
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          if [[ -z "$SIMULATOR_UDID" ]]; then
+            SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          fi
+          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
+          echo "Found simulator: $SIMULATOR_UDID"
+
+          xcrun simctl boot "$SIMULATOR_UDID" 2>/dev/null || true
+          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
+          echo "Simulator booted"
+
+      - name: Build for testing
+        run: |
+          xcodebuild build-for-testing \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "DerivedData" \
+            -configuration Debug \
+            -skipMacroValidation \
+            -allowProvisioningUpdates \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            DEBUG_INFORMATION_FORMAT=dwarf-with-dsym
+
+      - name: Upload dSYMs to Embrace
+        env:
+          EMBRACE_APP: ${{ vars.APP_ID }}
+          EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
+        run: |
+          curl -sL -o embrace_support.zip https://downloads.embrace.io/embrace_support.zip
+          unzip -o embrace_support.zip
+          chmod +x embrace_symbol_upload.darwin
+
+          find "DerivedData/Build/Products" -type d -name "*.dSYM" -print0 | while IFS= read -r -d '' dsym_dir; do
+            find "${dsym_dir}/Contents/Resources/DWARF" -type f -print0 2>/dev/null | while IFS= read -r -d '' dwarf_file; do
+              echo "Uploading dSYM: ${dwarf_file}"
+              ./embrace_symbol_upload.darwin --dsym "${dwarf_file}" || echo "Warning: upload failed for ${dwarf_file}"
+            done
+          done
+
+      - name: "Run 5 crash+flush cycles"
+        run: |
+          SIM_DEST="platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}"
+          CRASH_TEST="Embrace EcommerceUITests/Embrace_EcommerceUITests/testForceCrash"
+          FLUSH_TEST="Embrace EcommerceUITests/Embrace_EcommerceUITests/testFlushCrashReport"
+          PASSED=0
+          FAILED=0
+
+          for i in 1 2 3 4 5; do
+            echo ""
+            echo "========================================"
+            echo "  Crash cycle $i of 5"
+            echo "========================================"
+
+            echo "--- Triggering crash ---"
+            xcodebuild test-without-building \
+              -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+              -scheme "${{ env.SCHEME_NAME }}" \
+              -destination "$SIM_DEST" \
+              -derivedDataPath "DerivedData" \
+              -only-testing:"$CRASH_TEST" \
+              -resultBundlePath "Results/crash-$i" 2>&1 || true
+
+            echo "--- Flushing crash report (relaunch) ---"
+            xcodebuild test-without-building \
+              -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+              -scheme "${{ env.SCHEME_NAME }}" \
+              -destination "$SIM_DEST" \
+              -derivedDataPath "DerivedData" \
+              -only-testing:"$FLUSH_TEST" \
+              -resultBundlePath "Results/flush-$i" 2>&1
+
+            if [ $? -eq 0 ]; then
+              echo "Cycle $i: flush succeeded"
+              PASSED=$((PASSED + 1))
+            else
+              echo "Cycle $i: flush failed"
+              FAILED=$((FAILED + 1))
+            fi
+
+            sleep 5
+          done
+
+          echo ""
+          echo "========================================"
+          echo "  Results: $PASSED flushed, $FAILED failed"
+          echo "========================================"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crash-test-results
+          path: Results/
+          retention-days: 3
+          if-no-files-found: ignore
+
+      - name: Cleanup
+        if: always()
+        run: |
+          killall Simulator 2>/dev/null || true
+          xcrun simctl shutdown "${{ steps.setup_simulator.outputs.simulator_udid }}" 2>/dev/null || true
