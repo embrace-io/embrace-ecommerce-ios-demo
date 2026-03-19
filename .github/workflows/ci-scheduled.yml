@@ -28,9 +28,6 @@ jobs:
       fail-fast: false
       matrix:
         test_suite:
-          # Single test to create 1 non-stitched timeline per run
-          # Combined with one-simulator.yml (1 stitched timeline per run)
-          # this achieves ~50% stitched / 50% non-stitched sessions
           - name: "Browse Products"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
             run_source: "scheduled-browse"
@@ -143,7 +140,21 @@ jobs:
             -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
             -derivedDataPath "DerivedData" \
             -only-testing:"${{ matrix.test_suite.target }}" \
-            -resultBundlePath "TestResults-${{ matrix.test_suite.run_source }}"
+            -resultBundlePath "TestResults-${{ matrix.test_suite.run_source }}" || true
+
+      - name: Flush crash report (relaunch app on same simulator)
+        run: |
+          # If the previous test crashed, the crash report is stored on disk
+          # but not yet sent. Run a quick non-crashing test on the same
+          # simulator so the app relaunches and sends the pending report.
+          echo "Running follow-up test to flush any pending crash reports..."
+          xcodebuild test-without-building \
+            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+            -scheme "${{ env.SCHEME_NAME }}" \
+            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
+            -derivedDataPath "DerivedData" \
+            -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/testQuickBrowseAndLeave" \
+            -resultBundlePath "TestResults-flush" || true
 
       - name: Upload test results
         if: always()

@@ -330,71 +330,77 @@ final class EmbraceService: TelemetryService {
 
     // MARK: - Crash Simulation (For Testing/Demo Purposes)
 
-    enum CrashType: String, CaseIterable {
-        case embraceSDK = "embrace_sdk_crash"
-        case forceUnwrapNil = "force_unwrap_nil"
-        case arrayOutOfBounds = "array_index_out_of_bounds"
-        case fatalError = "fatal_error_crash"
-        case implicitlyUnwrappedOptional = "implicitly_unwrapped_optional"
-    }
-
-    /// Forces a crash in the app for testing Embrace crash reporting.
-    /// Randomly selects from different crash types so they appear as
-    /// distinct crash groups on the Embrace dashboard.
+    /// Randomly dispatches to one of 5 distinct crash functions so they
+    /// appear as separate crash groups on the Embrace dashboard.
+    /// Each function uses Embrace.client?.crash() to ensure session association.
     func forceEmbraceCrash() {
-        let crashType = CrashType.allCases.randomElement() ?? .embraceSDK
-        let attributes: [String: String] = [
-            "crash_type": crashType.rawValue,
-            "trigger": "manual_crash_button"
-        ]
-
-        Embrace.client?.log(
-            "Forcing crash: \(crashType.rawValue)",
-            severity: .error,
-            attributes: attributes
-        )
-
-        addBreadcrumb(message: "User triggered intentional crash: \(crashType.rawValue)")
-
-        switch crashType {
-        case .embraceSDK:
-            triggerEmbraceSDKCrash()
-        case .forceUnwrapNil:
-            triggerForceUnwrapNilCrash()
-        case .arrayOutOfBounds:
-            triggerArrayIndexOutOfBoundsCrash()
-        case .fatalError:
-            triggerFatalErrorCrash()
-        case .implicitlyUnwrappedOptional:
-            triggerImplicitlyUnwrappedOptionalCrash()
+        let selection = Int.random(in: 0...4)
+        switch selection {
+        case 0: simulateCartUpdateCrash()
+        case 1: simulatePaymentProcessingCrash()
+        case 2: simulateProductRecommendationCrash()
+        case 3: simulateSearchFilterCrash()
+        default: simulateAuthTokenRefreshCrash()
         }
     }
 
-    /// Crash via Embrace SDK's built-in crash method (SIGABRT).
-    private func triggerEmbraceSDKCrash() {
+    /// Dashboard description: EmbraceService.simulateCartUpdateCrash()
+    @inline(never)
+    private func simulateCartUpdateCrash() {
+        Embrace.client?.log(
+            "Cart update failed: quantity sync error",
+            severity: .error,
+            attributes: ["crash_type": "cart_update", "trigger": "manual_crash_button"]
+        )
+        addBreadcrumb(message: "Crash in cart quantity update flow")
         Embrace.client?.crash()
     }
 
-    /// Crash by force-unwrapping a nil Optional (EXC_BAD_INSTRUCTION).
-    private func triggerForceUnwrapNilCrash() {
-        let nilValue: String? = nil
-        _ = nilValue!
+    /// Dashboard description: EmbraceService.simulatePaymentProcessingCrash()
+    @inline(never)
+    private func simulatePaymentProcessingCrash() {
+        Embrace.client?.log(
+            "Payment processing failed: unexpected nil response",
+            severity: .error,
+            attributes: ["crash_type": "payment_processing", "trigger": "manual_crash_button"]
+        )
+        addBreadcrumb(message: "Crash in payment processing flow")
+        Embrace.client?.crash()
     }
 
-    /// Crash by accessing an out-of-bounds array index (EXC_BAD_INSTRUCTION).
-    private func triggerArrayIndexOutOfBoundsCrash() {
-        let array = [1, 2, 3]
-        _ = array[10]
+    /// Dashboard description: EmbraceService.simulateProductRecommendationCrash()
+    @inline(never)
+    private func simulateProductRecommendationCrash() {
+        Embrace.client?.log(
+            "Product recommendations failed: index out of range",
+            severity: .error,
+            attributes: ["crash_type": "product_recommendation", "trigger": "manual_crash_button"]
+        )
+        addBreadcrumb(message: "Crash in product recommendation engine")
+        Embrace.client?.crash()
     }
 
-    /// Crash via fatalError with a descriptive message (SIGABRT).
-    private func triggerFatalErrorCrash() {
-        fatalError("Intentional crash: simulated unrecoverable error in checkout flow")
+    /// Dashboard description: EmbraceService.simulateSearchFilterCrash()
+    @inline(never)
+    private func simulateSearchFilterCrash() {
+        Embrace.client?.log(
+            "Search filter failed: malformed predicate",
+            severity: .error,
+            attributes: ["crash_type": "search_filter", "trigger": "manual_crash_button"]
+        )
+        addBreadcrumb(message: "Crash in search filter application")
+        Embrace.client?.crash()
     }
 
-    /// Crash by using an implicitly unwrapped optional that is nil (EXC_BAD_INSTRUCTION).
-    private func triggerImplicitlyUnwrappedOptionalCrash() {
-        let value: String! = nil
-        _ = value.count
+    /// Dashboard description: EmbraceService.simulateAuthTokenRefreshCrash()
+    @inline(never)
+    private func simulateAuthTokenRefreshCrash() {
+        Embrace.client?.log(
+            "Auth token refresh failed: expired session",
+            severity: .error,
+            attributes: ["crash_type": "auth_token_refresh", "trigger": "manual_crash_button"]
+        )
+        addBreadcrumb(message: "Crash in auth token refresh")
+        Embrace.client?.crash()
     }
 }
