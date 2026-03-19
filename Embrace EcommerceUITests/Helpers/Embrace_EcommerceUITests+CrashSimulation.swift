@@ -86,4 +86,39 @@ extension Embrace_EcommerceUITests {
             }
         }
     }
+
+    /// Deterministic crash test. Always authenticates, navigates briefly,
+    /// then triggers a crash. Used by the dedicated crash CI workflow.
+    func testForceCrash() throws {
+        let currentScreen = detectCurrentScreen()
+        if currentScreen == .authentication {
+            let success = tapGuestButton()
+            XCTAssertTrue(success, "Failed to complete guest authentication")
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Brief navigation so the session has some activity
+        let homeView = app.descendants(matching: .any)["homeView"].firstMatch
+        _ = homeView.waitForExistence(timeout: 10.0)
+        Thread.sleep(forTimeInterval: 2.0)
+
+        tapCrashButton()
+    }
+
+    /// Minimal test that just launches the app and backgrounds it.
+    /// Used after a crash test to flush the pending crash report.
+    func testFlushCrashReport() throws {
+        let currentScreen = detectCurrentScreen()
+        if currentScreen == .authentication {
+            _ = tapGuestButton()
+            Thread.sleep(forTimeInterval: 2.0)
+        }
+
+        // Wait for SDK to send pending crash report from prior session
+        Thread.sleep(forTimeInterval: 5.0)
+
+        // Background/foreground to trigger session upload
+        sendAppToBackground()
+        bringAppToForeground()
+    }
 }
