@@ -61,7 +61,7 @@ jobs:
       - name: Setup simulator
         id: setup_simulator
         run: |
-          SIMULATOR_UDID=$(xcrun simctl list devices available | grep "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro" | head -1 | grep -o '[A-F0-9-]\{36\}')
+          SIMULATOR_UDID=$(xcrun simctl list devices available | grep -w "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro\|e " | head -1 | grep -o '[A-F0-9-]\{36\}')
           if [[ -z "$SIMULATOR_UDID" ]]; then
             SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
           fi
