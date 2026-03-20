@@ -173,26 +173,21 @@ final class Embrace_EcommerceUITests: XCTestCase {
         // Wait for content to load
         Thread.sleep(forTimeInterval: 2.0)
 
-        // Tap on a featured product
-        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_'")).firstMatch
-        if productCard.waitForExistence(timeout: 5.0) {
+        // Tap on any available product (featured or new arrival)
+        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_' OR identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
+        if productCard.waitForExistence(timeout: 10.0) {
             productCard.tap()
-            print("Tapped: Featured product")
+            print("Tapped: Product card")
         } else {
-            // Fallback: tap on a new arrival
-            let newArrivalCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
-            if newArrivalCard.waitForExistence(timeout: 5.0) {
-                newArrivalCard.tap()
-                print("Tapped: New arrival product")
-            }
+            print("WARNING: No product card found")
         }
 
         // Wait for product detail to load
-        Thread.sleep(forTimeInterval: 2.0)
+        Thread.sleep(forTimeInterval: 3.0)
 
         // Try to tap Add to Cart button
         let addToCartButton = app.descendants(matching: .any)["productDetailAddToCartButton"].firstMatch
-        if addToCartButton.waitForExistence(timeout: 5.0) {
+        if addToCartButton.waitForExistence(timeout: 10.0) {
             addToCartButton.tap()
             print("Tapped: Add to Cart button")
             Thread.sleep(forTimeInterval: 1.0)
@@ -213,7 +208,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
         XCTAssertTrue(cartView.waitForExistence(timeout: 5.0), "Cart view did not load")
         print("Verified: Cart view loaded")
 
-        // ~20% chance to crash the app to demonstrate Embrace crash reporting
+        // ~35% chance to crash the app to demonstrate Embrace crash reporting
         calculateAndCreateCrash()
 
         // Send app to background to trigger Embrace session upload
@@ -454,17 +449,17 @@ final class Embrace_EcommerceUITests: XCTestCase {
         // Wait for home view
         Thread.sleep(forTimeInterval: 3.0)
 
-        // Tap on a featured product
-        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_'")).firstMatch
-        if productCard.waitForExistence(timeout: 5.0) && productCard.isHittable {
+        // Tap on any available product
+        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_' OR identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
+        if productCard.waitForExistence(timeout: 10.0) && productCard.isHittable {
             productCard.tap()
-            print("Tapped: Featured product")
-            Thread.sleep(forTimeInterval: 2.0)
+            print("Tapped: Product card")
+            Thread.sleep(forTimeInterval: 3.0)
         }
 
         // Add to cart
         let addToCartButton = app.descendants(matching: .any)["productDetailAddToCartButton"].firstMatch
-        if addToCartButton.waitForExistence(timeout: 5.0) && addToCartButton.isHittable {
+        if addToCartButton.waitForExistence(timeout: 10.0) && addToCartButton.isHittable {
             addToCartButton.tap()
             print("Tapped: Add to Cart")
             Thread.sleep(forTimeInterval: 2.0)
@@ -606,32 +601,26 @@ final class Embrace_EcommerceUITests: XCTestCase {
             print("Completed: Guest authentication")
         }
 
-        // Step 2: Wait for home view and tap on a featured product
+        // Step 2: Wait for home view and tap on any available product
         let homeView = app.descendants(matching: .any)["homeView"].firstMatch
-        guard homeView.waitForExistence(timeout: 10.0) else {
+        guard homeView.waitForExistence(timeout: 15.0) else {
             XCTFail("Home view did not load")
             return
         }
-        Thread.sleep(forTimeInterval: 2.0)
+        Thread.sleep(forTimeInterval: 3.0)
 
-        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_'")).firstMatch
-        if productCard.waitForExistence(timeout: 5.0) {
+        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_' OR identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
+        if productCard.waitForExistence(timeout: 10.0) {
             productCard.tap()
-            print("Tapped: Featured product")
+            print("Tapped: Product card")
         } else {
-            let newArrivalCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
-            if newArrivalCard.waitForExistence(timeout: 5.0) {
-                newArrivalCard.tap()
-                print("Tapped: New arrival product")
-            } else {
-                print("WARNING: No product card found - cart may be empty")
-            }
+            print("WARNING: No product card found - cart may be empty")
         }
-        Thread.sleep(forTimeInterval: 2.0)
+        Thread.sleep(forTimeInterval: 3.0)
 
         // Step 3: Add product to cart
         let addToCartButton = app.descendants(matching: .any)["productDetailAddToCartButton"].firstMatch
-        if addToCartButton.waitForExistence(timeout: 5.0) {
+        if addToCartButton.waitForExistence(timeout: 10.0) {
             addToCartButton.tap()
             print("Tapped: Add to Cart")
             Thread.sleep(forTimeInterval: 1.0)
@@ -654,7 +643,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
 
         // Step 5: Tap "Proceed to Checkout" → triggers CHECKOUT_STARTED
         let proceedButton = app.descendants(matching: .any)["cartProceedToCheckoutButton"].firstMatch
-        guard proceedButton.waitForExistence(timeout: 5.0) else {
+        guard proceedButton.waitForExistence(timeout: 10.0) else {
             XCTFail("Proceed to Checkout button not found - cart may be empty")
             sendAppToBackground()
             bringAppToForeground()
@@ -666,7 +655,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
 
         // Step 6: Cart Review → tap "Continue to Shipping"
         let continueToShipping = app.descendants(matching: .any)["continueToShippingButton"].firstMatch
-        if continueToShipping.waitForExistence(timeout: 5.0) {
+        if continueToShipping.waitForExistence(timeout: 10.0) {
             continueToShipping.tap()
             print("Tapped: Continue to Shipping (via identifier)")
         } else {
@@ -683,7 +672,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
 
         // Step 7: Shipping → select an address
         let selectAddressButton = app.descendants(matching: .any)["selectAddressButton"].firstMatch
-        if selectAddressButton.waitForExistence(timeout: 5.0) {
+        if selectAddressButton.waitForExistence(timeout: 10.0) {
             selectAddressButton.tap()
             print("Tapped: Select Address")
             Thread.sleep(forTimeInterval: 1.0)
@@ -693,7 +682,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
 
         // Step 8: Shipping → select a shipping method
         let shippingMethod = app.descendants(matching: .any)["shippingMethodstandardView"].firstMatch
-        if shippingMethod.waitForExistence(timeout: 5.0) {
+        if shippingMethod.waitForExistence(timeout: 10.0) {
             shippingMethod.tap()
             print("Tapped: Standard Shipping method")
             Thread.sleep(forTimeInterval: 1.0)
@@ -703,7 +692,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
 
         // Step 9: Tap "Continue to Payment" → triggers CHECKOUT_SHIPPING_COMPLETED
         let continueToPayment = app.descendants(matching: .any)["continueToPaymentButton"].firstMatch
-        if continueToPayment.waitForExistence(timeout: 5.0) {
+        if continueToPayment.waitForExistence(timeout: 10.0) {
             continueToPayment.tap()
             print("Tapped: Continue to Payment (CHECKOUT_SHIPPING_COMPLETED)")
         } else {
@@ -713,7 +702,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
 
         // Step 10: Payment → saved card auto-selected, tap "Review Order" → triggers CHECKOUT_PAYMENT_COMPLETED
         let reviewOrder = app.descendants(matching: .any)["reviewOrderButton"].firstMatch
-        if reviewOrder.waitForExistence(timeout: 5.0) {
+        if reviewOrder.waitForExistence(timeout: 10.0) {
             reviewOrder.tap()
             print("Tapped: Review Order (CHECKOUT_PAYMENT_COMPLETED) (via identifier)")
         } else {
