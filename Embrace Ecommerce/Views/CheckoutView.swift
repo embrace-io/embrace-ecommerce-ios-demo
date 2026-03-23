@@ -7,11 +7,6 @@ struct CheckoutView: View {
     @StateObject private var coordinator: CheckoutCoordinator
     @State private var navigationPath = NavigationPath()
     
-    init() {
-        let cartManager = CartManager()
-        self._coordinator = StateObject(wrappedValue: CheckoutCoordinator(cartManager: cartManager))
-    }
-    
     init(cartManager: CartManager) {
         self._coordinator = StateObject(wrappedValue: CheckoutCoordinator(cartManager: cartManager))
     }
@@ -129,7 +124,7 @@ struct OrderConfirmationViewControllerWrapper: UIViewControllerRepresentable {
 
 #Preview {
     NavigationView {
-        CheckoutView()
+        CheckoutView(cartManager: CartManager())
             .environmentObject(CartManager())
     }
 }
