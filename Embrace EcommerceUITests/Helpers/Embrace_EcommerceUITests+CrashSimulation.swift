@@ -89,7 +89,15 @@ extension Embrace_EcommerceUITests {
 
     /// Deterministic crash test. Always authenticates, navigates briefly,
     /// then triggers a crash. Used by the dedicated crash CI workflow.
+    ///
+    /// When run in the same xcodebuild invocation as testFlushCrashReport,
+    /// XCTest continues to the flush test after this test fails from the crash.
+    /// The app data (Embrace session DB + KSCrash reports) persists on disk
+    /// because the app is relaunched, not reinstalled, between test methods.
     func testForceCrash() throws {
+        // Allow XCTest to proceed to testFlushCrashReport after the crash
+        continueAfterFailure = true
+
         let currentScreen = detectCurrentScreen()
         if currentScreen == .authentication {
             let success = tapGuestButton()
@@ -100,13 +108,23 @@ extension Embrace_EcommerceUITests {
         // Brief navigation so the session has some activity
         let homeView = app.descendants(matching: .any)["homeView"].firstMatch
         _ = homeView.waitForExistence(timeout: 10.0)
-        Thread.sleep(forTimeInterval: 2.0)
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Background/foreground to flush the session data to disk before crashing.
+        // This ensures the Embrace session DB has the full timeline persisted.
+        sendAppToBackground()
+        bringAppToForeground()
+
+        // Give SDK time to finish any pending writes after foregrounding
+        Thread.sleep(forTimeInterval: 3.0)
 
         tapCrashButton()
     }
 
     /// Minimal test that just launches the app and backgrounds it.
     /// Used after a crash test to flush the pending crash report.
+    /// Must run in the same xcodebuild invocation as testForceCrash
+    /// so the app data container is preserved (relaunch, not reinstall).
     func testFlushCrashReport() throws {
         let currentScreen = detectCurrentScreen()
         if currentScreen == .authentication {
@@ -114,10 +132,16 @@ extension Embrace_EcommerceUITests {
             Thread.sleep(forTimeInterval: 2.0)
         }
 
-        // Wait for SDK to send pending crash report from prior session
-        Thread.sleep(forTimeInterval: 5.0)
+        // Wait for SDK to process and upload the pending crash report
+        // and its associated session from the prior crashed session
+        Thread.sleep(forTimeInterval: 10.0)
 
         // Background/foreground to trigger session upload
+        sendAppToBackground()
+        bringAppToForeground()
+
+        // Second background/foreground cycle for reliability
+        Thread.sleep(forTimeInterval: 5.0)
         sendAppToBackground()
         bringAppToForeground()
     }
