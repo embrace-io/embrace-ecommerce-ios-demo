@@ -78,7 +78,7 @@ struct MainTabView: View {
     private func destinationView(for destination: NavigationDestination) -> some View {
         switch destination {
         case .checkout:
-            CheckoutView()
+            CheckoutView(cartManager: cartManager)
         case .productDetail(let productId):
             ProductDetailView(productId: productId)
         case .productList(let category):
