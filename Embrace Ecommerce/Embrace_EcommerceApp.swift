@@ -22,6 +22,7 @@ struct Embrace_EcommerceApp: App {
 
         if environment["UI_TESTING"] == "1" {
             print("📱 Running in UI Testing mode")
+            MockNetworkService.shared.config = MockNetworkConfig(baseDelay: 0.1, slowDelay: 0.1, failureRate: 0, timeoutRate: 0, serverErrorRate: 0)
         }
 
         if environment["DISABLE_NETWORK_CALLS"] == "1" {
