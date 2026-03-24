@@ -90,12 +90,12 @@ extension Embrace_EcommerceUITests {
     /// Deterministic crash test. Always authenticates, navigates briefly,
     /// then triggers a crash. Used by the dedicated crash CI workflow.
     ///
-    /// When run in the same xcodebuild invocation as testFlushCrashReport,
-    /// XCTest continues to the flush test after this test fails from the crash.
-    /// The app data (Embrace session DB + KSCrash reports) persists on disk
-    /// because the app is relaunched, not reinstalled, between test methods.
-    func testForceCrash() throws {
-        // Allow XCTest to proceed to testFlushCrashReport after the crash
+    /// Named with "A_" prefix so XCTest runs it BEFORE testCrashB_Flush
+    /// (alphabetical ordering). The app data (Embrace session DB + KSCrash
+    /// reports) persists on disk because the app is relaunched, not
+    /// reinstalled, between test methods in the same xcodebuild invocation.
+    func testCrashA_Force() throws {
+        // Allow XCTest to proceed to testCrashB_Flush after the crash
         continueAfterFailure = true
 
         let currentScreen = detectCurrentScreen()
@@ -123,9 +123,10 @@ extension Embrace_EcommerceUITests {
 
     /// Minimal test that just launches the app and backgrounds it.
     /// Used after a crash test to flush the pending crash report.
-    /// Must run in the same xcodebuild invocation as testForceCrash
+    /// Named with "B_" prefix so XCTest runs it AFTER testCrashA_Force
+    /// (alphabetical ordering). Must be in the same xcodebuild invocation
     /// so the app data container is preserved (relaunch, not reinstall).
-    func testFlushCrashReport() throws {
+    func testCrashB_Flush() throws {
         let currentScreen = detectCurrentScreen()
         if currentScreen == .authentication {
             _ = tapGuestButton()
