@@ -170,21 +170,20 @@ final class Embrace_EcommerceUITests: XCTestCase {
         XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "Home view did not load")
         print("Verified: Home view loaded")
 
-        // Wait for content to load, then scroll to reveal product cards
+        // Use "See All" to reach product list (avoids horizontal scroll hittability issues)
         Thread.sleep(forTimeInterval: 2.0)
-        let mainContent = app.descendants(matching: .any)["homeMainContent"].firstMatch
-        if mainContent.exists {
-            mainContent.swipeUp()
+        let seeAllButton = app.descendants(matching: .any)["homeFeaturedProductsSeeAllButton"].firstMatch
+        if seeAllButton.waitForExistence(timeout: 10.0) {
+            seeAllButton.tap()
+            print("Tapped: See All button")
         }
-        Thread.sleep(forTimeInterval: 1.0)
+        Thread.sleep(forTimeInterval: 3.0)
 
-        // Tap on any available product (featured or new arrival)
-        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_' OR identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
-        if productCard.waitForExistence(timeout: 10.0) && productCard.isHittable {
-            productCard.tap()
-            print("Tapped: Product card")
-        } else {
-            print("WARNING: No product card found or not hittable")
+        // Tap first product from the product list
+        let productRow = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productListRow_'")).firstMatch
+        if productRow.waitForExistence(timeout: 10.0) {
+            productRow.tap()
+            print("Tapped: Product from list")
         }
 
         // Wait for product detail to load
@@ -606,7 +605,8 @@ final class Embrace_EcommerceUITests: XCTestCase {
             print("Completed: Guest authentication")
         }
 
-        // Step 2: Wait for home view and tap on any available product
+        // Step 2: Wait for home view, then use "See All" to reach product list
+        // (Direct product card taps fail on CI due to horizontal scroll hittability issues)
         let homeView = app.descendants(matching: .any)["homeView"].firstMatch
         guard homeView.waitForExistence(timeout: 15.0) else {
             XCTFail("Home view did not load")
@@ -614,19 +614,22 @@ final class Embrace_EcommerceUITests: XCTestCase {
         }
         Thread.sleep(forTimeInterval: 3.0)
 
-        // Scroll down to reveal product cards that may be below the fold
-        let mainContent = app.descendants(matching: .any)["homeMainContent"].firstMatch
-        if mainContent.exists {
-            mainContent.swipeUp()
-        }
-        Thread.sleep(forTimeInterval: 1.0)
-
-        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_' OR identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
-        if productCard.waitForExistence(timeout: 10.0) && productCard.isHittable {
-            productCard.tap()
-            print("Tapped: Product card")
+        let seeAllButton = app.descendants(matching: .any)["homeFeaturedProductsSeeAllButton"].firstMatch
+        if seeAllButton.waitForExistence(timeout: 10.0) {
+            seeAllButton.tap()
+            print("Tapped: See All button")
         } else {
-            print("WARNING: No product card found or not hittable")
+            print("WARNING: See All button not found")
+        }
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Tap first product from the product list
+        let productRow = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productListRow_'")).firstMatch
+        if productRow.waitForExistence(timeout: 10.0) {
+            productRow.tap()
+            print("Tapped: Product from list")
+        } else {
+            print("WARNING: No product row found in product list")
         }
         Thread.sleep(forTimeInterval: 3.0)
 
