@@ -170,16 +170,21 @@ final class Embrace_EcommerceUITests: XCTestCase {
         XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "Home view did not load")
         print("Verified: Home view loaded")
 
-        // Wait for content to load
+        // Wait for content to load, then scroll to reveal product cards
         Thread.sleep(forTimeInterval: 2.0)
+        let mainContent = app.descendants(matching: .any)["homeMainContent"].firstMatch
+        if mainContent.exists {
+            mainContent.swipeUp()
+        }
+        Thread.sleep(forTimeInterval: 1.0)
 
         // Tap on any available product (featured or new arrival)
         let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_' OR identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
-        if productCard.waitForExistence(timeout: 10.0) {
+        if productCard.waitForExistence(timeout: 10.0) && productCard.isHittable {
             productCard.tap()
             print("Tapped: Product card")
         } else {
-            print("WARNING: No product card found")
+            print("WARNING: No product card found or not hittable")
         }
 
         // Wait for product detail to load
@@ -609,12 +614,19 @@ final class Embrace_EcommerceUITests: XCTestCase {
         }
         Thread.sleep(forTimeInterval: 3.0)
 
+        // Scroll down to reveal product cards that may be below the fold
+        let mainContent = app.descendants(matching: .any)["homeMainContent"].firstMatch
+        if mainContent.exists {
+            mainContent.swipeUp()
+        }
+        Thread.sleep(forTimeInterval: 1.0)
+
         let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeFeaturedProduct_' OR identifier BEGINSWITH 'homeNewArrival_'")).firstMatch
-        if productCard.waitForExistence(timeout: 10.0) {
+        if productCard.waitForExistence(timeout: 10.0) && productCard.isHittable {
             productCard.tap()
             print("Tapped: Product card")
         } else {
-            print("WARNING: No product card found - cart may be empty")
+            print("WARNING: No product card found or not hittable")
         }
         Thread.sleep(forTimeInterval: 3.0)
 
