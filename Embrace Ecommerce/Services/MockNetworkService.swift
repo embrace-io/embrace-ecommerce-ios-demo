@@ -83,12 +83,17 @@ class MockNetworkService: ObservableObject {
     }
     
     private func determineResponseScenario() -> MockNetworkResponse {
+        // Always succeed in UI testing mode
+        if ProcessInfo.processInfo.environment["UI_TESTING"] == "1" {
+            return .success
+        }
+
         if !isOnline {
             return .failure(.noConnection)
         }
-        
+
         let random = Double.random(in: 0...1)
-        
+
         if random < config.timeoutRate {
             return .failure(.timeout)
         } else if random < config.timeoutRate + config.serverErrorRate {
@@ -99,13 +104,17 @@ class MockNetworkService: ObservableObject {
         } else if random < config.timeoutRate + config.serverErrorRate + config.failureRate + 0.2 {
             return .slow
         }
-        
+
         return .success
     }
     
     private func simulateNetworkDelay(for scenario: MockNetworkResponse) async throws {
+        if ProcessInfo.processInfo.environment["UI_TESTING"] == "1" {
+            return
+        }
+
         let delay: TimeInterval
-        
+
         switch scenario {
         case .success:
             delay = config.baseDelay + Double.random(in: 0...0.5)
@@ -114,7 +123,7 @@ class MockNetworkService: ObservableObject {
         case .failure:
             delay = config.baseDelay * 0.3
         }
-        
+
         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
     }
     
