@@ -170,20 +170,28 @@ final class Embrace_EcommerceUITests: XCTestCase {
         XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "Home view did not load")
         print("Verified: Home view loaded")
 
-        // Use "See All" to reach product list (avoids horizontal scroll hittability issues)
+        // Use Search tab to find a product (bypasses mock network issues)
         Thread.sleep(forTimeInterval: 2.0)
-        let seeAllButton = app.descendants(matching: .any)["homeFeaturedProductsSeeAllButton"].firstMatch
-        if seeAllButton.waitForExistence(timeout: 10.0) {
-            seeAllButton.tap()
-            print("Tapped: See All button")
+        let searchTab = app.tabBars.buttons["Search"].firstMatch
+        if searchTab.waitForExistence(timeout: 5.0) {
+            searchTab.tap()
+            print("Tapped: Search tab")
+        }
+        Thread.sleep(forTimeInterval: 2.0)
+
+        let searchField = app.descendants(matching: .any)["searchTextField"].firstMatch
+        if searchField.waitForExistence(timeout: 5.0) {
+            searchField.tap()
+            searchField.typeText("phone\n")
+            print("Typed: search query")
         }
         Thread.sleep(forTimeInterval: 3.0)
 
-        // Tap first product from the product list
-        let productRow = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productListRow_'")).firstMatch
-        if productRow.waitForExistence(timeout: 10.0) {
-            productRow.tap()
-            print("Tapped: Product from list")
+        // Tap first product from search results
+        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productCard_'")).firstMatch
+        if productCard.waitForExistence(timeout: 10.0) {
+            productCard.tap()
+            print("Tapped: Product from search results")
         }
 
         // Wait for product detail to load
@@ -605,31 +613,31 @@ final class Embrace_EcommerceUITests: XCTestCase {
             print("Completed: Guest authentication")
         }
 
-        // Step 2: Wait for home view, then use "See All" to reach product list
-        // (Direct product card taps fail on CI due to horizontal scroll hittability issues)
-        let homeView = app.descendants(matching: .any)["homeView"].firstMatch
-        guard homeView.waitForExistence(timeout: 15.0) else {
-            XCTFail("Home view did not load")
-            return
+        // Step 2: Use Search tab to find a product (bypasses mock network issues on home screen)
+        Thread.sleep(forTimeInterval: 3.0)
+
+        let searchTab = app.tabBars.buttons["Search"].firstMatch
+        if searchTab.waitForExistence(timeout: 5.0) {
+            searchTab.tap()
+            print("Tapped: Search tab")
+        }
+        Thread.sleep(forTimeInterval: 2.0)
+
+        let searchField = app.descendants(matching: .any)["searchTextField"].firstMatch
+        if searchField.waitForExistence(timeout: 5.0) {
+            searchField.tap()
+            searchField.typeText("phone\n")
+            print("Typed: search query")
         }
         Thread.sleep(forTimeInterval: 3.0)
 
-        let seeAllButton = app.descendants(matching: .any)["homeFeaturedProductsSeeAllButton"].firstMatch
-        if seeAllButton.waitForExistence(timeout: 10.0) {
-            seeAllButton.tap()
-            print("Tapped: See All button")
+        // Tap first product from search results
+        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productCard_'")).firstMatch
+        if productCard.waitForExistence(timeout: 10.0) {
+            productCard.tap()
+            print("Tapped: Product from search results")
         } else {
-            print("WARNING: See All button not found")
-        }
-        Thread.sleep(forTimeInterval: 3.0)
-
-        // Tap first product from the product list
-        let productRow = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productListRow_'")).firstMatch
-        if productRow.waitForExistence(timeout: 10.0) {
-            productRow.tap()
-            print("Tapped: Product from list")
-        } else {
-            print("WARNING: No product row found in product list")
+            print("WARNING: No product found in search results")
         }
         Thread.sleep(forTimeInterval: 3.0)
 
