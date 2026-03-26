@@ -56,7 +56,11 @@ class MockNetworkService: ObservableObject {
     @Published var config = MockNetworkConfig.default
     @Published var isOnline = true
     
-    private init() {}
+    private init() {
+        if ProcessInfo.processInfo.environment["UI_TESTING"] == "1" {
+            config = MockNetworkConfig(baseDelay: 0.1, slowDelay: 0.1, failureRate: 0, timeoutRate: 0, serverErrorRate: 0)
+        }
+    }
     
     func simulateRequest<T: Codable>(
         endpoint: String,
