@@ -170,28 +170,20 @@ final class Embrace_EcommerceUITests: XCTestCase {
         XCTAssertTrue(homeView.waitForExistence(timeout: 10.0), "Home view did not load")
         print("Verified: Home view loaded")
 
-        // Use Search tab to find a product (bypasses mock network issues)
+        // Tap a category to reach product list (proven to work in testBrowseFlow)
         Thread.sleep(forTimeInterval: 2.0)
-        let searchTab = app.tabBars.buttons["Search"].firstMatch
-        if searchTab.waitForExistence(timeout: 5.0) {
-            searchTab.tap()
-            print("Tapped: Search tab")
-        }
-        Thread.sleep(forTimeInterval: 2.0)
-
-        let searchField = app.descendants(matching: .any)["searchTextField"].firstMatch
-        if searchField.waitForExistence(timeout: 5.0) {
-            searchField.tap()
-            searchField.typeText("phone\n")
-            print("Typed: search query")
+        let categoryButton = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeCategory_'")).firstMatch
+        if categoryButton.waitForExistence(timeout: 10.0) {
+            categoryButton.tap()
+            print("Tapped: Category button")
         }
         Thread.sleep(forTimeInterval: 3.0)
 
-        // Tap first product from search results
-        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productCard_'")).firstMatch
-        if productCard.waitForExistence(timeout: 10.0) {
-            productCard.tap()
-            print("Tapped: Product from search results")
+        // Tap first product from the product list
+        let productRow = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productListRow_'")).firstMatch
+        if productRow.waitForExistence(timeout: 10.0) {
+            productRow.tap()
+            print("Tapped: Product from list")
         }
 
         // Wait for product detail to load
@@ -613,31 +605,31 @@ final class Embrace_EcommerceUITests: XCTestCase {
             print("Completed: Guest authentication")
         }
 
-        // Step 2: Use Search tab to find a product (bypasses mock network issues on home screen)
-        Thread.sleep(forTimeInterval: 3.0)
-
-        let searchTab = app.tabBars.buttons["Search"].firstMatch
-        if searchTab.waitForExistence(timeout: 5.0) {
-            searchTab.tap()
-            print("Tapped: Search tab")
-        }
-        Thread.sleep(forTimeInterval: 2.0)
-
-        let searchField = app.descendants(matching: .any)["searchTextField"].firstMatch
-        if searchField.waitForExistence(timeout: 5.0) {
-            searchField.tap()
-            searchField.typeText("phone\n")
-            print("Typed: search query")
+        // Step 2: Tap a category on home screen to reach product list
+        // (Uses MockDataService directly, no mock network involved - proven to work in testBrowseFlow)
+        let homeView = app.descendants(matching: .any)["homeView"].firstMatch
+        guard homeView.waitForExistence(timeout: 15.0) else {
+            XCTFail("Home view did not load")
+            return
         }
         Thread.sleep(forTimeInterval: 3.0)
 
-        // Tap first product from search results
-        let productCard = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productCard_'")).firstMatch
-        if productCard.waitForExistence(timeout: 10.0) {
-            productCard.tap()
-            print("Tapped: Product from search results")
+        let categoryButton = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'homeCategory_'")).firstMatch
+        if categoryButton.waitForExistence(timeout: 10.0) {
+            categoryButton.tap()
+            print("Tapped: Category button")
         } else {
-            print("WARNING: No product found in search results")
+            print("WARNING: No category button found")
+        }
+        Thread.sleep(forTimeInterval: 3.0)
+
+        // Tap first product from the product list
+        let productRow = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'productListRow_'")).firstMatch
+        if productRow.waitForExistence(timeout: 10.0) {
+            productRow.tap()
+            print("Tapped: Product from list")
+        } else {
+            print("WARNING: No product row found")
         }
         Thread.sleep(forTimeInterval: 3.0)
 
