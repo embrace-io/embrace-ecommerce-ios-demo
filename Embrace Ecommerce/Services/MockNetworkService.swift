@@ -123,7 +123,7 @@ class MockNetworkService: ObservableObject {
         responseType: T.Type
     ) async throws -> T {
         switch endpoint {
-        case "/products/featured":
+        case "/products", "/products/featured":
             if let products = MockDataService.shared.getFeaturedProducts() as? T {
                 return products
             }
