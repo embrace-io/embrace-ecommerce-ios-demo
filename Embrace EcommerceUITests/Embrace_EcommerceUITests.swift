@@ -594,8 +594,8 @@ final class Embrace_EcommerceUITests: XCTestCase {
         continueAfterFailure = true
         print("Starting checkout flow test")
 
-        // Relaunch app with pre-filled cart to bypass mock network issues
-        app.launchEnvironment["PREFILL_CART"] = "1"
+        // Relaunch app with pre-filled cart via launch argument
+        app.launchArguments += ["-PREFILL_CART"]
         app.launch()
         Thread.sleep(forTimeInterval: 10.0)
 
