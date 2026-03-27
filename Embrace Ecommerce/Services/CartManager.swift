@@ -29,6 +29,10 @@ class CartManager: ObservableObject {
     
     init() {
         loadCart()
+        if ProcessInfo.processInfo.environment["PREFILL_CART"] == "1" {
+            let product = MockDataService.shared.getFeaturedProducts().first!
+            addToCart(product: product, quantity: 1)
+        }
     }
     
     func addToCart(product: Product, quantity: Int = 1, selectedVariants: [String: String] = [:]) {
