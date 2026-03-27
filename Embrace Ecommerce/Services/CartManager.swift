@@ -29,7 +29,7 @@ class CartManager: ObservableObject {
     
     init() {
         loadCart()
-        if ProcessInfo.processInfo.environment["PREFILL_CART"] == "1" {
+        if CommandLine.arguments.contains("-PREFILL_CART") {
             let product = MockDataService.shared.getFeaturedProducts().first!
             addToCart(product: product, quantity: 1)
         }
