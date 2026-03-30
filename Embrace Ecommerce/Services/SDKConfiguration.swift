@@ -13,7 +13,7 @@ struct SDKConfiguration {
     
     struct Embrace {
         // TODO: Replace with your actual Embrace App ID from the dashboard
-        static let appId = "YOUR_EMBRACE_APP_ID"
+        static let appId = "c6jp3"
         
         // Development settings for comprehensive telemetry
         static let logLevel = "info"

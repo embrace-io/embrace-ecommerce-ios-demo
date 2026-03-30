@@ -21,6 +21,9 @@
 		701467252E43D40E000ECF98 /* Stripe in Frameworks */ = {isa = PBXBuildFile; productRef = 701467242E43D40E000ECF98 /* Stripe */; };
 		70DFC7E82E44082700585111 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 70DFC7E72E44082700585111 /* GoogleSignIn */; };
 		70DFC7EA2E44082700585111 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 70DFC7E92E44082700585111 /* GoogleSignInSwift */; };
+		AA00000100010001000AA001 /* EmbraceIO in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000100010001000AA00D /* EmbraceIO */; };
+		AA00000100010001000AA002 /* EmbraceCrash in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000100010001000AA00E /* EmbraceCrash */; };
+		AA00000100010001000AA003 /* EmbraceCore in Frameworks */ = {isa = PBXBuildFile; productRef = AA00000100010001000AA00F /* EmbraceCore */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +39,7 @@
 /* Begin PBXFileReference section */
 		5404630F2E7B366500021FF7 /* Embrace EcommerceUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Embrace EcommerceUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		701466F42E43C509000ECF98 /* Embrace Ecommerce.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Embrace Ecommerce.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AA00000100010001000AA004 /* Embrace Ecommerce Watch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Embrace Ecommerce Watch.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -47,6 +51,11 @@
 		701466F62E43C509000ECF98 /* Embrace Ecommerce */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Embrace Ecommerce";
+			sourceTree = "<group>";
+		};
+		AA00000100010001000AA005 /* Embrace Ecommerce Watch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "Embrace Ecommerce Watch";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -80,6 +89,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA00000100010001000AA006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AA00000100010001000AA001 /* EmbraceIO in Frameworks */,
+				AA00000100010001000AA002 /* EmbraceCrash in Frameworks */,
+				AA00000100010001000AA003 /* EmbraceCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -87,6 +106,7 @@
 			isa = PBXGroup;
 			children = (
 				701466F62E43C509000ECF98 /* Embrace Ecommerce */,
+				AA00000100010001000AA005 /* Embrace Ecommerce Watch */,
 				540463102E7B366500021FF7 /* Embrace EcommerceUITests */,
 				701466F52E43C509000ECF98 /* Products */,
 			);
@@ -96,6 +116,7 @@
 			isa = PBXGroup;
 			children = (
 				701466F42E43C509000ECF98 /* Embrace Ecommerce.app */,
+				AA00000100010001000AA004 /* Embrace Ecommerce Watch.app */,
 				5404630F2E7B366500021FF7 /* Embrace EcommerceUITests.xctest */,
 			);
 			name = Products;
@@ -163,6 +184,31 @@
 			productReference = 701466F42E43C509000ECF98 /* Embrace Ecommerce.app */;
 			productType = "com.apple.product-type.application";
 		};
+		AA00000100010001000AA009 /* Embrace Ecommerce Watch */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AA00000100010001000AA00C /* Build configuration list for PBXNativeTarget "Embrace Ecommerce Watch" */;
+			buildPhases = (
+				AA00000100010001000AA007 /* Sources */,
+				AA00000100010001000AA006 /* Frameworks */,
+				AA00000100010001000AA008 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				AA00000100010001000AA005 /* Embrace Ecommerce Watch */,
+			);
+			name = "Embrace Ecommerce Watch";
+			packageProductDependencies = (
+				AA00000100010001000AA00D /* EmbraceIO */,
+				AA00000100010001000AA00E /* EmbraceCrash */,
+				AA00000100010001000AA00F /* EmbraceCore */,
+			);
+			productName = "Embrace Ecommerce Watch";
+			productReference = AA00000100010001000AA004 /* Embrace Ecommerce Watch.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -178,6 +224,9 @@
 						TestTargetID = 701466F32E43C509000ECF98;
 					};
 					701466F32E43C509000ECF98 = {
+						CreatedOnToolsVersion = 16.4;
+					};
+					AA00000100010001000AA009 = {
 						CreatedOnToolsVersion = 16.4;
 					};
 				};
@@ -204,6 +253,7 @@
 			projectRoot = "";
 			targets = (
 				701466F32E43C509000ECF98 /* Embrace Ecommerce */,
+				AA00000100010001000AA009 /* Embrace Ecommerce Watch */,
 				5404630E2E7B366500021FF7 /* Embrace EcommerceUITests */,
 			);
 		};
@@ -224,6 +274,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		AA00000100010001000AA008 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -235,6 +292,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		701466F02E43C509000ECF98 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AA00000100010001000AA007 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -473,6 +537,62 @@
 			};
 			name = Release;
 		};
+		AA00000100010001000AA00A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L5RVT7J8CV;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Embrace Watch";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.embrace.org.Embrace-Ecommerce";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.embrace.org.Embrace-Ecommerce.watchapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Debug;
+		};
+		AA00000100010001000AA00B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = L5RVT7J8CV;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Embrace Watch";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = "com.embrace.org.Embrace-Ecommerce";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.embrace.org.Embrace-Ecommerce.watchapp";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -503,6 +623,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		AA00000100010001000AA00C /* Build configuration list for PBXNativeTarget "Embrace Ecommerce Watch" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AA00000100010001000AA00A /* Debug */,
+				AA00000100010001000AA00B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -510,8 +639,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/embrace-io/embrace-apple-sdk/";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 6.14.1;
+				kind = exactVersion;
+				version = 6.17.1;
 			};
 		};
 		701467152E43D148000ECF98 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
@@ -618,6 +747,21 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 70DFC7E62E44082700585111 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		AA00000100010001000AA00D /* EmbraceIO */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */;
+			productName = EmbraceIO;
+		};
+		AA00000100010001000AA00E /* EmbraceCrash */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */;
+			productName = EmbraceCrash;
+		};
+		AA00000100010001000AA00F /* EmbraceCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7014670A2E43D0D6000ECF98 /* XCRemoteSwiftPackageReference "embrace-apple-sdk" */;
+			productName = EmbraceCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -30,9 +30,27 @@ class CartManager: ObservableObject {
     init() {
         loadCart()
         if UserDefaults.standard.bool(forKey: "PREFILL_CART") {
-            let product = MockDataService.shared.getFeaturedProducts().first!
-            addToCart(product: product, quantity: 1)
+            prefillTestProduct()
         }
+    }
+
+    private func prefillTestProduct() {
+        let testProduct = Product(
+            id: "test_001",
+            name: "Test Phone",
+            description: "UI Test Product",
+            price: 99.99,
+            currency: "USD",
+            imageUrls: [],
+            category: "Electronics",
+            brand: nil,
+            variants: [],
+            inStock: true,
+            stockCount: 100,
+            weight: 0.5,
+            dimensions: ProductDimensions(width: 3, height: 6, depth: 0.3)
+        )
+        addToCart(product: testProduct, quantity: 1)
     }
     
     func addToCart(product: Product, quantity: Int = 1, selectedVariants: [String: String] = [:]) {
