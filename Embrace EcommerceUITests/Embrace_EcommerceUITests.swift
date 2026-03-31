@@ -594,8 +594,14 @@ final class Embrace_EcommerceUITests: XCTestCase {
         continueAfterFailure = true
         print("Starting checkout flow test")
 
-        // Relaunch app with pre-filled cart via UserDefaults (set through launch arguments)
-        app.launchArguments += ["-PREFILL_CART", "YES"]
+        // Relaunch with fresh XCUIApplication to ensure launch arguments take effect
+        app.terminate()
+        app = XCUIApplication()
+        app.launchArguments = ["-PREFILL_CART", "YES"]
+        app.launchEnvironment = [
+            "UI_TESTING": "1",
+            "RUN_SOURCE": "UITest"
+        ]
         app.launch()
         Thread.sleep(forTimeInterval: 10.0)
 
