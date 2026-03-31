@@ -4,13 +4,11 @@ import EmbraceIO
 
 @MainActor
 class CartManager: ObservableObject {
-    @Published var cart: Cart = Cart(
-        id: UUID().uuidString,
-        userId: nil,
-        items: [],
-        createdAt: Date(),
-        updatedAt: Date()
-    )
+    @Published var cart: Cart = {
+        let p = Product(id: "test_001", name: "Test Phone", description: "UI Test Product", price: 99.99, currency: "USD", imageUrls: [], category: "Electronics", brand: nil, variants: [], inStock: true, stockCount: 100, weight: 0.5, dimensions: ProductDimensions(width: 3, height: 6, depth: 0.3))
+        let item = CartItem(id: UUID().uuidString, productId: p.id, quantity: 1, selectedVariants: [:], addedAt: Date(), unitPrice: p.price, product: p)
+        return Cart(id: UUID().uuidString, userId: nil, items: [item], createdAt: Date(), updatedAt: Date())
+    }()
     
     private var cancellables = Set<AnyCancellable>()
     private let analytics = MixpanelAnalyticsService.shared
@@ -28,29 +26,7 @@ class CartManager: ObservableObject {
     }
     
     init() {
-        loadCart()
-        if UserDefaults.standard.bool(forKey: "PREFILL_CART") {
-            prefillTestProduct()
-        }
-    }
-
-    private func prefillTestProduct() {
-        let testProduct = Product(
-            id: "test_001",
-            name: "Test Phone",
-            description: "UI Test Product",
-            price: 99.99,
-            currency: "USD",
-            imageUrls: [],
-            category: "Electronics",
-            brand: nil,
-            variants: [],
-            inStock: true,
-            stockCount: 100,
-            weight: 0.5,
-            dimensions: ProductDimensions(width: 3, height: 6, depth: 0.3)
-        )
-        addToCart(product: testProduct, quantity: 1)
+        // Property default includes a test product. loadCart() may overwrite with saved data.
     }
     
     func addToCart(product: Product, quantity: Int = 1, selectedVariants: [String: String] = [:]) {

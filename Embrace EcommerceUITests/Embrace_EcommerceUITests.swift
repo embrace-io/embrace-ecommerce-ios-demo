@@ -17,11 +17,9 @@ final class Embrace_EcommerceUITests: XCTestCase {
         // Configure the app with launch environment variables
         app = XCUIApplication()
         app.launchEnvironment = [
-            "UI_TESTING": "1", // NOT IN USE.
-            "DISABLE_NETWORK_CALLS": "1", // NOT IN USE. Disable app network calls but allow Embrace SDK
-            "USE_MOCK_DATA": "1", // NOT IN USE.
-            "ALLOW_EMBRACE_NETWORK": "1", // NOT IN USE. Allow Embrace SDK network requests
-            "RUN_SOURCE": "UITest" // Sends information about how session was run
+            "UI_TESTING": "1",
+            "PREFILL_CART": "1",
+            "RUN_SOURCE": "UITest"
         ]
         app.launch()
 
@@ -594,16 +592,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
         continueAfterFailure = true
         print("Starting checkout flow test")
 
-        // Relaunch with fresh XCUIApplication to ensure launch arguments take effect
-        app.terminate()
-        app = XCUIApplication()
-        app.launchArguments = ["-PREFILL_CART", "YES"]
-        app.launchEnvironment = [
-            "UI_TESTING": "1",
-            "RUN_SOURCE": "UITest"
-        ]
-        app.launch()
-        Thread.sleep(forTimeInterval: 10.0)
+        // Cart is pre-filled from setUp via -PREFILL_CART launch argument
 
         // Step 1: Authenticate as guest if needed
         let initialScreen = detectCurrentScreen()
@@ -631,7 +620,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 2.0)
 
         // Step 5: Tap "Proceed to Checkout" → triggers CHECKOUT_STARTED
-        let proceedButton = app.descendants(matching: .any)["cartProceedToCheckoutButton"].firstMatch
+        let proceedButton = app.buttons["Proceed to Checkout"].firstMatch
         guard proceedButton.waitForExistence(timeout: 10.0) else {
             XCTFail("Proceed to Checkout button not found - cart may be empty")
             sendAppToBackground()
