@@ -620,88 +620,85 @@ final class Embrace_EcommerceUITests: XCTestCase {
         Thread.sleep(forTimeInterval: 2.0)
 
         // Step 5: Tap "Proceed to Checkout" → triggers CHECKOUT_STARTED
-        let proceedButton = app.buttons["Proceed to Checkout"].firstMatch
+        Thread.sleep(forTimeInterval: 2.0)
+        // Use staticTexts to find and tap the actual text element inside the button
+        // (SwiftUI parent accessibilityIdentifiers override child button identifiers)
+        let proceedButton = app.buttons.matching(NSPredicate(format: "label == 'Proceed to Checkout'")).firstMatch
         guard proceedButton.waitForExistence(timeout: 10.0) else {
             XCTFail("Proceed to Checkout button not found - cart may be empty")
             sendAppToBackground()
             bringAppToForeground()
             return
         }
-        proceedButton.tap()
-        print("Tapped: Proceed to Checkout (CHECKOUT_STARTED)")
-        Thread.sleep(forTimeInterval: 2.0)
-
-        // Step 6: Cart Review → tap "Continue to Shipping"
-        let continueToShipping = app.descendants(matching: .any)["continueToShippingButton"].firstMatch
-        if continueToShipping.waitForExistence(timeout: 10.0) {
-            continueToShipping.tap()
-            print("Tapped: Continue to Shipping (via identifier)")
+        // Use identifier + coordinate tap to trigger the actual SwiftUI button action
+        let proceedById = app.descendants(matching: .any)["cartProceedToCheckoutButton"].firstMatch
+        if proceedById.exists {
+            proceedById.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         } else {
-            // Fallback: match by label
-            let continueToShippingLabel = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Continue to Shipping'")).firstMatch
-            if continueToShippingLabel.waitForExistence(timeout: 3.0) {
-                continueToShippingLabel.tap()
-                print("Tapped: Continue to Shipping (via label)")
-            } else {
-                print("WARNING: Continue to Shipping button not found")
-            }
+            proceedButton.tap()
+        }
+        print("Tapped: Proceed to Checkout (CHECKOUT_STARTED)")
+
+        // Steps 6-12: All taps use coordinate(withNormalizedOffset:) to bypass
+        // SwiftUI parent accessibilityIdentifier propagation that prevents normal tap()
+
+        // Step 6: Cart Review → "Continue to Shipping" (SwiftUI button with HStack)
+        let continueToShipping = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Continue to Shipping'")).firstMatch
+        if continueToShipping.waitForExistence(timeout: 10.0) {
+            continueToShipping.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            print("Tapped: Continue to Shipping")
+        } else {
+            print("WARNING: Continue to Shipping not found")
         }
         Thread.sleep(forTimeInterval: 2.0)
 
-        // Step 7: Shipping → select an address
-        let selectAddressButton = app.descendants(matching: .any)["selectAddressButton"].firstMatch
+        // Step 7: Shipping → select an address (UIKit button)
+        let selectAddressButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Select Address'")).firstMatch
         if selectAddressButton.waitForExistence(timeout: 10.0) {
-            selectAddressButton.tap()
+            selectAddressButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             print("Tapped: Select Address")
             Thread.sleep(forTimeInterval: 1.0)
         } else {
-            print("WARNING: Select Address button not found")
+            print("WARNING: Select Address not found")
         }
 
-        // Step 8: Shipping → select a shipping method
-        let shippingMethod = app.descendants(matching: .any)["shippingMethodstandardView"].firstMatch
+        // Step 8: Shipping → select a shipping method (UIKit view with tap gesture)
+        let shippingMethod = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] 'Standard Shipping'")).firstMatch
         if shippingMethod.waitForExistence(timeout: 10.0) {
-            shippingMethod.tap()
+            shippingMethod.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             print("Tapped: Standard Shipping method")
             Thread.sleep(forTimeInterval: 1.0)
         } else {
             print("WARNING: Shipping method not found")
         }
 
-        // Step 9: Tap "Continue to Payment" → triggers CHECKOUT_SHIPPING_COMPLETED
-        let continueToPayment = app.descendants(matching: .any)["continueToPaymentButton"].firstMatch
+        // Step 9: "Continue to Payment" → triggers CHECKOUT_SHIPPING_COMPLETED (UIKit button)
+        let continueToPayment = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Continue to Payment'")).firstMatch
         if continueToPayment.waitForExistence(timeout: 10.0) {
-            continueToPayment.tap()
-            print("Tapped: Continue to Payment (CHECKOUT_SHIPPING_COMPLETED)")
+            continueToPayment.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            print("Tapped: Continue to Payment")
         } else {
-            print("WARNING: Continue to Payment button not found")
+            print("WARNING: Continue to Payment not found")
         }
         Thread.sleep(forTimeInterval: 2.0)
 
-        // Step 10: Payment → saved card auto-selected, tap "Review Order" → triggers CHECKOUT_PAYMENT_COMPLETED
-        let reviewOrder = app.descendants(matching: .any)["reviewOrderButton"].firstMatch
+        // Step 10: "Review Order" → triggers CHECKOUT_PAYMENT_COMPLETED (SwiftUI button with HStack)
+        let reviewOrder = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Review Order'")).firstMatch
         if reviewOrder.waitForExistence(timeout: 10.0) {
-            reviewOrder.tap()
-            print("Tapped: Review Order (CHECKOUT_PAYMENT_COMPLETED) (via identifier)")
+            reviewOrder.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            print("Tapped: Review Order")
         } else {
-            // Fallback: match by label
-            let reviewOrderLabel = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Review Order'")).firstMatch
-            if reviewOrderLabel.waitForExistence(timeout: 3.0) {
-                reviewOrderLabel.tap()
-                print("Tapped: Review Order (CHECKOUT_PAYMENT_COMPLETED) (via label)")
-            } else {
-                print("WARNING: Review Order button not found")
-            }
+            print("WARNING: Review Order not found")
         }
         Thread.sleep(forTimeInterval: 2.0)
 
-        // Step 11: Order Confirmation → tap "Place Order" → triggers PLACE_ORDER_INITIATED + ORDER_PLACED_SUCCESS
-        let placeOrderButton = app.descendants(matching: .any)["placeOrderButton"].firstMatch
+        // Step 11: "Place Order" → triggers PLACE_ORDER_INITIATED + ORDER_PLACED_SUCCESS (UIKit button)
+        let placeOrderButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Place Order'")).firstMatch
         if placeOrderButton.waitForExistence(timeout: 10.0) {
-            placeOrderButton.tap()
-            print("Tapped: Place Order (PLACE_ORDER_INITIATED -> ORDER_PLACED_SUCCESS)")
+            placeOrderButton.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            print("Tapped: Place Order")
         } else {
-            print("WARNING: Place Order button not found")
+            print("WARNING: Place Order not found")
         }
         Thread.sleep(forTimeInterval: 3.0)
 
@@ -709,7 +706,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
         let continueShoppingButton = app.alerts.buttons["Continue Shopping"].firstMatch
         if continueShoppingButton.waitForExistence(timeout: 5.0) {
             continueShoppingButton.tap()
-            print("Tapped: Continue Shopping (order placed successfully)")
+            print("Tapped: Continue Shopping")
         }
         Thread.sleep(forTimeInterval: 2.0)
 

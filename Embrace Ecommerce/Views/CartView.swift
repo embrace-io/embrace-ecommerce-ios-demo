@@ -7,6 +7,7 @@ struct CartView: View {
     @State private var showingClearCartAlert = false
     @State private var isLoading = false
     @State private var showingSavedForLaterSection = false
+    @State private var showingCheckout = false
     
     var body: some View {
         VStack(spacing: 0) {
@@ -18,11 +19,12 @@ struct CartView: View {
                     .accessibilityIdentifier("cartEmptyView")
             } else {
                 cartContentView
-                    .accessibilityIdentifier("cartContentView")
             }
         }
-        .accessibilityIdentifier("cartView")
         .navigationTitle("Cart")
+            .fullScreenCover(isPresented: $showingCheckout) {
+                CheckoutView(cartManager: cartManager)
+            }
             .onAppear {
                 cartManager.trackCartViewed()
                 MixpanelAnalyticsService.shared.trackScreenView(screenName: "Cart")
@@ -108,7 +110,6 @@ struct CartView: View {
                 .accessibilityIdentifier("cartSummary")
 
             checkoutButton
-                .accessibilityIdentifier("cartCheckoutButton")
         }
     }
     
@@ -226,7 +227,7 @@ struct CartView: View {
     private var checkoutButton: some View {
         Button("Proceed to Checkout") {
             trackCheckoutAction()
-            navigationCoordinator.navigate(to: .checkout)
+            showingCheckout = true
         }
         .font(.headline)
         .foregroundColor(.white)
