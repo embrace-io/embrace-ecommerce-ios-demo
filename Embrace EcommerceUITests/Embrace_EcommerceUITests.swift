@@ -682,7 +682,17 @@ final class Embrace_EcommerceUITests: XCTestCase {
         }
         Thread.sleep(forTimeInterval: 2.0)
 
-        // Step 10: "Review Order" → triggers CHECKOUT_PAYMENT_COMPLETED (SwiftUI button with HStack)
+        // Step 10: Select PayPal as payment method (enables "Review Order" button)
+        let paypal = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS[c] 'PayPal'")).firstMatch
+        if paypal.waitForExistence(timeout: 10.0) {
+            paypal.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            print("Tapped: PayPal")
+        } else {
+            print("WARNING: PayPal not found")
+        }
+        Thread.sleep(forTimeInterval: 1.0)
+
+        // Step 11: "Review Order" → triggers CHECKOUT_PAYMENT_COMPLETED (SwiftUI button with HStack)
         let reviewOrder = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Review Order'")).firstMatch
         if reviewOrder.waitForExistence(timeout: 10.0) {
             reviewOrder.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
