@@ -117,6 +117,7 @@ enum NavigationDestination: Hashable {
     case orderHistory
     case networkSettings
     case networkDebug
+    case webViewDemo
 }
 
 extension Notification.Name {

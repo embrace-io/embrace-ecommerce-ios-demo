@@ -105,6 +105,15 @@ struct ProfileView: View {
                 )
                 .accessibilityIdentifier("profileNetworkDebugRow")
 
+                ProfileMenuRow(
+                    icon: "globe",
+                    title: "WebView Demo",
+                    action: {
+                        navigationCoordinator.navigate(to: .webViewDemo)
+                    }
+                )
+                .accessibilityIdentifier("profileWebViewDemoRow")
+
                 Button(action: {
                     EmbraceService.shared.forceEmbraceCrash()
                 }) {
@@ -246,6 +255,8 @@ struct ProfileView: View {
             NetworkSettingsView()
         case .networkDebug:
             NetworkDebugView()
+        case .webViewDemo:
+            WebViewDemoView()
         default:
             Text("Coming Soon")
                 .navigationTitle("Coming Soon")

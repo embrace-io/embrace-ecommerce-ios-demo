@@ -97,6 +97,8 @@ struct MainTabView: View {
             NetworkSettingsView()
         case .networkDebug:
             NetworkDebugView()
+        case .webViewDemo:
+            WebViewDemoView()
         case .orderConfirmation(let orderId):
             Text("Order Confirmation: \(orderId)")
                 .navigationTitle("Order Confirmed")
