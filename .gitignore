@@ -104,3 +104,6 @@ embrace_debug.log
 CLAUDE.md
 .claude/settings.local.json
 .claude/*.local.json
+
+# Web
+node_modules

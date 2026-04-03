@@ -1,0 +1,16 @@
+{
+  "name": "embrace-ecommerce-ios-demo",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@biomejs/biome": "2.4.10"
+  },
+  "peerDependencies": {
+    "typescript": "6.0.2"
+  },
+  "scripts": {
+    "dev": "bun index.html",
+    "build": "bun build index.html --outdir '../Embrace Ecommerce/Resources'",
+    "postbuild": ""
+  }
+}
