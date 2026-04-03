@@ -15,7 +15,12 @@ final class Embrace_EcommerceUITests: XCTestCase {
         continueAfterFailure = false
 
         // Configure the app with launch environment variables
+        // Write sentinel file for cart prefill (reliable on cloned simulators
+        // where launchEnvironment/launchArguments may not reach the app)
+        FileManager.default.createFile(atPath: "/tmp/ui_test_prefill_cart", contents: nil)
+
         app = XCUIApplication()
+        app.launchArguments += ["-PREFILL_CART", "1"]
         app.launchEnvironment = [
             "UI_TESTING": "1",
             "PREFILL_CART": "1",
@@ -29,6 +34,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(atPath: "/tmp/ui_test_prefill_cart")
         app = nil
     }
 

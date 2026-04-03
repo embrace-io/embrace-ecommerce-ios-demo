@@ -4,29 +4,49 @@ import EmbraceIO
 
 @MainActor
 class CartManager: ObservableObject {
-    @Published var cart: Cart = {
-        let p = Product(id: "test_001", name: "Test Phone", description: "UI Test Product", price: 99.99, currency: "USD", imageUrls: [], category: "Electronics", brand: nil, variants: [], inStock: true, stockCount: 100, weight: 0.5, dimensions: ProductDimensions(width: 3, height: 6, depth: 0.3))
-        let item = CartItem(id: UUID().uuidString, productId: p.id, quantity: 1, selectedVariants: [:], addedAt: Date(), unitPrice: p.price, product: p)
-        return Cart(id: UUID().uuidString, userId: nil, items: [item], createdAt: Date(), updatedAt: Date())
-    }()
-    
+    @Published var cart: Cart = Cart(id: UUID().uuidString, userId: nil, items: [], createdAt: Date(), updatedAt: Date())
+
     private var cancellables = Set<AnyCancellable>()
     private let analytics = MixpanelAnalyticsService.shared
-    
+
     var totalItems: Int {
         cart.totalItems
     }
-    
+
     var subtotal: Double {
         cart.subtotal
     }
-    
+
     var isEmpty: Bool {
         cart.items.isEmpty
     }
-    
+
     init() {
-        // Property default includes a test product. loadCart() may overwrite with saved data.
+        #if DEBUG
+        if Self.shouldPrefillCart {
+            prefillTestProduct()
+            return
+        }
+        #endif
+        loadCart()
+    }
+
+    #if DEBUG
+    private static var shouldPrefillCart: Bool {
+        // launchArguments (-PREFILL_CART) register in UserDefaults via NSArgumentDomain
+        if UserDefaults.standard.bool(forKey: "PREFILL_CART") { return true }
+        // Fallback: check for sentinel file written by UI test runner
+        if FileManager.default.fileExists(atPath: Self.prefillSentinelPath) { return true }
+        return false
+    }
+
+    static let prefillSentinelPath: String = "/tmp/ui_test_prefill_cart"
+    #endif
+
+    private func prefillTestProduct() {
+        let p = Product(id: "test_001", name: "Test Phone", description: "UI Test Product", price: 99.99, currency: "USD", imageUrls: [], category: "Electronics", brand: nil, variants: [], inStock: true, stockCount: 100, weight: 0.5, dimensions: ProductDimensions(width: 3, height: 6, depth: 0.3))
+        let item = CartItem(id: UUID().uuidString, productId: p.id, quantity: 1, selectedVariants: [:], addedAt: Date(), unitPrice: p.price, product: p)
+        cart = Cart(id: UUID().uuidString, userId: nil, items: [item], createdAt: Date(), updatedAt: Date())
     }
     
     func addToCart(product: Product, quantity: Int = 1, selectedVariants: [String: String] = [:]) {
