@@ -3,14 +3,14 @@
   "type": "module",
   "private": true,
   "devDependencies": {
-    "@biomejs/biome": "2.4.10"
+    "@biomejs/biome": "2.4.10",
+    "@types/bun": "1.3.11"
   },
   "peerDependencies": {
     "typescript": "6.0.2"
   },
   "scripts": {
     "dev": "bun index.html",
-    "build": "bun build index.html --outdir '../Embrace Ecommerce/Resources'",
-    "postbuild": ""
+    "build": "bun scripts/build.ts"
   }
 }
