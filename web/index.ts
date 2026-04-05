@@ -6,6 +6,7 @@ interface EmbracePayload {
 
 function post(payload: EmbracePayload): void {
   try {
+    console.debug('Embrace payload:', payload);
     window.webkit.messageHandlers.embrace.postMessage(payload);
   } catch {
     // Not in a WKWebView — silently ignore
