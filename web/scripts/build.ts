@@ -5,6 +5,7 @@ const OUTDIR = join(ROOT, '..', 'Embrace Ecommerce', 'Resources');
 
 const jsBuild = await Bun.build({
   entrypoints: [join(ROOT, 'index.ts')],
+  format: 'iife',
   minify: true,
   target: 'browser',
 });
@@ -16,8 +17,7 @@ const sourceHtml = await Bun.file(join(ROOT, 'index.html')).text();
 const rewriter = new HTMLRewriter().on('script[src="./index.ts"]', {
   element(el) {
     el.removeAttribute('src');
-    // el.removeAttribute('type');
-    el.setInnerContent(jsCode ?? '// error', { html: true });
+    el.setInnerContent(jsCode ?? '/* error */', { html: true });
   },
 });
 
