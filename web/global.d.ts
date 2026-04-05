@@ -1,4 +1,4 @@
-interface Window {
+declare interface Window {
   webkit: {
     messageHandlers: {
       embrace: {
