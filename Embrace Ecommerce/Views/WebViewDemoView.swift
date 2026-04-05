@@ -24,6 +24,7 @@ struct EmbraceWebView: UIViewRepresentable {
         config.userContentController.add(context.coordinator, name: Self.handlerName)
 
         let webView = WKWebView(frame: .zero, configuration: config)
+        webView.isInspectable = true
         webView.navigationDelegate = context.coordinator
 
         if let url = Bundle.main.url(forResource: "index", withExtension: "html") {
