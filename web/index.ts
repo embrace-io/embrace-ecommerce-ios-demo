@@ -1,153 +1,238 @@
+import type { Metric } from 'web-vitals';
+import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
+
 interface EmbracePayload {
-  type: string;
-  severity?: string;
+  'emb.type': string;
+  'emb.webview_id': string;
   [key: string]: string | number | undefined;
 }
 
+const pageViewId =
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
 function post(payload: EmbracePayload): void {
   try {
-    console.debug('Embrace payload:', payload);
+    console.log(payload);
     window.webkit.messageHandlers.embrace.postMessage(payload);
   } catch {
-    // Not in a WKWebView — silently ignore
+    // Not in a WKWebView
   }
 }
 
-// 1. Document load timing
-function trackLoadTiming(): void {
-  const onLoad = () => {
-    const t = performance.timing || {};
-    const navEntry =
-      (performance.getEntriesByType?.(
-        'navigation',
-      )[0] as PerformanceNavigationTiming) || {};
+function base(): Pick<EmbracePayload, 'emb.webview_id' | 'browser.url.full'> {
+  return { 'emb.webview_id': pageViewId, 'browser.url.full': location.href };
+}
 
-    const domContentLoaded =
-      navEntry.domContentLoadedEventEnd ||
-      t.domContentLoadedEventEnd - t.navigationStart;
-    const loadComplete =
-      navEntry.loadEventEnd || t.loadEventEnd - t.navigationStart;
-    const ttfb = navEntry.responseStart || t.responseStart - t.navigationStart;
-    const domInteractive =
-      navEntry.domInteractive || t.domInteractive - t.navigationStart;
+// --- Web Vitals ---
+
+function initWebVitals(): void {
+  const report = (metric: Metric) => {
+    post({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.name': metric.name,
+      'emb.web_vital.value': metric.value,
+      'emb.web_vital.delta': metric.delta,
+      'emb.web_vital.rating': metric.rating,
+      'emb.web_vital.id': metric.id,
+      'emb.web_vital.navigation_type': metric.navigationType,
+      ...base(),
+    });
+  };
+
+  onLCP(report);
+  onFCP(report);
+  onINP(report);
+  onCLS(report);
+  onTTFB(report);
+}
+
+// --- Document Load ---
+
+function initDocumentLoad(): void {
+  const emit = () => {
+    const nav = performance.getEntriesByType('navigation')[0] as
+      | PerformanceNavigationTiming
+      | undefined;
+    if (!nav) return;
+
+    const paint = performance.getEntriesByType('paint');
+    const fp = paint.find((e) => e.name === 'first-paint')?.startTime;
+    const fcp = paint.find(
+      (e) => e.name === 'first-contentful-paint',
+    )?.startTime;
 
     post({
-      type: 'doc_load',
-      ttfb_ms: Math.round(ttfb),
-      dom_interactive_ms: Math.round(domInteractive),
-      dom_content_loaded_ms: Math.round(domContentLoaded),
-      load_complete_ms: Math.round(loadComplete),
-      url: document.location.href,
+      'emb.type': 'ux.document_load',
+      'user_agent.original': navigator.userAgent,
+      dom_interactive: Math.round(nav.domInteractive),
+      dom_content_loaded_event_end: Math.round(nav.domContentLoadedEventEnd),
+      load_event_end: Math.round(nav.loadEventEnd),
+      redirect_duration: Math.round(nav.redirectEnd - nav.redirectStart),
+      dns_duration: Math.round(nav.domainLookupEnd - nav.domainLookupStart),
+      connect_duration: Math.round(nav.connectEnd - nav.connectStart),
+      request_duration: Math.round(nav.responseStart - nav.requestStart),
+      response_duration: Math.round(nav.responseEnd - nav.responseStart),
+      first_paint: fp !== undefined ? Math.round(fp) : undefined,
+      first_contentful_paint: fcp !== undefined ? Math.round(fcp) : undefined,
+      ...base(),
     });
 
-    const status = document.getElementById('status');
-    if (status) {
-      status.textContent = `Load: ${Math.round(loadComplete)}ms | TTFB: ${Math.round(ttfb)}ms`;
+    const resources = performance.getEntriesByType(
+      'resource',
+    ) as PerformanceResourceTiming[];
+    for (const r of resources) {
+      post({
+        'emb.type': 'ux.resource_fetch',
+        'url.full': r.name,
+        'http.request.initiator_type': r.initiatorType,
+        'http.response.delivery_type':
+          (r as unknown as Record<string, string>).deliveryType ?? '',
+        'http.request.render_blocking_status':
+          (r as unknown as Record<string, string>).renderBlockingStatus ?? '',
+        'http.response.body.size': r.transferSize,
+        'http.response.decoded_body_size': r.decodedBodySize,
+        duration: Math.round(r.duration),
+        ...base(),
+      });
     }
   };
 
   if (document.readyState === 'complete') {
-    setTimeout(onLoad, 0);
+    setTimeout(emit, 0);
   } else {
-    window.addEventListener('load', () => setTimeout(onLoad, 0));
+    window.addEventListener('load', () => setTimeout(emit, 0));
   }
 }
 
-// 2. Empty content detection
-function trackEmptyContent(): void {
-  setTimeout(() => {
-    const textLength = (document.body.innerText || '').trim().length;
-    const imgCount = document.body.querySelectorAll('img').length;
-    if (textLength < 50 && imgCount === 0) {
-      post({
-        type: 'empty_content',
-        severity: 'error',
-        text_length: textLength,
-        img_count: imgCount,
-        url: document.location.href,
-      });
-    }
-  }, 2000);
-}
+// --- Exceptions ---
 
-// 3. Unhandled errors
-function trackErrors(): void {
+function initExceptions(): void {
   window.addEventListener('error', (e) => {
     post({
-      type: 'js_error',
-      severity: 'error',
-      message: e.message || 'unknown',
-      filename: e.filename || '',
-      lineno: e.lineno || 0,
-      colno: e.colno || 0,
+      'emb.type': 'sys.exception',
+      'emb.exception_handling': 'global_exception',
+      'exception.message': e.message || 'unknown',
+      'exception.stacktrace': e.error?.stack ?? '',
+      'exception.type': e.error?.name ?? 'Error',
+      ...base(),
     });
   });
-}
 
-// 4. Resource load failures (images, scripts, etc.)
-function trackResourceErrors(): void {
-  document.addEventListener(
-    'error',
-    (e) => {
-      const target = e.target as HTMLElement;
-      if (target?.tagName) {
-        post({
-          type: 'resource_error',
-          severity: 'warning',
-          tag: target.tagName,
-          src:
-            (target as HTMLImageElement).src ||
-            (target as HTMLLinkElement).href ||
-            '',
-        });
-      }
-    },
-    true,
-  );
-}
-
-// 5. Click tracking
-function trackClicks(): void {
-  document.addEventListener('click', (e) => {
-    const target = e.target as HTMLElement;
+  window.addEventListener('unhandledrejection', (e) => {
+    const err =
+      e.reason instanceof Error
+        ? e.reason
+        : { message: String(e.reason), stack: '', name: 'UnhandledRejection' };
     post({
-      type: 'user_interaction',
-      action: 'click',
-      tag: target.tagName.toLowerCase(),
-      text: target.textContent?.slice(0, 50) ?? '',
-      x: Math.round(e.clientX),
-      y: Math.round(e.clientY),
+      'emb.type': 'sys.exception',
+      'emb.exception_handling': 'promise_rejection',
+      'exception.message': err.message,
+      'exception.stacktrace': err.stack ?? '',
+      'exception.type': err.name ?? 'Error',
+      ...base(),
     });
   });
 }
 
-// 6. Content visibility
-function trackVisibility(): void {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          const el = entry.target as HTMLElement;
-          post({
-            type: 'content_visible',
-            tag: el.tagName.toLowerCase(),
-            text: el.textContent?.slice(0, 50) ?? '',
-          });
-          observer.unobserve(el);
-        }
-      }
-    },
-    { threshold: 0.5 },
-  );
+// --- LoAF (Long Animation Frames) ---
 
-  for (const el of document.querySelectorAll('h1, img, .status')) {
-    observer.observe(el);
-  }
+interface LoafEntry {
+  duration: number;
+  blockingDuration: number;
+  styleAndLayoutStart: number;
+  startTime: number;
 }
 
-trackLoadTiming();
-trackEmptyContent();
-trackErrors();
-trackResourceErrors();
-trackClicks();
-trackVisibility();
+function initLoaf(): void {
+  if (
+    typeof PerformanceObserver === 'undefined' ||
+    !PerformanceObserver.supportedEntryTypes?.includes('long-animation-frame')
+  ) {
+    return;
+  }
+
+  let totalBlockingDuration = 0;
+  let totalDuration = 0;
+  let totalStyleAndLayoutDuration = 0;
+  let count = 0;
+  let longestDuration = 0;
+
+  const observer = new PerformanceObserver((list) => {
+    for (const entry of list.getEntries()) {
+      const loaf = entry as unknown as LoafEntry;
+      totalBlockingDuration += loaf.blockingDuration;
+      totalDuration += loaf.duration;
+      count++;
+      if (loaf.duration > longestDuration) {
+        longestDuration = loaf.duration;
+      }
+      const styleDuration =
+        loaf.duration - (loaf.styleAndLayoutStart - loaf.startTime);
+      if (styleDuration > 0) {
+        totalStyleAndLayoutDuration += styleDuration;
+      }
+    }
+  });
+
+  observer.observe({ type: 'long-animation-frame', buffered: true });
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState !== 'hidden' || count === 0) return;
+
+    let rating: 'good' | 'needs-improvement' | 'poor';
+    if (totalBlockingDuration <= 200) rating = 'good';
+    else if (totalBlockingDuration <= 600) rating = 'needs-improvement';
+    else rating = 'poor';
+
+    post({
+      'emb.type': 'ux.web_vital',
+      'emb.web_vital.name': 'TBD',
+      'emb.web_vital.value': totalBlockingDuration,
+      'emb.web_vital.rating': rating,
+      'emb.tbd.loaf_total_duration': Math.round(totalDuration),
+      'emb.tbd.loaf_style_and_layout_duration': Math.round(
+        totalStyleAndLayoutDuration,
+      ),
+      'emb.tbd.loaf_count': count,
+      'emb.tbd.loaf_longest_duration': Math.round(longestDuration),
+      ...base(),
+    });
+  });
+}
+
+// --- Clicks ---
+
+function elementName(el: HTMLElement): string {
+  const tag = el.tagName.toLowerCase();
+  if (el.id) return `${tag}#${el.id}`;
+  if (el.className && typeof el.className === 'string') {
+    const cls = el.className.trim().split(/\s+/)[0];
+    if (cls) return `${tag}.${cls}`;
+  }
+  const text = el.textContent?.trim().slice(0, 30);
+  if (text) return `${tag} "${text}"`;
+  return tag;
+}
+
+function initClicks(): void {
+  document.addEventListener('click', (e) => {
+    const target = e.target as HTMLElement | null;
+    if (!target?.tagName) return;
+    post({
+      'emb.type': 'ux.tap',
+      'view.name': elementName(target),
+      'tap.coords': `${Math.round(e.clientX)},${Math.round(e.clientY)}`,
+      ...base(),
+    });
+  });
+}
+
+// --- Init ---
+
+initWebVitals();
+initDocumentLoad();
+initExceptions();
+initLoaf();
+initClicks();

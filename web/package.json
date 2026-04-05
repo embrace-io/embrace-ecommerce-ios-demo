@@ -12,5 +12,8 @@
   "scripts": {
     "dev": "bun index.html",
     "build": "bun scripts/build.ts"
+  },
+  "dependencies": {
+    "web-vitals": "^5.2.0"
   }
 }
