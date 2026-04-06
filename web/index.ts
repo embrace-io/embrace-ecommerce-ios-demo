@@ -66,6 +66,111 @@ function initWebVitals(): void {
   onTTFB(report);
 }
 
+function initWebVitalsSimple(): void {
+  const rate = (v: number, good: number, poor: number) =>
+    v <= good ? 'good' : v <= poor ? 'needs-improvement' : 'poor';
+
+  const emit = (name: string, value: number, good: number, poor: number) => {
+    post({
+      'emb.type': 'ux.web_vital_simple',
+      'emb.web_vital.name': name,
+      'emb.web_vital.value': Math.round(value),
+      'emb.web_vital.rating': rate(value, good, poor),
+      ...base(),
+    });
+  };
+
+  const obs = (
+    type: string,
+    cb: (entries: PerformanceEntryList) => void,
+  ): PerformanceObserver | undefined => {
+    try {
+      if (!PerformanceObserver.supportedEntryTypes?.includes(type)) return;
+      const o = new PerformanceObserver((l) => cb(l.getEntries()));
+      o.observe({ type, buffered: true });
+      return o;
+    } catch {}
+  };
+
+  const onHidden = (fn: () => void) => {
+    document.addEventListener(
+      'visibilitychange',
+      () => {
+        if (document.visibilityState === 'hidden') fn();
+      },
+      { once: true },
+    );
+  };
+
+  // TTFB + FCP from paint/navigation entries
+  const nav = performance.getEntriesByType(
+    'navigation',
+  )[0] as PerformanceNavigationTiming;
+  if (nav) emit('TTFB', Math.max(nav.responseStart, 0), 800, 1800);
+
+  const paintEntries = performance.getEntriesByType('paint');
+  const fcpEntry = paintEntries.find(
+    (e) => e.name === 'first-contentful-paint',
+  );
+  if (fcpEntry) emit('FCP', fcpEntry.startTime, 1800, 3000);
+
+  // LCP
+  let lcpValue = 0;
+  const lcpObs = obs('largest-contentful-paint', (entries) => {
+    const last = entries.at(-1);
+    if (last) lcpValue = last.startTime;
+  });
+  if (lcpObs) {
+    onHidden(() => {
+      lcpObs.disconnect();
+      if (lcpValue) emit('LCP', lcpValue, 2500, 4000);
+    });
+  }
+
+  // CLS
+  let clsValue = 0;
+  let sessionValue = 0;
+  let sessionEntries: PerformanceEntry[] = [];
+  obs('layout-shift', (entries) => {
+    for (const entry of entries) {
+      const e = entry as PerformanceEntry & {
+        hadRecentInput: boolean;
+        value: number;
+      };
+      if (e.hadRecentInput) continue;
+      const first = sessionEntries[0];
+      const last = sessionEntries.at(-1);
+      if (
+        first &&
+        last &&
+        e.startTime - last.startTime < 1000 &&
+        e.startTime - first.startTime < 5000
+      ) {
+        sessionValue += e.value;
+      } else {
+        sessionValue = e.value;
+        sessionEntries = [];
+      }
+      sessionEntries.push(e);
+      if (sessionValue > clsValue) clsValue = sessionValue;
+    }
+  });
+  onHidden(() => {
+    if (clsValue > 0) emit('CLS', clsValue, 0.1, 0.25);
+  });
+
+  // INP
+  let inpValue = 0;
+  obs('event', (entries) => {
+    for (const entry of entries) {
+      if (entry.duration > inpValue) inpValue = entry.duration;
+    }
+  });
+  onHidden(() => {
+    if (inpValue) emit('INP', inpValue, 200, 500);
+  });
+}
+
 // --- Document Load ---
 
 function initDocumentLoad(): void {
@@ -337,11 +442,12 @@ function initClicks(): void {
 
 try {
   for (const fn of [
-    initExceptions, // 1.25
+    // initExceptions, // 1.25
     initWebVitals, // 6.28
-    initDocumentLoad, // 2.1
-    initLoaf, // 1.64
-    initClicks, // .84
+    initWebVitalsSimple, // 1.66
+    // initDocumentLoad, // 2.1
+    // initLoaf, // 1.64
+    // initClicks, // .84
   ]) {
     try {
       fn();
