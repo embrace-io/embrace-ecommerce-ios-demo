@@ -13,26 +13,33 @@ type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
 
 interface EmbracePayload {
   'emb.type': string;
-  'emb.webview_id': string;
+  'emb.app_instance_id': string;
   [key: string]: string | number | undefined;
 }
 
-const pageViewId =
-  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+const appInstanceId = (() => {
+  const buf = new Uint8Array(16);
+  crypto.getRandomValues(buf);
+  return Array.from(buf, (b) => b.toString(16).padStart(2, '0')).join('');
+})();
 
 function post(payload: EmbracePayload): void {
   try {
-    console.log(payload);
+    console.dir(payload);
     window.webkit?.messageHandlers.embrace.postMessage(payload);
   } catch {
     // Not in a WKWebView
   }
 }
 
-function base(): Pick<EmbracePayload, 'emb.webview_id' | 'browser.url.full'> {
-  return { 'emb.webview_id': pageViewId, 'browser.url.full': location.href };
+function base(): Pick<
+  EmbracePayload,
+  'emb.app_instance_id' | 'browser.url.full'
+> {
+  return {
+    'emb.app_instance_id': appInstanceId,
+    'browser.url.full': location.href,
+  };
 }
 
 // --- Web Vitals ---
@@ -42,8 +49,8 @@ function initWebVitals(): void {
     post({
       'emb.type': 'ux.web_vital',
       'emb.web_vital.name': metric.name,
-      'emb.web_vital.value': metric.value,
-      'emb.web_vital.delta': metric.delta,
+      'emb.web_vital.value': Math.round(metric.value),
+      'emb.web_vital.delta': Math.round(metric.delta),
       'emb.web_vital.rating': metric.rating,
       'emb.web_vital.id': metric.id,
       'emb.web_vital.navigation_type': metric.navigationType,
@@ -99,19 +106,35 @@ function initDocumentLoad(): void {
       'resource',
     ) as EmbracePerformanceResourceTiming[];
     for (const r of resources) {
-      post({
+      const payload: EmbracePayload = {
         'emb.type': 'ux.resource_fetch',
         'url.full': r.name,
-        'http.request.initiator_type': r.initiatorType,
-        'http.response.delivery_type': r.deliveryType ?? '',
-        'http.request.render_blocking_status': r.renderBlockingStatus ?? '',
-        'http.response.body.size': r.transferSize,
+        'http.response.body.size': r.encodedBodySize,
+        'http.response.size': r.transferSize,
         'http.response.decoded_body_size': r.decodedBodySize,
-        'http.response.cors_opaque':
-          r.responseStart === 0 && r.startTime > 0 ? 1 : 0,
         duration: Math.round(r.duration),
         ...base(),
-      });
+      };
+      if (r.initiatorType) {
+        payload['http.request.initiator_type'] = r.initiatorType;
+      }
+      if (r.deliveryType) {
+        payload['http.response.delivery_type'] = r.deliveryType;
+      }
+      if (r.renderBlockingStatus) {
+        payload['http.request.render_blocking_status'] = r.renderBlockingStatus;
+      }
+
+      const hasNoSizeData =
+        r.transferSize === 0 &&
+        r.decodedBodySize === 0 &&
+        r.encodedBodySize === 0;
+      const hasTimingData = r.fetchStart > 0 && r.responseEnd > 0;
+      if (hasNoSizeData && hasTimingData) {
+        payload['http.response.cors_opaque'] = 1;
+      }
+
+      post(payload);
     }
   };
 
@@ -131,12 +154,14 @@ function initExceptions(): void {
     if (handling) return;
     handling = true;
     try {
+      const err = e.error;
       post({
         'emb.type': 'sys.exception',
-        'emb.exception_handling': 'global_exception',
-        'exception.message': e.message || 'unknown',
-        'exception.stacktrace': e.error?.stack ?? '',
-        'exception.type': e.error?.name ?? 'Error',
+        'emb.exception_handling': 'unhandled_error',
+        'exception.message': e.message || '',
+        'exception.stacktrace': err?.stack ?? '',
+        'exception.type': err?.constructor?.name || typeof err || 'Error',
+        'exception.name': err?.name ?? 'Error',
         ...base(),
       });
     } catch {
@@ -156,20 +181,19 @@ function initExceptions(): void {
       } catch {
         message = 'unserializable rejection reason';
       }
-      const err =
-        e.reason instanceof Error
-          ? {
-              message,
-              stack: e.reason.stack ?? '',
-              name: e.reason.name ?? 'Error',
-            }
-          : { message, stack: '', name: 'UnhandledRejection' };
+      const reason = e.reason;
+      const isError = reason instanceof Error;
       post({
         'emb.type': 'sys.exception',
-        'emb.exception_handling': 'promise_rejection',
-        'exception.message': err.message,
-        'exception.stacktrace': err.stack,
-        'exception.type': err.name,
+        'emb.exception_handling': 'unhandled_rejection',
+        'exception.message': message,
+        'exception.stacktrace': isError ? (reason.stack ?? '') : '',
+        'exception.type': isError
+          ? reason.constructor?.name || typeof reason
+          : typeof reason,
+        'exception.name': isError
+          ? (reason.name ?? 'Error')
+          : 'UnhandledRejection',
         ...base(),
       });
     } catch {
@@ -185,7 +209,9 @@ interface LoafEntry {
   duration: number;
   blockingDuration: number;
   styleAndLayoutStart: number;
+  renderStart: number;
   startTime: number;
+  firstUIEventTimestamp: number;
 }
 
 function initLoaf(): void {
@@ -198,22 +224,42 @@ function initLoaf(): void {
 
   let totalBlockingDuration = 0;
   let totalDuration = 0;
+  let workDuration = 0;
   let totalStyleAndLayoutDuration = 0;
   let count = 0;
   let longestDuration = 0;
+  let longestDurationExcludingFirst = 0;
+  let isFirstEntry = true;
 
   const observer = new PerformanceObserver((list) => {
     for (const entry of list.getEntries()) {
       const loaf = entry as unknown as LoafEntry;
-      totalBlockingDuration += loaf.blockingDuration;
-      totalDuration += loaf.duration;
       count++;
+      totalDuration += loaf.duration;
+      workDuration += loaf.renderStart
+        ? loaf.renderStart - loaf.startTime
+        : loaf.duration;
+
+      if (loaf.styleAndLayoutStart) {
+        totalStyleAndLayoutDuration += Math.max(
+          0,
+          loaf.startTime + loaf.duration - loaf.styleAndLayoutStart,
+        );
+      }
+
       if (loaf.duration > longestDuration) {
         longestDuration = loaf.duration;
       }
-      if (loaf.styleAndLayoutStart > loaf.startTime) {
-        totalStyleAndLayoutDuration +=
-          loaf.duration - (loaf.styleAndLayoutStart - loaf.startTime);
+
+      if (isFirstEntry) {
+        isFirstEntry = false;
+      } else {
+        if (loaf.duration > longestDurationExcludingFirst) {
+          longestDurationExcludingFirst = loaf.duration;
+        }
+        if (loaf.firstUIEventTimestamp === 0) {
+          totalBlockingDuration += loaf.blockingDuration;
+        }
       }
     }
   });
@@ -231,22 +277,28 @@ function initLoaf(): void {
     post({
       'emb.type': 'ux.web_vital',
       'emb.web_vital.name': 'TBD',
-      'emb.web_vital.value': totalBlockingDuration,
+      'emb.web_vital.value': Math.round(totalBlockingDuration),
       'emb.web_vital.rating': rating,
       'emb.tbd.loaf_total_duration': Math.round(totalDuration),
+      'emb.tbd.loaf_work_duration': Math.round(workDuration),
       'emb.tbd.loaf_style_and_layout_duration': Math.round(
         totalStyleAndLayoutDuration,
       ),
       'emb.tbd.loaf_count': count,
       'emb.tbd.loaf_longest_duration': Math.round(longestDuration),
+      'emb.tbd.loaf_longest_duration_excluding_first': Math.round(
+        longestDurationExcludingFirst,
+      ),
       ...base(),
     });
 
     totalBlockingDuration = 0;
     totalDuration = 0;
+    workDuration = 0;
     totalStyleAndLayoutDuration = 0;
     count = 0;
     longestDuration = 0;
+    longestDurationExcludingFirst = 0;
   };
 
   document.addEventListener('visibilitychange', () => {
@@ -259,14 +311,13 @@ function initLoaf(): void {
 
 function elementName(el: HTMLElement): string {
   const tag = el.tagName.toLowerCase();
-  if (el.id) return `${tag}#${el.id}`;
-  if (el.className && typeof el.className === 'string') {
-    const cls = el.className.trim().split(/\s+/)[0];
-    if (cls) return `${tag}.${cls}`;
-  }
-  const text = el.textContent?.trim().slice(0, 30);
-  if (text) return `${tag} "${text}"`;
-  return tag;
+  const className =
+    el.className && typeof el.className === 'string'
+      ? ` class="${el.className}"`
+      : '';
+  const innerText = (el.innerText || '').substring(0, 30);
+  const ellipsis = (el.innerText || '').length > 30 ? '...' : '';
+  return `<${tag}${className}>${innerText}${ellipsis}</${tag}>`;
 }
 
 function initClicks(): void {
