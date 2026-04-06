@@ -1,4 +1,6 @@
+/** biome-ignore-all lint/suspicious/noConsole: we want build output */
 import { join } from 'node:path';
+import { exit } from 'node:process';
 
 const ROOT = join(import.meta.dir, '..');
 const OUTDIR = join(ROOT, '..', 'Embrace Ecommerce', 'Resources');
@@ -12,7 +14,7 @@ const jsBuild = await Bun.build({
 
 if (!jsBuild.success) {
   for (const log of jsBuild.logs) console.error(log);
-  process.exit(1);
+  exit(1);
 }
 
 const jsCode = await jsBuild.outputs[0]?.text();
