@@ -1,5 +1,5 @@
 declare interface Window {
-  webkit: {
+  webkit?: {
     messageHandlers: {
       embrace: {
         postMessage(body: unknown): void;

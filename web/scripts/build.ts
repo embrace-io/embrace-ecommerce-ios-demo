@@ -10,6 +10,11 @@ const jsBuild = await Bun.build({
   target: 'browser',
 });
 
+if (!jsBuild.success) {
+  for (const log of jsBuild.logs) console.error(log);
+  process.exit(1);
+}
+
 const jsCode = await jsBuild.outputs[0]?.text();
 
 const sourceHtml = await Bun.file(join(ROOT, 'index.html')).text();

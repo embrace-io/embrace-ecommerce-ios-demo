@@ -1,6 +1,16 @@
 import type { Metric } from 'web-vitals';
 import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
 
+/**
+ * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
+ * - deliveryType: Chromium only (experimental) https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/deliveryType
+ * - renderBlockingStatus: Chromium only https://developer.mozilla.org/en-US/docs/Web/API/PerformanceResourceTiming/renderBlockingStatus
+ */
+type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
+  deliveryType?: 'cache' | '';
+  renderBlockingStatus?: 'blocking' | 'non-blocking';
+};
+
 interface EmbracePayload {
   'emb.type': string;
   'emb.webview_id': string;
@@ -15,7 +25,7 @@ const pageViewId =
 function post(payload: EmbracePayload): void {
   try {
     console.log(payload);
-    window.webkit.messageHandlers.embrace.postMessage(payload);
+    window.webkit?.messageHandlers.embrace.postMessage(payload);
   } catch {
     // Not in a WKWebView
   }
@@ -51,11 +61,17 @@ function initWebVitals(): void {
 // --- Document Load ---
 
 function initDocumentLoad(): void {
+  let retries = 0;
   const emit = () => {
     const nav = performance.getEntriesByType('navigation')[0] as
       | PerformanceNavigationTiming
       | undefined;
     if (!nav) return;
+    if (nav.loadEventEnd === 0 && retries < 5) {
+      retries++;
+      setTimeout(emit, 100);
+      return;
+    }
 
     const paint = performance.getEntriesByType('paint');
     const fp = paint.find((e) => e.name === 'first-paint')?.startTime;
@@ -81,18 +97,18 @@ function initDocumentLoad(): void {
 
     const resources = performance.getEntriesByType(
       'resource',
-    ) as PerformanceResourceTiming[];
+    ) as EmbracePerformanceResourceTiming[];
     for (const r of resources) {
       post({
         'emb.type': 'ux.resource_fetch',
         'url.full': r.name,
         'http.request.initiator_type': r.initiatorType,
-        'http.response.delivery_type':
-          (r as unknown as Record<string, string>).deliveryType ?? '',
-        'http.request.render_blocking_status':
-          (r as unknown as Record<string, string>).renderBlockingStatus ?? '',
+        'http.response.delivery_type': r.deliveryType ?? '',
+        'http.request.render_blocking_status': r.renderBlockingStatus ?? '',
         'http.response.body.size': r.transferSize,
         'http.response.decoded_body_size': r.decodedBodySize,
+        'http.response.cors_opaque':
+          r.responseStart === 0 && r.startTime > 0 ? 1 : 0,
         duration: Math.round(r.duration),
         ...base(),
       });
@@ -109,30 +125,57 @@ function initDocumentLoad(): void {
 // --- Exceptions ---
 
 function initExceptions(): void {
+  let handling = false;
+
   window.addEventListener('error', (e) => {
-    post({
-      'emb.type': 'sys.exception',
-      'emb.exception_handling': 'global_exception',
-      'exception.message': e.message || 'unknown',
-      'exception.stacktrace': e.error?.stack ?? '',
-      'exception.type': e.error?.name ?? 'Error',
-      ...base(),
-    });
+    if (handling) return;
+    handling = true;
+    try {
+      post({
+        'emb.type': 'sys.exception',
+        'emb.exception_handling': 'global_exception',
+        'exception.message': e.message || 'unknown',
+        'exception.stacktrace': e.error?.stack ?? '',
+        'exception.type': e.error?.name ?? 'Error',
+        ...base(),
+      });
+    } catch {
+      /* prevent recursive error handling */
+    }
+    handling = false;
   });
 
   window.addEventListener('unhandledrejection', (e) => {
-    const err =
-      e.reason instanceof Error
-        ? e.reason
-        : { message: String(e.reason), stack: '', name: 'UnhandledRejection' };
-    post({
-      'emb.type': 'sys.exception',
-      'emb.exception_handling': 'promise_rejection',
-      'exception.message': err.message,
-      'exception.stacktrace': err.stack ?? '',
-      'exception.type': err.name ?? 'Error',
-      ...base(),
-    });
+    if (handling) return;
+    handling = true;
+    try {
+      let message: string;
+      try {
+        message =
+          e.reason instanceof Error ? e.reason.message : String(e.reason);
+      } catch {
+        message = 'unserializable rejection reason';
+      }
+      const err =
+        e.reason instanceof Error
+          ? {
+              message,
+              stack: e.reason.stack ?? '',
+              name: e.reason.name ?? 'Error',
+            }
+          : { message, stack: '', name: 'UnhandledRejection' };
+      post({
+        'emb.type': 'sys.exception',
+        'emb.exception_handling': 'promise_rejection',
+        'exception.message': err.message,
+        'exception.stacktrace': err.stack,
+        'exception.type': err.name,
+        ...base(),
+      });
+    } catch {
+      /* prevent recursive error handling */
+    }
+    handling = false;
   });
 }
 
@@ -168,18 +211,17 @@ function initLoaf(): void {
       if (loaf.duration > longestDuration) {
         longestDuration = loaf.duration;
       }
-      const styleDuration =
-        loaf.duration - (loaf.styleAndLayoutStart - loaf.startTime);
-      if (styleDuration > 0) {
-        totalStyleAndLayoutDuration += styleDuration;
+      if (loaf.styleAndLayoutStart > loaf.startTime) {
+        totalStyleAndLayoutDuration +=
+          loaf.duration - (loaf.styleAndLayoutStart - loaf.startTime);
       }
     }
   });
 
   observer.observe({ type: 'long-animation-frame', buffered: true });
 
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'hidden' || count === 0) return;
+  const flush = () => {
+    if (count === 0) return;
 
     let rating: 'good' | 'needs-improvement' | 'poor';
     if (totalBlockingDuration <= 200) rating = 'good';
@@ -199,7 +241,18 @@ function initLoaf(): void {
       'emb.tbd.loaf_longest_duration': Math.round(longestDuration),
       ...base(),
     });
+
+    totalBlockingDuration = 0;
+    totalDuration = 0;
+    totalStyleAndLayoutDuration = 0;
+    count = 0;
+    longestDuration = 0;
+  };
+
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flush();
   });
+  window.addEventListener('pagehide', flush);
 }
 
 // --- Clicks ---
@@ -231,8 +284,20 @@ function initClicks(): void {
 
 // --- Init ---
 
-initWebVitals();
-initDocumentLoad();
-initExceptions();
-initLoaf();
-initClicks();
+try {
+  for (const fn of [
+    initExceptions,
+    initWebVitals,
+    initDocumentLoad,
+    initLoaf,
+    initClicks,
+  ]) {
+    try {
+      fn();
+    } catch {
+      /* subsystem failed to init */
+    }
+  }
+} catch {
+  /* never crash the customer's page */
+}
