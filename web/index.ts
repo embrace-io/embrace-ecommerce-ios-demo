@@ -444,8 +444,8 @@ function initClicks(): void {
 try {
   for (const fn of [
     initExceptions, // 1.25
-    // initWebVitals, // 4.86
-    initWebVitalsSimple, // 1.86 - no INP
+    initWebVitals, // 4.86
+    // initWebVitalsSimple, // 1.86
     initDocumentLoad, // 2.1
     initLoaf, // 1.64
     initClicks, // .84
