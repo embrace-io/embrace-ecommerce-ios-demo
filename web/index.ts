@@ -294,10 +294,6 @@ try {
   ]) {
     try {
       fn();
-    } catch {
-      /* subsystem failed to init */
-    }
+    } catch {}
   }
-} catch {
-  /* never crash the customer's page */
-}
+} catch {}
