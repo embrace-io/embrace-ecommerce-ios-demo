@@ -25,7 +25,7 @@ const appInstanceId = (() => {
 
 function post(payload: EmbracePayload): void {
   try {
-    console.dir(payload);
+    console.debug(payload['emb.type'], payload);
     window.webkit?.messageHandlers.embrace.postMessage(payload);
   } catch {
     // Not in a WKWebView
@@ -34,11 +34,12 @@ function post(payload: EmbracePayload): void {
 
 function base(): Pick<
   EmbracePayload,
-  'emb.app_instance_id' | 'browser.url.full'
+  'emb.app_instance_id' | 'browser.url.full' | 'user_agent.original'
 > {
   return {
     'emb.app_instance_id': appInstanceId,
     'browser.url.full': location.href,
+    'user_agent.original': navigator.userAgent,
   };
 }
 
@@ -88,7 +89,6 @@ function initDocumentLoad(): void {
 
     post({
       'emb.type': 'ux.document_load',
-      'user_agent.original': navigator.userAgent,
       dom_interactive: Math.round(nav.domInteractive),
       dom_content_loaded_event_end: Math.round(nav.domContentLoadedEventEnd),
       load_event_end: Math.round(nav.loadEventEnd),
