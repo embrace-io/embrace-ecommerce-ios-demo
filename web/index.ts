@@ -337,11 +337,11 @@ function initClicks(): void {
 
 try {
   for (const fn of [
-    initExceptions,
-    initWebVitals,
-    initDocumentLoad,
-    initLoaf,
-    initClicks,
+    initExceptions, // 1.25
+    initWebVitals, // 6.28
+    initDocumentLoad, // 2.1
+    initLoaf, // 1.64
+    initClicks, // .84
   ]) {
     try {
       fn();
