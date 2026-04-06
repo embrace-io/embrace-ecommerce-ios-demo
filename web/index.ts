@@ -1,5 +1,5 @@
 import type { Metric } from 'web-vitals';
-import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals';
+import { onCLS, onFCP, onLCP, onTTFB } from 'web-vitals';
 
 /**
  * Adds new browser features not yet in TypeScript's DOM lib (as of Oct 2025):
@@ -61,7 +61,6 @@ function initWebVitals(): void {
 
   onLCP(report);
   onFCP(report);
-  onINP(report);
   onCLS(report);
   onTTFB(report);
 }
@@ -70,12 +69,20 @@ function initWebVitalsSimple(): void {
   const rate = (v: number, good: number, poor: number) =>
     v <= good ? 'good' : v <= poor ? 'needs-improvement' : 'poor';
 
+  const nav = performance.getEntriesByType('navigation')[0] as
+    | PerformanceNavigationTiming
+    | undefined;
+  const navType = nav?.type.replace(/_/g, '-') || 'navigate';
+
+  let idCounter = 0;
   const emit = (name: string, value: number, good: number, poor: number) => {
     post({
       'emb.type': 'ux.web_vital_simple',
       'emb.web_vital.name': name,
       'emb.web_vital.value': Math.round(value),
       'emb.web_vital.rating': rate(value, good, poor),
+      'emb.web_vital.id': `s-${appInstanceId}-${idCounter++}`,
+      'emb.web_vital.navigation_type': navType,
       ...base(),
     });
   };
@@ -92,20 +99,20 @@ function initWebVitalsSimple(): void {
     } catch {}
   };
 
-  const onHidden = (fn: () => void) => {
-    document.addEventListener(
-      'visibilitychange',
-      () => {
-        if (document.visibilityState === 'hidden') fn();
-      },
-      { once: true },
-    );
+  const hiddenCallbacks: (() => void)[] = [];
+  const onHidden = (fn: () => void) => hiddenCallbacks.push(fn);
+  let flushed = false;
+  const flushAll = () => {
+    if (flushed) return;
+    flushed = true;
+    for (const fn of hiddenCallbacks) fn();
   };
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushAll();
+  });
+  window.addEventListener('pagehide', flushAll);
 
   // TTFB + FCP from paint/navigation entries
-  const nav = performance.getEntriesByType(
-    'navigation',
-  )[0] as PerformanceNavigationTiming;
   if (nav) emit('TTFB', Math.max(nav.responseStart, 0), 800, 1800);
 
   const paintEntries = performance.getEntriesByType('paint');
@@ -114,17 +121,24 @@ function initWebVitalsSimple(): void {
   );
   if (fcpEntry) emit('FCP', fcpEntry.startTime, 1800, 3000);
 
-  // LCP
+  // LCP — finalized on first input or hidden
   let lcpValue = 0;
+  let lcpDone = false;
   const lcpObs = obs('largest-contentful-paint', (entries) => {
     const last = entries.at(-1);
     if (last) lcpValue = last.startTime;
   });
   if (lcpObs) {
-    onHidden(() => {
+    const finalizeLcp = () => {
+      if (lcpDone) return;
+      lcpDone = true;
       lcpObs.disconnect();
       if (lcpValue) emit('LCP', lcpValue, 2500, 4000);
-    });
+    };
+    onHidden(finalizeLcp);
+    for (const evt of ['keydown', 'click'] as const) {
+      addEventListener(evt, finalizeLcp, { once: true, capture: true });
+    }
   }
 
   // CLS
@@ -155,20 +169,7 @@ function initWebVitalsSimple(): void {
       if (sessionValue > clsValue) clsValue = sessionValue;
     }
   });
-  onHidden(() => {
-    if (clsValue > 0) emit('CLS', clsValue, 0.1, 0.25);
-  });
-
-  // INP
-  let inpValue = 0;
-  obs('event', (entries) => {
-    for (const entry of entries) {
-      if (entry.duration > inpValue) inpValue = entry.duration;
-    }
-  });
-  onHidden(() => {
-    if (inpValue) emit('INP', inpValue, 200, 500);
-  });
+  onHidden(() => emit('CLS', clsValue, 0.1, 0.25));
 }
 
 // --- Document Load ---
@@ -442,12 +443,12 @@ function initClicks(): void {
 
 try {
   for (const fn of [
-    // initExceptions, // 1.25
-    initWebVitals, // 6.28
-    initWebVitalsSimple, // 1.66
-    // initDocumentLoad, // 2.1
-    // initLoaf, // 1.64
-    // initClicks, // .84
+    initExceptions, // 1.25
+    // initWebVitals, // 4.86
+    initWebVitalsSimple, // 1.86 - no INP
+    initDocumentLoad, // 2.1
+    initLoaf, // 1.64
+    initClicks, // .84
   ]) {
     try {
       fn();
