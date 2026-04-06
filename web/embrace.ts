@@ -8,8 +8,16 @@ type EmbracePerformanceResourceTiming = PerformanceResourceTiming & {
   renderBlockingStatus?: 'blocking' | 'non-blocking';
 };
 
+type EmbraceEventType =
+  | 'ux.document_load'
+  | 'ux.resource_fetch'
+  | 'sys.exception'
+  | 'ux.web_vital'
+  | 'ux.web_vital_simple'
+  | 'ux.tap';
+
 export interface EmbracePayload {
-  'emb.type': string;
+  'emb.type': EmbraceEventType;
   'emb.app_instance_id': string;
   [key: string]: string | number | undefined;
 }
@@ -21,11 +29,11 @@ export const appInstanceId = (() => {
 })();
 
 export function post(payload: EmbracePayload): void {
+  console.debug(payload['emb.type'], payload);
   try {
-    console.debug(payload['emb.type'], payload);
-    window.webkit?.messageHandlers.embrace.postMessage(payload);
-  } catch {
-    // Not in a WKWebView
+    window.webkit?.messageHandlers.embrace?.postMessage(payload);
+  } catch (e) {
+    console.warn('[embrace] postMessage failed:', e);
   }
 }
 
@@ -138,8 +146,8 @@ export function initExceptions(): void {
         'exception.name': err?.name ?? 'Error',
         ...base(),
       });
-    } catch {
-      /* prevent recursive error handling */
+    } catch (inner) {
+      console.warn('[embrace] error handler failed:', inner);
     }
     handling = false;
   });
@@ -152,7 +160,11 @@ export function initExceptions(): void {
       try {
         message =
           e.reason instanceof Error ? e.reason.message : String(e.reason);
-      } catch {
+      } catch (coercionError) {
+        console.warn(
+          '[embrace] could not serialize rejection reason:',
+          coercionError,
+        );
         message = 'unserializable rejection reason';
       }
       const reason = e.reason;
@@ -170,8 +182,8 @@ export function initExceptions(): void {
           : 'UnhandledRejection',
         ...base(),
       });
-    } catch {
-      /* prevent recursive error handling */
+    } catch (inner) {
+      console.warn('[embrace] rejection handler failed:', inner);
     }
     handling = false;
   });
@@ -273,6 +285,7 @@ export function initLoaf(): void {
     count = 0;
     longestDuration = 0;
     longestDurationExcludingFirst = 0;
+    isFirstEntry = true;
   };
 
   document.addEventListener('visibilitychange', () => {
@@ -285,13 +298,14 @@ export function initLoaf(): void {
 
 function elementName(el: HTMLElement): string {
   const tag = el.tagName.toLowerCase();
-  const className =
+  const cls =
     el.className && typeof el.className === 'string'
-      ? ` class="${el.className}"`
+      ? ` class="${el.className.substring(0, 50)}"`
       : '';
-  const innerText = (el.innerText || '').substring(0, 30);
-  const ellipsis = (el.innerText || '').length > 30 ? '...' : '';
-  return `<${tag}${className}>${innerText}${ellipsis}</${tag}>`;
+  const text = el.innerText || '';
+  const truncated = text.substring(0, 30);
+  const ellipsis = text.length > 30 ? '...' : '';
+  return `<${tag}${cls}>${truncated}${ellipsis}</${tag}>`;
 }
 
 export function initClicks(): void {

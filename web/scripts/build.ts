@@ -18,13 +18,17 @@ if (!jsBuild.success) {
 }
 
 const jsCode = await jsBuild.outputs[0]?.text();
+if (!jsCode) {
+  console.error('Build produced no JS output');
+  exit(1);
+}
 
 const sourceHtml = await Bun.file(join(ROOT, 'index.html')).text();
 
 const rewriter = new HTMLRewriter().on('script[src="./index.ts"]', {
   element(el) {
     el.removeAttribute('src');
-    el.setInnerContent(jsCode ?? '/* error */', { html: true });
+    el.setInnerContent(jsCode, { html: true });
   },
 });
 

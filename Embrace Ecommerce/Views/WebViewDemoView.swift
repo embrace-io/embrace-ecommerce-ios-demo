@@ -29,11 +29,17 @@ struct EmbraceWebView: UIViewRepresentable {
 
         if let url = Bundle.main.url(forResource: "index", withExtension: "html") {
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
+        } else {
+            webView.loadHTMLString("<h1>Error: Could not load content</h1>", baseURL: nil)
         }
         return webView
     }
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
+        uiView.configuration.userContentController.removeScriptMessageHandler(forName: handlerName)
+    }
 
     // MARK: - Coordinator (message handler + navigation delegate)
 
@@ -53,12 +59,11 @@ struct EmbraceWebView: UIViewRepresentable {
                 return
             }
 
-            let eventType = payload["type"] as? String ?? "unknown"
-            let severity = payload["severity"] as? String ?? "info"
+            let eventType = payload["emb.type"] as? String ?? "unknown"
+            let severity: String = (eventType == "sys.exception") ? "error" : "info"
 
-            // Flatten all payload values into string properties for the log
             var properties: [String: String] = ["webview.event_type": eventType]
-            for (key, value) in payload where key != "type" && key != "severity" {
+            for (key, value) in payload where key != "emb.type" {
                 properties["webview.\(key)"] = "\(value)"
             }
 

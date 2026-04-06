@@ -29,16 +29,16 @@ function initWebVitals(): void {
   onTTFB(report);
 }
 
-try {
-  for (const fn of [
-    initExceptions,
-    initWebVitals,
-    initDocumentLoad,
-    initLoaf,
-    initClicks,
-  ]) {
-    try {
-      fn();
-    } catch {}
+for (const fn of [
+  initExceptions,
+  initWebVitals,
+  initDocumentLoad,
+  initLoaf,
+  initClicks,
+]) {
+  try {
+    fn();
+  } catch (e) {
+    console.warn(`[embrace] ${fn.name} failed:`, e);
   }
-} catch {}
+}

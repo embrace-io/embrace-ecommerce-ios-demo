@@ -34,12 +34,14 @@ function initWebVitalsSimple(): void {
     type: string,
     cb: (entries: PerformanceEntryList) => void,
   ): PerformanceObserver | undefined => {
+    if (!PerformanceObserver.supportedEntryTypes?.includes(type)) return;
     try {
-      if (!PerformanceObserver.supportedEntryTypes?.includes(type)) return;
       const o = new PerformanceObserver((l) => cb(l.getEntries()));
       o.observe({ type, buffered: true });
       return o;
-    } catch {}
+    } catch (e) {
+      console.warn(`[embrace] PerformanceObserver(${type}) failed:`, e);
+    }
   };
 
   const hiddenCallbacks: (() => void)[] = [];
@@ -115,16 +117,16 @@ function initWebVitalsSimple(): void {
   onHidden(() => emit('CLS', clsValue, 0.1, 0.25));
 }
 
-try {
-  for (const fn of [
-    initExceptions,
-    initWebVitalsSimple,
-    initDocumentLoad,
-    initLoaf,
-    initClicks,
-  ]) {
-    try {
-      fn();
-    } catch {}
+for (const fn of [
+  initExceptions,
+  initWebVitalsSimple,
+  initDocumentLoad,
+  initLoaf,
+  initClicks,
+]) {
+  try {
+    fn();
+  } catch (e) {
+    console.warn(`[embrace] ${fn.name} failed:`, e);
   }
-} catch {}
+}
