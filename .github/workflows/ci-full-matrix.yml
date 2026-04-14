@@ -15,15 +15,21 @@ env:
   SCHEME_NAME: "Embrace Ecommerce"
   XCODE_VERSION: "16.4"
 
-concurrency:
-  group: full-matrix-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
-    name: Build for Testing
+    name: "Build (${{ matrix.env_name }})"
     runs-on: macos-latest
+    environment: ${{ matrix.env_name }}
     timeout-minutes: 25
+
+    concurrency:
+      group: full-matrix-${{ github.ref }}-${{ matrix.env_name }}
+      cancel-in-progress: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        env_name: [internal, demo]
 
     outputs:
       simulator_udid: ${{ steps.find_simulator.outputs.simulator_udid }}
@@ -81,19 +87,25 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: full-matrix-build
+          name: full-matrix-build-${{ matrix.env_name }}
           path: DerivedData/Build/Products/
           retention-days: 1
 
   test:
-    name: "${{ matrix.device }} - ${{ matrix.test_suite.name }}"
+    name: "${{ matrix.env_name }} - ${{ matrix.device }} - ${{ matrix.test_suite.name }}"
     needs: build
     runs-on: macos-latest
+    environment: ${{ matrix.env_name }}
     timeout-minutes: 15
+
+    concurrency:
+      group: full-matrix-test-${{ github.ref }}-${{ matrix.env_name }}-${{ matrix.device }}-${{ matrix.test_suite.run_source }}
+      cancel-in-progress: true
 
     strategy:
       fail-fast: false
       matrix:
+        env_name: [internal, demo]
         device:
           - "iPhone 16"
           - "iPhone 16 Pro"
@@ -129,7 +141,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: full-matrix-build
+          name: full-matrix-build-${{ matrix.env_name }}
           path: DerivedData/Build/Products
 
       - name: Configure Embrace App ID
@@ -178,15 +190,17 @@ jobs:
 
   # Optional iPad tests - only runs if include_ipad is true
   test-ipad:
-    name: "iPad - ${{ matrix.test_suite.name }}"
+    name: "${{ matrix.env_name }} - iPad - ${{ matrix.test_suite.name }}"
     if: ${{ inputs.include_ipad == true }}
     needs: build
     runs-on: macos-latest
+    environment: ${{ matrix.env_name }}
     timeout-minutes: 15
 
     strategy:
       fail-fast: false
       matrix:
+        env_name: [internal, demo]
         test_suite:
           - name: "Guest Auth"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow"
@@ -209,7 +223,7 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: full-matrix-build
+          name: full-matrix-build-${{ matrix.env_name }}
           path: DerivedData/Build/Products
 
       - name: Configure Embrace App ID

@@ -15,15 +15,21 @@ env:
   XCODE_VERSION: "16.4"
   DEVICE_NAME: "iPhone 16"
 
-concurrency:
-  group: crash-tests
-  cancel-in-progress: true
-
 jobs:
   crash-and-flush:
-    name: "Crash Tests (5 cycles)"
+    name: "${{ matrix.env_name }} - Crash Tests (5 cycles)"
     runs-on: macos-latest
+    environment: ${{ matrix.env_name }}
     timeout-minutes: 60
+
+    concurrency:
+      group: crash-tests-${{ matrix.env_name }}
+      cancel-in-progress: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        env_name: [internal, demo]
 
     steps:
       - name: Checkout code
@@ -167,7 +173,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: crash-test-results
+          name: crash-test-results-${{ matrix.env_name }}
           path: |
             Results/
             host_embrace.log

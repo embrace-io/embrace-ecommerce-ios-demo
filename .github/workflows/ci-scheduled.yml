@@ -14,19 +14,21 @@ env:
   XCODE_VERSION: "16.4"
   DEVICE_NAME: "iPhone 16"
 
-concurrency:
-  group: scheduled-tests
-  cancel-in-progress: true
-
 jobs:
   run-tests:
-    name: "${{ matrix.test_suite.name }}"
+    name: "${{ matrix.env_name }} - ${{ matrix.test_suite.name }}"
     runs-on: macos-latest
+    environment: ${{ matrix.env_name }}
     timeout-minutes: 35
+
+    concurrency:
+      group: scheduled-tests-${{ matrix.env_name }}-${{ matrix.test_suite.run_source }}
+      cancel-in-progress: true
 
     strategy:
       fail-fast: false
       matrix:
+        env_name: [internal, demo]
         test_suite:
           - name: "Browse Products"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
@@ -60,7 +62,7 @@ jobs:
           if [[ -n "$RUN_ID" ]]; then
             echo "Found successful build run: $RUN_ID"
             mkdir -p DerivedData/Build/Products
-            gh run download "$RUN_ID" --name test-build-artifacts --dir DerivedData/Build/Products 2>/dev/null || true
+            gh run download "$RUN_ID" --name test-build-artifacts-${{ matrix.env_name }} --dir DerivedData/Build/Products 2>/dev/null || true
           fi
 
           # Check if artifacts were downloaded
@@ -166,7 +168,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.test_suite.run_source }}
+          name: test-results-${{ matrix.env_name }}-${{ matrix.test_suite.run_source }}
           path: TestResults-${{ matrix.test_suite.run_source }}.xcresult
           retention-days: 3
           if-no-files-found: ignore

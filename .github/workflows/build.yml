@@ -12,16 +12,21 @@ env:
   XCODE_VERSION: "16.4"
   DERIVED_DATA_PATH: "DerivedData"
 
-# Prevent multiple builds from running simultaneously
-concurrency:
-  group: build-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
   build:
-    name: Build for Testing
+    name: "Build (${{ matrix.env_name }})"
     runs-on: macos-latest
+    environment: ${{ matrix.env_name }}
     timeout-minutes: 30
+
+    concurrency:
+      group: build-${{ github.ref }}-${{ matrix.env_name }}
+      cancel-in-progress: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        env_name: [internal, demo]
 
     steps:
       - name: Checkout code
@@ -39,8 +44,8 @@ jobs:
             sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
             echo "Embrace APP_ID configured"
           else
-            echo "ERROR: APP_ID variable not found in repository variables"
-            echo "Please add APP_ID to your repository variables at: Settings > Secrets and variables > Actions > Variables"
+            echo "ERROR: APP_ID variable not found in environment"
+            echo "Please add APP_ID to the environment at: Settings > Environments > (internal or demo)"
             exit 1
           fi
 
@@ -114,7 +119,7 @@ jobs:
       - name: Upload test artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: test-build-artifacts
+          name: test-build-artifacts-${{ matrix.env_name }}
           path: |
             ${{ env.DERIVED_DATA_PATH }}/Build/Products/
           retention-days: 7
@@ -123,7 +128,7 @@ jobs:
       - name: Upload xctestrun file
         uses: actions/upload-artifact@v4
         with:
-          name: xctestrun-file
+          name: xctestrun-file-${{ matrix.env_name }}
           path: ${{ env.DERIVED_DATA_PATH }}/Build/Products/*.xctestrun
           retention-days: 7
           if-no-files-found: error
@@ -135,6 +140,7 @@ jobs:
           echo "- **Project:** ${{ env.PROJECT_NAME }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Xcode:** ${{ env.XCODE_VERSION }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Artifacts:** test-build-artifacts, xctestrun-file" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment:** ${{ matrix.env_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifacts:** test-build-artifacts-${{ matrix.env_name }}, xctestrun-file-${{ matrix.env_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "Artifacts are available for 7 days for use by scheduled test workflows." >> $GITHUB_STEP_SUMMARY

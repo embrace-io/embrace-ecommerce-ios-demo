@@ -17,15 +17,21 @@ env:
   XCODE_VERSION: "16.4"
   DEVICE_NAME: "iPhone 16"
 
-concurrency:
-  group: one-simulator-tests
-  cancel-in-progress: false
-
 jobs:
   run-all-tests:
-    name: "Run All Tests (Stitched Sessions)"
+    name: "${{ matrix.env_name }} - Run All Tests (Stitched Sessions)"
     runs-on: macos-latest
+    environment: ${{ matrix.env_name }}
     timeout-minutes: 90
+
+    concurrency:
+      group: one-simulator-tests-${{ matrix.env_name }}
+      cancel-in-progress: false
+
+    strategy:
+      fail-fast: false
+      matrix:
+        env_name: [internal, demo]
 
     steps:
       - name: Checkout code
@@ -49,7 +55,7 @@ jobs:
           if [[ -n "$RUN_ID" ]]; then
             echo "Found successful build run: $RUN_ID"
             mkdir -p DerivedData/Build/Products
-            gh run download "$RUN_ID" --name test-build-artifacts --dir DerivedData/Build/Products 2>/dev/null || true
+            gh run download "$RUN_ID" --name test-build-artifacts-${{ matrix.env_name }} --dir DerivedData/Build/Products 2>/dev/null || true
           fi
 
           # Check if artifacts were downloaded
@@ -151,7 +157,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: stitched-session-results
+          name: stitched-session-results-${{ matrix.env_name }}
           path: |
             result-*.txt
             result-*.xcresult

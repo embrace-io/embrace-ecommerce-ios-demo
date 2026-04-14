@@ -98,12 +98,14 @@ Push to main
 
 ## Setup Instructions
 
-### Required Repository Variables
+### Required GitHub Environments
 
-1. Go to repository **Settings**
-2. Navigate to: **Secrets and variables > Actions > Variables**
-3. Add:
-   - `APP_ID`: Your Embrace App ID
+Each workflow runs for two environments: `internal` and `demo`. Set these up in the repo's **Settings > Environments**:
+
+| Environment | `APP_ID` (variable) | `EMBRACE_API_TOKEN` (secret) |
+|---|---|---|
+| `internal` | Internal org app ID | Internal org symbol upload token |
+| `demo` | Demo org app ID | Demo org symbol upload token |
 
 ### Running Workflows
 
