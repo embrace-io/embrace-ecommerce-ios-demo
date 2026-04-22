@@ -29,7 +29,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env_name: [internal, demo]
+        env_name: ${{ fromJSON(vars.ENVIRONMENTS || '["default"]') }}
 
     outputs:
       simulator_udid: ${{ steps.find_simulator.outputs.simulator_udid }}
@@ -105,7 +105,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env_name: [internal, demo]
+        env_name: ${{ fromJSON(vars.ENVIRONMENTS || '["default"]') }}
         device:
           - "iPhone 16"
           - "iPhone 16 Pro"
@@ -200,7 +200,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env_name: [internal, demo]
+        env_name: ${{ fromJSON(vars.ENVIRONMENTS || '["default"]') }}
         test_suite:
           - name: "Guest Auth"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testAuthenticationGuestFlow"

@@ -28,7 +28,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        env_name: [internal, demo]
+        env_name: ${{ fromJSON(vars.ENVIRONMENTS || '["default"]') }}
         test_suite:
           - name: "Browse Products"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
