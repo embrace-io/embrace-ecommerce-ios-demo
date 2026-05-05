@@ -126,20 +126,41 @@ jobs:
           PASSED=0
           FAILED=0
 
+          # Two-phase pattern (mirrors Android's two-am-instrument approach):
+          # Phase A runs only the crash test; xcodebuild exits, leaving the
+          # KSCrash payload on disk. Phase B is a fresh xcodebuild invocation
+          # (fresh xctest runner, fresh app cold-start) so the SDK reads and
+          # ships the pending crash tied to the persisted session.
+          # Do NOT uninstall, erase, or shutdown the simulator between phases —
+          # the on-disk payload must survive.
           for i in 1 2 3 4 5; do
             echo ""
             echo "========================================"
             echo "  Crash cycle $i of 5"
             echo "========================================"
-            echo "--- Running crash + flush cycle ---"
+
+            echo "--- Phase A: trigger crash ---"
             xcodebuild test-without-building \
               -project "${{ env.PROJECT_NAME }}.xcodeproj" \
               -scheme "${{ env.SCHEME_NAME }}" \
               -destination "$SIM_DEST" \
               -derivedDataPath "DerivedData" \
               -only-testing:"$CRASH_TEST" \
+              -resultBundlePath "Results/cycle-$i-crash" 2>&1 || true
+
+            # Let KSCrash finish flushing the payload to disk before we
+            # cold-start a new test runner.
+            sleep 15
+
+            echo "--- Phase B: cold-start to flush pending crash ---"
+            xcodebuild test-without-building \
+              -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+              -scheme "${{ env.SCHEME_NAME }}" \
+              -destination "$SIM_DEST" \
+              -derivedDataPath "DerivedData" \
               -only-testing:"$FLUSH_TEST" \
-              -resultBundlePath "Results/cycle-$i" 2>&1 || true
+              -resultBundlePath "Results/cycle-$i-flush" 2>&1 || true
+
             echo "Cycle $i: completed"
             PASSED=$((PASSED + 1))
             sleep 5

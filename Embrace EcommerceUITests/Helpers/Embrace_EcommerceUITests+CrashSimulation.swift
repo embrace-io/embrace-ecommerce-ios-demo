@@ -114,9 +114,13 @@ extension Embrace_EcommerceUITests {
 
         // Navigate around so the session has breadcrumbs and spans for the timeline.
         // The cold-start session from setUp is already persisted to CoreData.
+        // The longer wait gives CoreData time to flush the SessionRecord and any
+        // queued span/log writes — without this, a CI runner under load can
+        // crash before the SessionRecord is on disk, leaving the crash orphaned
+        // (no timeline) when UnsentDataHandler tries to fetch it on next launch.
         let homeView = app.descendants(matching: .any)["homeView"].firstMatch
         _ = homeView.waitForExistence(timeout: 10.0)
-        Thread.sleep(forTimeInterval: 3.0)
+        Thread.sleep(forTimeInterval: 8.0)
 
         tapCrashButton()
     }
