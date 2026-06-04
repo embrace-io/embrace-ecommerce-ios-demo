@@ -7,328 +7,364 @@
 
 import Foundation
 import EmbraceIO
+import EmbraceSemantics
 import OpenTelemetryApi
 
+// MARK: - Public Surface
+
+/// Abstraction over Embrace so feature code never imports EmbraceIO directly.
+/// Swap the implementation for a mock/no-op in tests.
 protocol TelemetryService {
+    // Logs
     func logInfo(_ message: String, properties: [String: String]?)
     func logWarning(_ message: String, properties: [String: String]?)
     func logError(_ message: String, properties: [String: String]?)
     func logDebug(_ message: String, properties: [String: String]?)
-    
+
+    // Spans
     func startSpan(name: String) -> OpenTelemetryApi.Span?
-    func recordCompletedSpan(name: String, startTime: Date, endTime: Date, attributes: [String: String]?)
-    
+    func recordCompletedSpan(
+        name: String,
+        startTime: Date,
+        endTime: Date,
+        attributes: [String: String]?,
+        errorCode: SpanErrorCode?
+    )
+    func recordSpan<T>(name: String, attributes: [String: String], block: (Span?) throws -> T) rethrows -> T
+
+    // Events
     func addBreadcrumb(message: String)
+
+    // Metadata (session, process, or permanent scope)
     func addSessionProperty(key: String, value: String, permanent: Bool)
     func removeSessionProperty(key: String)
-    
+
+    // User identity
+    func setUser(id: String?, email: String?, name: String?)
+    func clearUser()
+
+    // Persona tags (segmentation)
+    func addPersona(_ tag: String, permanent: Bool)
+    func removePersona(_ tag: String, permanent: Bool)
+
+    // Manual network + push
     func recordNetworkRequest(url: String, method: String, startTime: Date, endTime: Date, statusCode: Int?, errorMessage: String?, traceId: String?)
-    func recordPushNotification(title: String?, body: String?, topic: String?, messageId: String?)
+    func recordPushNotification(userInfo: [AnyHashable: Any])
 }
 
 final class EmbraceService: TelemetryService {
     static let shared = EmbraceService()
-    
+
     private init() {}
-    
-    // MARK: - Logging Methods
-    
+
+    // MARK: - Logs
+
     func logInfo(_ message: String, properties: [String: String]? = nil) {
-        Embrace.client?.log(
-            message,
-            severity: .info,
-            attributes: properties ?? [:]
-        )
+        Embrace.client?.log(message, severity: .info, attributes: properties ?? [:])
     }
-    
+
     func logWarning(_ message: String, properties: [String: String]? = nil) {
-        Embrace.client?.log(
-            message,
-            severity: .warn,
-            attributes: properties ?? [:]
-        )
+        Embrace.client?.log(message, severity: .warn, attributes: properties ?? [:])
     }
-    
+
     func logError(_ message: String, properties: [String: String]? = nil) {
-        Embrace.client?.log(
-            message,
-            severity: .error,
-            attributes: properties ?? [:]
-        )
+        Embrace.client?.log(message, severity: .error, attributes: properties ?? [:])
     }
-    
+
     func logDebug(_ message: String, properties: [String: String]? = nil) {
-        Embrace.client?.log(
-            message,
-            severity: .debug,
-            attributes: properties ?? [:]
+        Embrace.client?.log(message, severity: .debug, attributes: properties ?? [:])
+    }
+
+    // MARK: - Spans
+
+    /// Returns a started span. Caller owns calling `.end()` (or `.end(errorCode:)`).
+    func startSpan(name: String) -> OpenTelemetryApi.Span? {
+        Embrace.client?.buildSpan(name: name, type: .performance).startSpan()
+    }
+
+    /// Records a span that already happened. Honors real start/end times and
+    /// optionally marks it as failed so it shows up as an error in the dashboard.
+    func recordCompletedSpan(
+        name: String,
+        startTime: Date,
+        endTime: Date,
+        attributes: [String: String]? = nil,
+        errorCode: SpanErrorCode? = nil
+    ) {
+        Embrace.client?.recordCompletedSpan(
+            name: name,
+            type: .performance,
+            parent: nil,
+            startTime: startTime,
+            endTime: endTime,
+            attributes: attributes ?? [:],
+            events: [],
+            errorCode: errorCode
         )
     }
-    
-    // MARK: - Custom Spans
-    
-    func startSpan(name: String) -> OpenTelemetryApi.Span? {
-        return Embrace.client?.buildSpan(name: name, type: .performance)
-            .startSpan()
+
+    /// Block-based span. Preferred for short synchronous work — auto-ends,
+    /// and the block still runs if Embrace.client is nil (e.g., pre-start).
+    @discardableResult
+    func recordSpan<T>(
+        name: String,
+        attributes: [String: String] = [:],
+        block: (Span?) throws -> T
+    ) rethrows -> T {
+        try Embrace.recordSpan(name: name, type: .performance, attributes: attributes, block: block)
     }
-    
-    func recordCompletedSpan(name: String, startTime: Date, endTime: Date, attributes: [String: String]? = nil) {
-        let span = Embrace.client?.buildSpan(name: name, type: .performance)
-            .startSpan()
-        
-        if let attributes = attributes {
-            for (key, value) in attributes {
-                span?.setAttribute(key: key, value: value)
-            }
-        }
-        
-        span?.end()
-    }
-    
+
     // MARK: - Breadcrumbs
-    
+
     func addBreadcrumb(message: String) {
         Embrace.client?.add(event: .breadcrumb(message))
     }
-    
+
     // MARK: - Session Properties
-    
+
     func addSessionProperty(key: String, value: String, permanent: Bool = false) {
-        // Note: Session property API needs to be checked for Embrace 6.x
         try? Embrace.client?.metadata.addProperty(
             key: key,
             value: value,
             lifespan: permanent ? .permanent : .session
         )
     }
-    
+
     func removeSessionProperty(key: String) {
-        // Note: Session property API needs to be checked for Embrace 6.x
         try? Embrace.client?.metadata.removeProperty(key: key)
     }
-    
+
+    // MARK: - User Identity
+
+    /// Sets built-in user fields (id/email/name). Persists across sessions
+    /// until `clearUser()` is called. Pass `nil` to leave a field unchanged.
+    func setUser(id: String?, email: String? = nil, name: String? = nil) {
+        guard let metadata = Embrace.client?.metadata else { return }
+        if let id = id { metadata.userIdentifier = id }
+        if let email = email { metadata.userEmail = email }
+        if let name = name { metadata.userName = name }
+    }
+
+    func clearUser() {
+        Embrace.client?.metadata.clearUserProperties()
+    }
+
+    // MARK: - Personas
+
+    func addPersona(_ tag: String, permanent: Bool = false) {
+        try? Embrace.client?.metadata.add(persona: tag, lifespan: permanent ? .permanent : .session)
+    }
+
+    func removePersona(_ tag: String, permanent: Bool = false) {
+        try? Embrace.client?.metadata.remove(persona: tag, lifespan: permanent ? .permanent : .session)
+    }
+
     // MARK: - Network Monitoring
-    
-    func recordNetworkRequest(url: String, method: String, startTime: Date, endTime: Date, statusCode: Int?, errorMessage: String?, traceId: String?) {
-        let span = Embrace.client?.buildSpan(name: "network_request", type: .networkRequest).startSpan()
-        
-        span?.setAttribute(key: "http.url", value: url)
-        span?.setAttribute(key: "http.method", value: method)
-        
-        if let statusCode = statusCode {
-            span?.setAttribute(key: "http.status_code", value: String(statusCode))
-        }
-        
-        if let traceId = traceId {
-            span?.setAttribute(key: "http.trace_id", value: traceId)
-        }
-        
-        if let errorMessage = errorMessage {
-            // Note: Span status API needs to be checked for Embrace 6.x
-            // span?.setStatus(.error, description: errorMessage)
-            span?.setAttribute(key: "error.message", value: errorMessage)
-        }
-        
-        span?.end()
+    // The SDK's URLSessionCaptureService auto-captures URLSession traffic.
+    // Use this only for custom transports the SDK cannot see (e.g. 3rd-party clients).
+
+    func recordNetworkRequest(
+        url: String,
+        method: String,
+        startTime: Date,
+        endTime: Date,
+        statusCode: Int?,
+        errorMessage: String?,
+        traceId: String?
+    ) {
+        var attributes: [String: String] = [
+            "http.url": url,
+            "http.method": method
+        ]
+        if let statusCode = statusCode { attributes["http.status_code"] = String(statusCode) }
+        if let traceId = traceId { attributes["http.trace_id"] = traceId }
+        if let errorMessage = errorMessage { attributes["error.message"] = errorMessage }
+
+        Embrace.client?.recordCompletedSpan(
+            name: "network_request",
+            type: .networkRequest,
+            parent: nil,
+            startTime: startTime,
+            endTime: endTime,
+            attributes: attributes,
+            events: [],
+            errorCode: errorMessage == nil ? nil : .failure
+        )
     }
-    
+
     // MARK: - Push Notifications
-    
-    func recordPushNotification(title: String?, body: String?, topic: String?, messageId: String?) {
+
+    /// Preferred: pass the raw `userInfo` from
+    /// `didReceiveRemoteNotification` / `UNUserNotificationCenterDelegate`.
+    /// The SDK parses the `aps` payload (title/body/category/badge) for you.
+    func recordPushNotification(userInfo: [AnyHashable: Any]) {
+        do {
+            if let event = try? PushNotificationEvent.push(userInfo: userInfo) {
+                Embrace.client?.add(event: event)
+            }
+        }
         addBreadcrumb(message: "Push notification received")
-        
-        let attributes: [String: String] = [
-            "push.title": title ?? "",
-            "push.body": body ?? "",
-            "push.topic": topic ?? "",
-            "push.message_id": messageId ?? ""
-        ].compactMapValues { $0.isEmpty ? nil : $0 }
-        
-        logInfo("Push notification received", properties: attributes)
     }
-    
-    // MARK: - User Journey Tracking
-    
+
+    // MARK: - User Journey
+
     func trackUserAction(_ action: String, screen: String, properties: [String: String]? = nil) {
         let breadcrumbMessage = "\(action) on \(screen)"
         addBreadcrumb(message: breadcrumbMessage)
-        
+
         var logProperties = properties ?? [:]
         logProperties["user_action"] = action
         logProperties["screen"] = screen
-        
+
         logInfo("User action: \(breadcrumbMessage)", properties: logProperties)
     }
-    
+
     func trackScreenView(_ screenName: String, properties: [String: String]? = nil) {
         addBreadcrumb(message: "Viewed \(screenName)")
-        
+
         var logProperties = properties ?? [:]
         logProperties["screen_name"] = screenName
-        
+
         logInfo("Screen view: \(screenName)", properties: logProperties)
     }
-    
-    // MARK: - E-commerce Specific Tracking
-    
+
+    // MARK: - E-commerce Tracking
+
     func trackProductView(productId: String, productName: String, category: String?, price: Double?) {
-        let span = Embrace.client?.buildSpan(name: "product_view", type: .performance).startSpan()
-        
-        span?.setAttribute(key: "product.id", value: productId)
-        span?.setAttribute(key: "product.name", value: productName)
-        if let category = category {
-            span?.setAttribute(key: "product.category", value: category)
+        recordSpan(name: "product_view", attributes: [
+            "product.id": productId,
+            "product.name": productName,
+            "product.category": category ?? "",
+            "product.price": price.map { String($0) } ?? ""
+        ].filter { !$0.value.isEmpty }) { _ in
+            trackUserAction("product_view", screen: "product_detail", properties: [
+                "product_id": productId,
+                "product_name": productName
+            ])
         }
-        if let price = price {
-            span?.setAttribute(key: "product.price", value: String(price))
-        }
-        
-        trackUserAction("product_view", screen: "product_detail", properties: [
-            "product_id": productId,
-            "product_name": productName
-        ])
-        
-        span?.end()
     }
-    
+
     func trackAddToCart(productId: String, quantity: Int, price: Double) {
-        let span = Embrace.client?.buildSpan(name: "add_to_cart", type: .performance).startSpan()
-        
-        span?.setAttribute(key: "product.id", value: productId)
-        span?.setAttribute(key: "cart.quantity", value: String(quantity))
-        span?.setAttribute(key: "cart.item_value", value: String(price))
-        
-        trackUserAction("add_to_cart", screen: "product_detail", properties: [
-            "product_id": productId,
-            "quantity": String(quantity),
-            "value": String(price)
-        ])
-        
-        span?.end()
+        recordSpan(name: "add_to_cart", attributes: [
+            "product.id": productId,
+            "cart.quantity": String(quantity),
+            "cart.item_value": String(price)
+        ]) { _ in
+            trackUserAction("add_to_cart", screen: "product_detail", properties: [
+                "product_id": productId,
+                "quantity": String(quantity),
+                "value": String(price)
+            ])
+        }
     }
-    
+
     func trackPurchaseAttempt(orderId: String, totalAmount: Double, itemCount: Int) {
-        let span = Embrace.client?.buildSpan(name: "purchase_attempt", type: .performance).startSpan()
-        
-        span?.setAttribute(key: "order.id", value: orderId)
-        span?.setAttribute(key: "order.total", value: String(totalAmount))
-        span?.setAttribute(key: "order.item_count", value: String(itemCount))
-        
-        addSessionProperty(key: "current_order_id", value: orderId)
-        
-        trackUserAction("purchase_attempt", screen: "checkout", properties: [
-            "order_id": orderId,
-            "total_amount": String(totalAmount),
-            "item_count": String(itemCount)
-        ])
-        
-        span?.end()
+        recordSpan(name: "purchase_attempt", attributes: [
+            "order.id": orderId,
+            "order.total": String(totalAmount),
+            "order.item_count": String(itemCount)
+        ]) { _ in
+            addSessionProperty(key: "current_order_id", value: orderId)
+            trackUserAction("purchase_attempt", screen: "checkout", properties: [
+                "order_id": orderId,
+                "total_amount": String(totalAmount),
+                "item_count": String(itemCount)
+            ])
+        }
     }
-    
+
     func trackPurchaseSuccess(orderId: String, totalAmount: Double, paymentMethod: String) {
-        recordCompletedSpan(
-            name: "purchase_success",
-            startTime: Date().addingTimeInterval(-1),
-            endTime: Date(),
-            attributes: [
-                "order.id": orderId,
-                "order.total": String(totalAmount),
-                "payment.method": paymentMethod
-            ]
-        )
-        
-        removeSessionProperty(key: "current_order_id")
-        addSessionProperty(key: "last_successful_order", value: orderId, permanent: true)
-        
-        logInfo("Purchase completed successfully", properties: [
-            "order_id": orderId,
-            "total_amount": String(totalAmount),
-            "payment_method": paymentMethod
-        ])
+        recordSpan(name: "purchase_success", attributes: [
+            "order.id": orderId,
+            "order.total": String(totalAmount),
+            "payment.method": paymentMethod
+        ]) { _ in
+            removeSessionProperty(key: "current_order_id")
+            addSessionProperty(key: "last_successful_order", value: orderId, permanent: true)
+
+            logInfo("Purchase completed successfully", properties: [
+                "order_id": orderId,
+                "total_amount": String(totalAmount),
+                "payment_method": paymentMethod
+            ])
+        }
     }
-    
+
     func trackPurchaseFailure(orderId: String, errorMessage: String, failureReason: String) {
+        let now = Date()
         recordCompletedSpan(
             name: "purchase_failure",
-            startTime: Date().addingTimeInterval(-1),
-            endTime: Date(),
+            startTime: now.addingTimeInterval(-1),
+            endTime: now,
             attributes: [
                 "order.id": orderId,
                 "error.message": errorMessage,
                 "failure.reason": failureReason
-            ]
+            ],
+            errorCode: .failure
         )
-        
+
         logError("Purchase failed", properties: [
             "order_id": orderId,
             "error_message": errorMessage,
             "failure_reason": failureReason
         ])
     }
-    
-    // MARK: - Authentication Tracking
-    
+
+    // MARK: - Authentication
+
     func trackLoginAttempt(method: String) {
-        let span = Embrace.client?.buildSpan(name: "login_attempt", type: .performance).startSpan()
-        span?.setAttribute(key: "auth.method", value: method)
-        
-        trackUserAction("login_attempt", screen: "authentication", properties: ["method": method])
-        
-        span?.end()
+        recordSpan(name: "login_attempt", attributes: ["auth.method": method]) { _ in
+            trackUserAction("login_attempt", screen: "authentication", properties: ["method": method])
+        }
     }
-    
+
     func trackLoginSuccess(userId: String, method: String) {
-        addSessionProperty(key: "user_id", value: userId, permanent: true)
+        setUser(id: userId)
         addSessionProperty(key: "auth_method", value: method)
-        
+
         logInfo("Login successful", properties: [
             "user_id": userId,
             "auth_method": method
         ])
     }
-    
+
     func trackLoginFailure(method: String, errorMessage: String) {
+        let now = Date()
         recordCompletedSpan(
             name: "login_failure",
-            startTime: Date().addingTimeInterval(-1),
-            endTime: Date(),
+            startTime: now.addingTimeInterval(-1),
+            endTime: now,
             attributes: [
                 "auth.method": method,
                 "error.message": errorMessage
-            ]
+            ],
+            errorCode: .userAbandon
         )
-        
+
         logError("Login failed", properties: [
             "auth_method": method,
             "error_message": errorMessage
         ])
     }
-    
-    // MARK: - Search Tracking
-    
+
+    // MARK: - Search
+
     func trackSearchPerformed(query: String, resultCount: Int, filters: [String: String]?) {
-        let span = Embrace.client?.buildSpan(name: "search_performed", type: .performance).startSpan()
+        var attributes: [String: String] = [
+            "search.query": query,
+            "search.result_count": String(resultCount)
+        ]
+        filters?.forEach { attributes["search.filter.\($0.key)"] = $0.value }
 
-        span?.setAttribute(key: "search.query", value: query)
-        span?.setAttribute(key: "search.result_count", value: String(resultCount))
-
-        if let filters = filters {
-            for (key, value) in filters {
-                span?.setAttribute(key: "search.filter.\(key)", value: value)
-            }
+        recordSpan(name: "search_performed", attributes: attributes) { _ in
+            var properties = ["query": query, "result_count": String(resultCount)]
+            if let filters = filters { properties.merge(filters) { $1 } }
+            trackUserAction("search", screen: "search", properties: properties)
         }
-
-        var properties = ["query": query, "result_count": String(resultCount)]
-        if let filters = filters {
-            properties.merge(filters) { $1 }
-        }
-
-        trackUserAction("search", screen: "search", properties: properties)
-
-        span?.end()
     }
 
-    // MARK: - Crash Simulation (For Testing/Demo Purposes)
+    // MARK: - Crash Simulation (Demo Only)
 
     /// Randomly dispatches to one of 5 distinct crash functions so they
     /// appear as separate crash groups on the Embrace dashboard.
@@ -344,7 +380,6 @@ final class EmbraceService: TelemetryService {
         }
     }
 
-    /// Dashboard description: EmbraceService.simulateCartUpdateCrash()
     @inline(never)
     private func simulateCartUpdateCrash() {
         Embrace.client?.log(
@@ -356,7 +391,6 @@ final class EmbraceService: TelemetryService {
         Embrace.client?.crash()
     }
 
-    /// Dashboard description: EmbraceService.simulatePaymentProcessingCrash()
     @inline(never)
     private func simulatePaymentProcessingCrash() {
         Embrace.client?.log(
@@ -368,7 +402,6 @@ final class EmbraceService: TelemetryService {
         Embrace.client?.crash()
     }
 
-    /// Dashboard description: EmbraceService.simulateProductRecommendationCrash()
     @inline(never)
     private func simulateProductRecommendationCrash() {
         Embrace.client?.log(
@@ -380,7 +413,6 @@ final class EmbraceService: TelemetryService {
         Embrace.client?.crash()
     }
 
-    /// Dashboard description: EmbraceService.simulateSearchFilterCrash()
     @inline(never)
     private func simulateSearchFilterCrash() {
         Embrace.client?.log(
@@ -392,7 +424,6 @@ final class EmbraceService: TelemetryService {
         Embrace.client?.crash()
     }
 
-    /// Dashboard description: EmbraceService.simulateAuthTokenRefreshCrash()
     @inline(never)
     private func simulateAuthTokenRefreshCrash() {
         Embrace.client?.log(

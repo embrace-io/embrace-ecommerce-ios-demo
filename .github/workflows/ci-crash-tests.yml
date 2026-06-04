@@ -49,6 +49,11 @@ jobs:
           sed -i '' 's/"RUN_SOURCE": "[^"]*"/"RUN_SOURCE": "crash-test"/' "${{ env.PROJECT_NAME }}UITests/Embrace_EcommerceUITests.swift"
           echo "RUN_SOURCE set to crash-test"
 
+      - name: Enable Embrace debug logging for crash diagnostics
+        run: |
+          sed -i '' 's/logLevel: .info/logLevel: .debug/' "${{ env.PROJECT_NAME }}/Embrace_EcommerceApp.swift"
+          echo "Embrace logLevel set to .debug"
+
       - name: Cache SPM dependencies
         uses: actions/cache@v4
         with:
@@ -103,6 +108,16 @@ jobs:
             done
           done
 
+      - name: Start host log capture
+        run: |
+          # SDK uses os_log with subsystem "com.embrace.logger".
+          # Debug-level os_log requires explicit --level debug to capture.
+          log stream --level debug --style compact \
+            --predicate 'subsystem == "com.embrace.logger"' \
+            > host_embrace.log 2>&1 &
+          echo $! > /tmp/host_log_pid
+          echo "Started host log stream (PID: $(cat /tmp/host_log_pid))"
+
       - name: "Run 5 crash+flush cycles"
         run: |
           SIM_DEST="platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}"
@@ -111,33 +126,43 @@ jobs:
           PASSED=0
           FAILED=0
 
+          # Two-phase pattern (mirrors Android's two-am-instrument approach):
+          # Phase A runs only the crash test; xcodebuild exits, leaving the
+          # KSCrash payload on disk. Phase B is a fresh xcodebuild invocation
+          # (fresh xctest runner, fresh app cold-start) so the SDK reads and
+          # ships the pending crash tied to the persisted session.
+          # Do NOT uninstall, erase, or shutdown the simulator between phases —
+          # the on-disk payload must survive.
           for i in 1 2 3 4 5; do
             echo ""
             echo "========================================"
             echo "  Crash cycle $i of 5"
             echo "========================================"
 
-            # Run both crash and flush in a single xcodebuild invocation.
-            # This ensures the app is relaunched (not reinstalled) between
-            # test methods, preserving the Embrace session database and
-            # KSCrash data on disk. XCTest runs methods alphabetically:
-            # testCrashA_Force runs first (crashes), then testCrashB_Flush
-            # gets a fresh app.launch() via setUp which triggers the
-            # pending crash+session upload.
-            echo "--- Running crash + flush cycle ---"
+            echo "--- Phase A: trigger crash ---"
             xcodebuild test-without-building \
               -project "${{ env.PROJECT_NAME }}.xcodeproj" \
               -scheme "${{ env.SCHEME_NAME }}" \
               -destination "$SIM_DEST" \
               -derivedDataPath "DerivedData" \
               -only-testing:"$CRASH_TEST" \
-              -only-testing:"$FLUSH_TEST" \
-              -resultBundlePath "Results/cycle-$i" 2>&1 || true
+              -resultBundlePath "Results/cycle-$i-crash" 2>&1 || true
 
-            # Exit code 65 is expected (crash test always "fails")
+            # Let KSCrash finish flushing the payload to disk before we
+            # cold-start a new test runner.
+            sleep 15
+
+            echo "--- Phase B: cold-start to flush pending crash ---"
+            xcodebuild test-without-building \
+              -project "${{ env.PROJECT_NAME }}.xcodeproj" \
+              -scheme "${{ env.SCHEME_NAME }}" \
+              -destination "$SIM_DEST" \
+              -derivedDataPath "DerivedData" \
+              -only-testing:"$FLUSH_TEST" \
+              -resultBundlePath "Results/cycle-$i-flush" 2>&1 || true
+
             echo "Cycle $i: completed"
             PASSED=$((PASSED + 1))
-
             sleep 5
           done
 
@@ -146,12 +171,27 @@ jobs:
           echo "  Results: $PASSED completed, $FAILED failed"
           echo "========================================"
 
+      - name: Analyze logs
+        if: always()
+        run: |
+          kill $(cat /tmp/host_log_pid) 2>/dev/null || true
+          sleep 2
+          echo "=== Host log lines: $(wc -l < host_embrace.log) ==="
+          echo ""
+          echo "=== Upload / session / crash related ==="
+          grep -i -E "upload|session|crash|unsent|span|Status:|error|warn" host_embrace.log | tail -200 || echo "No matching lines"
+          echo ""
+          echo "=== First 50 lines ==="
+          head -50 host_embrace.log || true
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: crash-test-results
-          path: Results/
+          path: |
+            Results/
+            host_embrace.log
           retention-days: 3
           if-no-files-found: ignore
 

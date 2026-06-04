@@ -15,7 +15,12 @@ final class Embrace_EcommerceUITests: XCTestCase {
         continueAfterFailure = false
 
         // Configure the app with launch environment variables
+        // Write sentinel file for cart prefill (reliable on cloned simulators
+        // where launchEnvironment/launchArguments may not reach the app)
+        FileManager.default.createFile(atPath: "/tmp/ui_test_prefill_cart", contents: nil)
+
         app = XCUIApplication()
+        app.launchArguments += ["-PREFILL_CART", "1"]
         app.launchEnvironment = [
             "UI_TESTING": "1",
             "PREFILL_CART": "1",
@@ -29,6 +34,7 @@ final class Embrace_EcommerceUITests: XCTestCase {
     }
 
     override func tearDownWithError() throws {
+        try? FileManager.default.removeItem(atPath: "/tmp/ui_test_prefill_cart")
         app = nil
     }
 
@@ -581,6 +587,18 @@ final class Embrace_EcommerceUITests: XCTestCase {
         print("Repeat product browsing test complete")
     }
 
+    /// Determines a random abandon point for the checkout flow to create realistic
+    /// user flow variance in the Embrace dashboard (target: 90-95% completion per flow).
+    /// Returns the step number at which to abandon, or nil to complete the full flow.
+    private func randomAbandonStep() -> Int? {
+        // ~8% chance to abandon at each of the 3 flow transition points
+        let roll = Int.random(in: 1...100)
+        if roll <= 3 { return 6 }   // Abandon after CHECKOUT_STARTED, before shipping completes
+        if roll <= 6 { return 10 }  // Abandon after SHIPPING_TO_PAYMENT_STARTED, before payment completes
+        if roll <= 8 { return 12 }  // Abandon after PLACE_ORDER_INITIATED, before order placed
+        return nil                   // Complete the full flow
+    }
+
     @MainActor
     func testCheckoutFlow() throws {
         // Exercises the full checkout flow to trigger all 4 user journey breadcrumbs:
@@ -589,8 +607,16 @@ final class Embrace_EcommerceUITests: XCTestCase {
         //
         // This test uses continueAfterFailure = true so that even if a step fails,
         // the test keeps going and fires as many breadcrumbs as possible for User Flows.
+        //
+        // ~8% of runs will randomly abandon at a flow transition point to create
+        // realistic variance in the Embrace User Flows dashboard.
         continueAfterFailure = true
-        print("Starting checkout flow test")
+        let abandonAt = randomAbandonStep()
+        if let step = abandonAt {
+            print("Starting checkout flow test (will abandon at step \(step))")
+        } else {
+            print("Starting checkout flow test (full completion)")
+        }
 
         // Cart is pre-filled from setUp via -PREFILL_CART launch argument
 
@@ -652,6 +678,15 @@ final class Embrace_EcommerceUITests: XCTestCase {
         }
         Thread.sleep(forTimeInterval: 2.0)
 
+        // Abandon point: user started checkout but left during shipping
+        if abandonAt == 6 {
+            print("Simulating abandon during shipping step")
+            Thread.sleep(forTimeInterval: 2.0)
+            sendAppToBackground()
+            bringAppToForeground()
+            return
+        }
+
         // Step 7: Shipping → select an address (UIKit button)
         let selectAddressButton = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Select Address'")).firstMatch
         if selectAddressButton.waitForExistence(timeout: 10.0) {
@@ -692,6 +727,15 @@ final class Embrace_EcommerceUITests: XCTestCase {
         }
         Thread.sleep(forTimeInterval: 1.0)
 
+        // Abandon point: user selected payment but left before reviewing order
+        if abandonAt == 10 {
+            print("Simulating abandon during payment step")
+            Thread.sleep(forTimeInterval: 2.0)
+            sendAppToBackground()
+            bringAppToForeground()
+            return
+        }
+
         // Step 11: "Review Order" → triggers CHECKOUT_PAYMENT_COMPLETED (SwiftUI button with HStack)
         let reviewOrder = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] 'Review Order'")).firstMatch
         if reviewOrder.waitForExistence(timeout: 10.0) {
@@ -711,6 +755,15 @@ final class Embrace_EcommerceUITests: XCTestCase {
             print("WARNING: Place Order not found")
         }
         Thread.sleep(forTimeInterval: 3.0)
+
+        // Abandon point: user tapped Place Order but left before confirmation
+        if abandonAt == 12 {
+            print("Simulating abandon after Place Order")
+            Thread.sleep(forTimeInterval: 2.0)
+            sendAppToBackground()
+            bringAppToForeground()
+            return
+        }
 
         // Step 12: Dismiss the success alert
         let continueShoppingButton = app.alerts.buttons["Continue Shopping"].firstMatch

@@ -94,6 +94,13 @@ extension Embrace_EcommerceUITests {
     /// (alphabetical ordering). The app data (Embrace session DB + KSCrash
     /// reports) persists on disk because the app is relaunched, not
     /// reinstalled, between test methods in the same xcodebuild invocation.
+    ///
+    /// Important: We crash in the cold-start session (created during setUp)
+    /// rather than cycling background/foreground first. The cold-start
+    /// session has had 10+ seconds to persist its SessionRecord and span
+    /// data to CoreData. A background/foreground cycle would end that
+    /// session and create a new one whose async CoreData write may not
+    /// complete before the crash, leaving the crash orphaned (no timeline).
     func testCrashA_Force() throws {
         // Allow XCTest to proceed to testCrashB_Flush after the crash
         continueAfterFailure = true
@@ -105,18 +112,15 @@ extension Embrace_EcommerceUITests {
             Thread.sleep(forTimeInterval: 2.0)
         }
 
-        // Brief navigation so the session has some activity
+        // Navigate around so the session has breadcrumbs and spans for the timeline.
+        // The cold-start session from setUp is already persisted to CoreData.
+        // The longer wait gives CoreData time to flush the SessionRecord and any
+        // queued span/log writes — without this, a CI runner under load can
+        // crash before the SessionRecord is on disk, leaving the crash orphaned
+        // (no timeline) when UnsentDataHandler tries to fetch it on next launch.
         let homeView = app.descendants(matching: .any)["homeView"].firstMatch
         _ = homeView.waitForExistence(timeout: 10.0)
-        Thread.sleep(forTimeInterval: 3.0)
-
-        // Background/foreground to flush the session data to disk before crashing.
-        // This ensures the Embrace session DB has the full timeline persisted.
-        sendAppToBackground()
-        bringAppToForeground()
-
-        // Give SDK time to finish any pending writes after foregrounding
-        Thread.sleep(forTimeInterval: 3.0)
+        Thread.sleep(forTimeInterval: 8.0)
 
         tapCrashButton()
     }
