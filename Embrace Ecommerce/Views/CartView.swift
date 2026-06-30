@@ -242,18 +242,18 @@ struct CartView: View {
     
     // MARK: - Telemetry Methods
     private func trackCartView() {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "view_cart",
             type: .performance
-        ).startSpan()
-        
-        span?.setAttribute(key: "cart_item_count", value: String(cartManager.totalItems))
-        span?.setAttribute(key: "cart_subtotal", value: String(cartManager.subtotal))
-        span?.setAttribute(key: "is_empty", value: String(cartManager.isEmpty))
-        
+        )
+
+        try? span?.setAttribute(key: "cart_item_count", value: String(cartManager.totalItems))
+        try? span?.setAttribute(key: "cart_subtotal", value: String(cartManager.subtotal))
+        try? span?.setAttribute(key: "is_empty", value: String(cartManager.isEmpty))
+
         span?.end()
-        
-        Embrace.client?.log(
+
+        EmbraceIO.shared.log(
             "Cart view opened",
             severity: .info,
             attributes: [
@@ -265,25 +265,25 @@ struct CartView: View {
     }
     
     private func trackEmptyCartAction() {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Empty cart - start shopping clicked",
             severity: .info
         )
     }
     
     private func trackCheckoutAction() {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "initiate_checkout",
             type: .performance
-        ).startSpan()
-        
-        span?.setAttribute(key: "cart_item_count", value: String(cartManager.totalItems))
-        span?.setAttribute(key: "cart_subtotal", value: String(cartManager.subtotal))
-        span?.setAttribute(key: "unique_products", value: String(cartManager.cart.items.count))
-        
+        )
+
+        try? span?.setAttribute(key: "cart_item_count", value: String(cartManager.totalItems))
+        try? span?.setAttribute(key: "cart_subtotal", value: String(cartManager.subtotal))
+        try? span?.setAttribute(key: "unique_products", value: String(cartManager.cart.items.count))
+
         span?.end()
-        
-        Embrace.client?.log(
+
+        EmbraceIO.shared.log(
             "Checkout initiated from cart",
             severity: .info,
             attributes: [
@@ -294,7 +294,7 @@ struct CartView: View {
     }
     
     private func trackClearCartAction() {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Clear cart action initiated",
             severity: .info,
             attributes: [
@@ -420,7 +420,7 @@ struct CartItemRow: View {
     }
     
     private func trackQuantityChange(from oldQuantity: Int, to newQuantity: Int) {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Cart item quantity changed",
             severity: .info,
             attributes: [
@@ -433,7 +433,7 @@ struct CartItemRow: View {
     }
     
     private func trackItemRemoval() {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Cart item removal initiated",
             severity: .info,
             attributes: [

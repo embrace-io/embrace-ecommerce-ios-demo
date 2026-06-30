@@ -3,7 +3,6 @@ import Combine
 import EmbraceIO
 import GoogleSignIn
 import GoogleSignInSwift
-import OpenTelemetryApi
 
 @MainActor
 class AuthenticationManager: ObservableObject {
@@ -43,10 +42,10 @@ class AuthenticationManager: ObservableObject {
     // MARK: - Email Authentication (Mock)
     
     func signInWithEmail(email: String, password: String) async {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "email_sign_in",
             type: .performance
-        ).startSpan()
+        )
 
         await MainActor.run {
             isLoading = true
@@ -56,14 +55,14 @@ class AuthenticationManager: ObservableObject {
         // Login Flow Start: USER_LOGIN_STARTED breadcrumb
         embraceService.addBreadcrumb(message: "USER_LOGIN_STARTED_EMAIL")
         
-        span?.setAttribute(key: "auth.method", value: "email")
-        span?.setAttribute(key: "auth.email", value: email)
-        span?.setAttribute(key: "auth.provider", value: "mock")
+        try? span?.setAttribute(key: "auth.method", value: "email")
+        try? span?.setAttribute(key: "auth.email", value: email)
+        try? span?.setAttribute(key: "auth.provider", value: "mock")
         
         do {
             // Simulate network delay
             let delay = mockAuthConfig.getRandomDelay()
-            span?.setAttribute(key: "mock.delay", value: String(delay))
+            try? span?.setAttribute(key: "mock.delay", value: String(delay))
             
             try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
             
@@ -109,20 +108,20 @@ class AuthenticationManager: ObservableObject {
     }
     
     func registerWithEmail(email: String, password: String, displayName: String) async {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "email_registration",
             type: .performance
-        ).startSpan()
+        )
         
         await MainActor.run {
             isLoading = true
             authState = .authenticating
         }
         
-        span?.setAttribute(key: "auth.method", value: "email_registration")
-        span?.setAttribute(key: "auth.email", value: email)
-        span?.setAttribute(key: "auth.display_name", value: displayName)
-        span?.setAttribute(key: "auth.provider", value: "mock")
+        try? span?.setAttribute(key: "auth.method", value: "email_registration")
+        try? span?.setAttribute(key: "auth.email", value: email)
+        try? span?.setAttribute(key: "auth.display_name", value: displayName)
+        try? span?.setAttribute(key: "auth.provider", value: "mock")
         
         do {
             // Simulate network delay
@@ -182,7 +181,7 @@ class AuthenticationManager: ObservableObject {
                     self?.currentUser = authenticatedUser
                     self?.saveUser(authenticatedUser)
                     
-                    Embrace.client?.log(
+                    EmbraceIO.shared.log(
                         "Google Sign-In restored from previous session",
                         severity: .info,
                         attributes: [
@@ -197,10 +196,10 @@ class AuthenticationManager: ObservableObject {
     }
     
     func signInWithGoogle() async {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "google_sign_in",
             type: .performance
-        ).startSpan()
+        )
         
         await MainActor.run {
             isLoading = true
@@ -210,8 +209,8 @@ class AuthenticationManager: ObservableObject {
         // Login Flow Start: USER_LOGIN_STARTED breadcrumb
         embraceService.addBreadcrumb(message: "USER_LOGIN_STARTED_GOOGLE")
 
-        span?.setAttribute(key: "auth.method", value: "google")
-        span?.setAttribute(key: "auth.provider", value: "google")
+        try? span?.setAttribute(key: "auth.method", value: "google")
+        try? span?.setAttribute(key: "auth.provider", value: "google")
         
         guard let presentingViewController = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
@@ -225,8 +224,8 @@ class AuthenticationManager: ObservableObject {
             let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presentingViewController)
             let user = result.user
             
-            span?.setAttribute(key: "google.user_id", value: user.userID ?? "unknown")
-            span?.setAttribute(key: "google.email", value: user.profile?.email ?? "unknown")
+            try? span?.setAttribute(key: "google.user_id", value: user.userID ?? "unknown")
+            try? span?.setAttribute(key: "google.email", value: user.profile?.email ?? "unknown")
             
             let authenticatedUser = AuthenticatedUser(
                 id: user.userID ?? UUID().uuidString,
@@ -248,7 +247,7 @@ class AuthenticationManager: ObservableObject {
             await handleSuccessfulAuthentication(user: authenticatedUser, span: span)
             
         } catch {
-            span?.setAttribute(key: "error.description", value: error.localizedDescription)
+            try? span?.setAttribute(key: "error.description", value: error.localizedDescription)
             analytics.trackUserSignIn(method: "google", success: false)
 
             // Login Flow Failure: USER_LOGIN_FAILED breadcrumb
@@ -265,18 +264,18 @@ class AuthenticationManager: ObservableObject {
     // MARK: - Guest Authentication
     
     func continueAsGuest() async {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "guest_sign_in",
             type: .performance
-        ).startSpan()
+        )
         
         await MainActor.run {
             isLoading = true
             authState = .authenticating
         }
         
-        span?.setAttribute(key: "auth.method", value: "guest")
-        span?.setAttribute(key: "auth.provider", value: "mock")
+        try? span?.setAttribute(key: "auth.method", value: "guest")
+        try? span?.setAttribute(key: "auth.provider", value: "mock")
 
         // Login Flow Start: USER_LOGIN_STARTED breadcrumb
         embraceService.addBreadcrumb(message: "USER_LOGIN_STARTED_GUEST")
@@ -311,18 +310,18 @@ class AuthenticationManager: ObservableObject {
     // MARK: - Biometric Authentication
     
     func signInWithBiometrics(for userId: String) async {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "biometric_sign_in",
             type: .performance
-        ).startSpan()
+        )
         
         await MainActor.run {
             isLoading = true
             authState = .authenticating
         }
         
-        span?.setAttribute(key: "auth.method", value: "biometric")
-        span?.setAttribute(key: "user.id", value: userId)
+        try? span?.setAttribute(key: "auth.method", value: "biometric")
+        try? span?.setAttribute(key: "user.id", value: userId)
 
         // Login Flow Start: USER_LOGIN_STARTED breadcrumb
         embraceService.addBreadcrumb(message: "USER_LOGIN_STARTED_BIOMETRIC")
@@ -380,15 +379,15 @@ class AuthenticationManager: ObservableObject {
     // MARK: - Sign Out
     
     func signOut() {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "user_sign_out",
             type: .performance
-        ).startSpan()
+        )
         
         if let user = currentUser {
-            span?.setAttribute(key: "user.id", value: user.id)
-            span?.setAttribute(key: "auth.method", value: user.authMethod.rawValue)
-            span?.setAttribute(key: "session.duration", value: String(Date().timeIntervalSince(user.lastSignInAt)))
+            try? span?.setAttribute(key: "user.id", value: user.id)
+            try? span?.setAttribute(key: "auth.method", value: user.authMethod.rawValue)
+            try? span?.setAttribute(key: "session.duration", value: String(Date().timeIntervalSince(user.lastSignInAt)))
         }
         
         // Sign out from Google if applicable
@@ -408,7 +407,7 @@ class AuthenticationManager: ObservableObject {
         
         span?.end()
         
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "User signed out",
             severity: .info,
             attributes: [
@@ -419,7 +418,7 @@ class AuthenticationManager: ObservableObject {
     
     // MARK: - Helper Methods
     
-    private func handleSuccessfulAuthentication(user: AuthenticatedUser, span: Span?) async {
+    private func handleSuccessfulAuthentication(user: AuthenticatedUser, span: EmbraceSpan?) async {
         await MainActor.run {
             authState = .authenticated(user)
             currentUser = user
@@ -434,12 +433,12 @@ class AuthenticationManager: ObservableObject {
             plan: user.isGuest ? "guest" : "authenticated"
         )
         
-        span?.setAttribute(key: "auth.success", value: "true")
-        span?.setAttribute(key: "user.id", value: user.id)
-        span?.setAttribute(key: "user.is_guest", value: String(user.isGuest))
+        try? span?.setAttribute(key: "auth.success", value: "true")
+        try? span?.setAttribute(key: "user.id", value: user.id)
+        try? span?.setAttribute(key: "user.is_guest", value: String(user.isGuest))
         span?.end()
         
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "User authentication successful",
             severity: .info,
             attributes: [
@@ -450,17 +449,17 @@ class AuthenticationManager: ObservableObject {
         )
     }
     
-    private func handleAuthenticationError(_ error: AuthenticationError, span: Span?) async {
+    private func handleAuthenticationError(_ error: AuthenticationError, span: EmbraceSpan?) async {
         await MainActor.run {
             authState = .error(error)
         }
         
-        span?.setAttribute(key: "auth.success", value: "false")
-        span?.setAttribute(key: "error.type", value: String(describing: error))
-        span?.setAttribute(key: "error.description", value: error.localizedDescription)
+        try? span?.setAttribute(key: "auth.success", value: "false")
+        try? span?.setAttribute(key: "error.type", value: String(describing: error))
+        try? span?.setAttribute(key: "error.description", value: error.localizedDescription)
         span?.end()
         
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Authentication failed",
             severity: .error,
             attributes: [

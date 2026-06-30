@@ -109,15 +109,15 @@ struct Embrace_EcommerceApp: App {
     
     private func configureEmbrace() {
         do {
-            // Create basic Embrace configuration  
-            let options = Embrace.Options(
-                appId: SDKConfiguration.Embrace.appId,
+            // Create basic Embrace configuration
+            let options = EmbraceIO.Options.withAppId(
+                SDKConfiguration.Embrace.appId,
                 logLevel: .info
             )
-            
-            try Embrace
-                .setup(options: options)
-                .start()
+
+            // 7.0: setup() configures AND starts the SDK in one step; there is
+            // no separate start().
+            try EmbraceIO.setup(options: options)
                 
             print("✅ Embrace SDK initialized successfully")
             

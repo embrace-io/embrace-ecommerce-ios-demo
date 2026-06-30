@@ -2,7 +2,6 @@ import Foundation
 import UIKit
 import Stripe
 import EmbraceIO
-import OpenTelemetryApi
 
 @MainActor
 class StripePaymentService: ObservableObject {
@@ -37,14 +36,14 @@ class StripePaymentService: ObservableObject {
     
     // MARK: - Payment Processing
     func processPayment(amount: Double, currency: String = "usd") async -> Result<StripePaymentResult, StripePaymentError> {
-        let span = Embrace.client?.buildSpan(name: "stripe_payment_processing", type: .performance).startSpan()
-        span?.setAttribute(key: "payment.amount", value: String(amount))
-        span?.setAttribute(key: "payment.currency", value: currency)
-        span?.setAttribute(key: "payment.provider", value: "stripe")
+        let span = EmbraceIO.shared.createSpan(name: "stripe_payment_processing", type: .performance)
+        try? span?.setAttribute(key: "payment.amount", value: String(amount))
+        try? span?.setAttribute(key: "payment.currency", value: currency)
+        try? span?.setAttribute(key: "payment.provider", value: "stripe")
 
         guard amount > 0 else {
-            span?.setAttribute(key: "error.type", value: "invalid_amount")
-            span?.setAttribute(key: "error.reason", value: "amount_zero_or_negative")
+            try? span?.setAttribute(key: "error.type", value: "invalid_amount")
+            try? span?.setAttribute(key: "error.reason", value: "amount_zero_or_negative")
             span?.end(errorCode: .failure)
 
             embraceService.logError("Payment processing failed - Invalid amount", properties: [
@@ -57,8 +56,8 @@ class StripePaymentService: ObservableObject {
         }
 
         guard amount >= 0.50 else {
-            span?.setAttribute(key: "error.type", value: "amount_too_small")
-            span?.setAttribute(key: "error.minimum_amount", value: "0.50")
+            try? span?.setAttribute(key: "error.type", value: "amount_too_small")
+            try? span?.setAttribute(key: "error.minimum_amount", value: "0.50")
             span?.end(errorCode: .failure)
 
             embraceService.logError("Payment processing failed - Amount too small", properties: [
@@ -91,10 +90,10 @@ class StripePaymentService: ObservableObject {
             )
 
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "payment.intent_id", value: result.paymentIntentId)
-            span?.setAttribute(key: "payment.status", value: result.status.rawValue)
-            span?.setAttribute(key: "payment.method_id", value: result.paymentMethodId)
-            span?.setAttribute(key: "payment.duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "payment.intent_id", value: result.paymentIntentId)
+            try? span?.setAttribute(key: "payment.status", value: result.status.rawValue)
+            try? span?.setAttribute(key: "payment.method_id", value: result.paymentMethodId)
+            try? span?.setAttribute(key: "payment.duration_ms", value: String(Int(duration * 1000)))
             span?.end()
 
             embraceService.logInfo("Payment processed successfully", properties: [
@@ -113,9 +112,9 @@ class StripePaymentService: ObservableObject {
             return .success(result)
         } catch {
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "error.type", value: "payment_failed")
-            span?.setAttribute(key: "error.message", value: error.localizedDescription)
-            span?.setAttribute(key: "payment.duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "error.type", value: "payment_failed")
+            try? span?.setAttribute(key: "error.message", value: error.localizedDescription)
+            try? span?.setAttribute(key: "payment.duration_ms", value: String(Int(duration * 1000)))
             span?.end(errorCode: .failure)
 
             embraceService.logError("Payment processing failed", properties: [
@@ -135,10 +134,10 @@ class StripePaymentService: ObservableObject {
     
     // MARK: - Test Methods
     func simulatePaymentFailure() async -> Result<StripePaymentResult, StripePaymentError> {
-        let span = Embrace.client?.buildSpan(name: "stripe_payment_test_failure", type: .performance).startSpan()
-        span?.setAttribute(key: "payment.provider", value: "stripe")
-        span?.setAttribute(key: "payment.test_mode", value: "true")
-        span?.setAttribute(key: "payment.simulation_type", value: "failure")
+        let span = EmbraceIO.shared.createSpan(name: "stripe_payment_test_failure", type: .performance)
+        try? span?.setAttribute(key: "payment.provider", value: "stripe")
+        try? span?.setAttribute(key: "payment.test_mode", value: "true")
+        try? span?.setAttribute(key: "payment.simulation_type", value: "failure")
 
         await MainActor.run {
             isProcessing = true
@@ -150,10 +149,10 @@ class StripePaymentService: ObservableObject {
         let duration = Date().timeIntervalSince(startTime)
         let error = NSError(domain: "StripeTestError", code: 4000, userInfo: [NSLocalizedDescriptionKey: "Test payment failure - card was declined."])
 
-        span?.setAttribute(key: "error.type", value: "card_declined")
-        span?.setAttribute(key: "error.code", value: "4000")
-        span?.setAttribute(key: "error.message", value: error.localizedDescription)
-        span?.setAttribute(key: "payment.duration_ms", value: String(Int(duration * 1000)))
+        try? span?.setAttribute(key: "error.type", value: "card_declined")
+        try? span?.setAttribute(key: "error.code", value: "4000")
+        try? span?.setAttribute(key: "error.message", value: error.localizedDescription)
+        try? span?.setAttribute(key: "payment.duration_ms", value: String(Int(duration * 1000)))
         span?.end(errorCode: .failure)
 
         embraceService.logError("Simulated payment failure", properties: [

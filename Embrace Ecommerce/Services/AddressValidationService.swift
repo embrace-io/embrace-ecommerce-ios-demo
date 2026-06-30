@@ -1,6 +1,5 @@
 import Foundation
 import EmbraceIO
-import OpenTelemetryApi
 
 enum AddressValidationError: LocalizedError {
     case invalidStreetAddress
@@ -74,20 +73,20 @@ class AddressValidationService: ObservableObject {
         isValidating = true
         defer { isValidating = false }
 
-        let span = Embrace.client?.buildSpan(name: "address_validation", type: .performance).startSpan()
-        span?.setAttribute(key: "address.city", value: address.city)
-        span?.setAttribute(key: "address.state", value: address.state)
-        span?.setAttribute(key: "address.zip_code", value: address.zipCode)
-        span?.setAttribute(key: "address.country", value: address.country)
+        let span = EmbraceIO.shared.createSpan(name: "address_validation", type: .performance)
+        try? span?.setAttribute(key: "address.city", value: address.city)
+        try? span?.setAttribute(key: "address.state", value: address.state)
+        try? span?.setAttribute(key: "address.zip_code", value: address.zipCode)
+        try? span?.setAttribute(key: "address.country", value: address.country)
 
         do {
             let result = try await performValidation(address, simulateError: simulateError)
             validationResults[address.id] = result
 
-            span?.setAttribute(key: "validation.is_valid", value: String(result.isValid))
-            span?.setAttribute(key: "validation.confidence", value: String(result.confidence))
-            span?.setAttribute(key: "validation.has_suggestion", value: String(result.hasSuggestion))
-            span?.setAttribute(key: "validation.errors_count", value: String(result.errors.count))
+            try? span?.setAttribute(key: "validation.is_valid", value: String(result.isValid))
+            try? span?.setAttribute(key: "validation.confidence", value: String(result.confidence))
+            try? span?.setAttribute(key: "validation.has_suggestion", value: String(result.hasSuggestion))
+            try? span?.setAttribute(key: "validation.errors_count", value: String(result.errors.count))
 
             if result.hasErrors {
                 embraceService.logWarning(
@@ -115,8 +114,8 @@ class AddressValidationService: ObservableObject {
             return result
 
         } catch {
-            span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
-            span?.setAttribute(key: "error.message", value: error.localizedDescription)
+            try? span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
+            try? span?.setAttribute(key: "error.message", value: error.localizedDescription)
             span?.end(errorCode: .failure)
 
             embraceService.logError(
@@ -139,14 +138,14 @@ class AddressValidationService: ObservableObject {
             return []
         }
 
-        let span = Embrace.client?.buildSpan(name: "address_suggestions_search", type: .performance).startSpan()
-        span?.setAttribute(key: "search.query", value: query)
-        span?.setAttribute(key: "search.query_length", value: String(query.count))
+        let span = EmbraceIO.shared.createSpan(name: "address_suggestions_search", type: .performance)
+        try? span?.setAttribute(key: "search.query", value: query)
+        try? span?.setAttribute(key: "search.query_length", value: String(query.count))
 
         try await Task.sleep(nanoseconds: UInt64.random(in: 200_000_000...800_000_000))
 
         let suggestions = generateMockSuggestions(for: query)
-        span?.setAttribute(key: "search.results_count", value: String(suggestions.count))
+        try? span?.setAttribute(key: "search.results_count", value: String(suggestions.count))
         span?.end()
 
         embraceService.logInfo(

@@ -1,6 +1,5 @@
 import Foundation
 import EmbraceIO
-import OpenTelemetryApi
 
 enum ShippingCalculationError: LocalizedError {
     case invalidAddress
@@ -100,21 +99,21 @@ class ShippingCalculationService: ObservableObject {
         calculationError = nil
         defer { isCalculating = false }
 
-        let span = Embrace.client?.buildSpan(name: "shipping_calculation", type: .performance).startSpan()
-        span?.setAttribute(key: "cart.item_count", value: String(request.cartItems.count))
-        span?.setAttribute(key: "cart.total_weight", value: String(request.totalWeight))
-        span?.setAttribute(key: "cart.total_value", value: String(request.totalValue))
-        span?.setAttribute(key: "shipping.destination_state", value: request.shippingAddress.state)
-        span?.setAttribute(key: "shipping.destination_zip", value: request.shippingAddress.zipCode)
-        span?.setAttribute(key: "shipping.destination_city", value: request.shippingAddress.city)
+        let span = EmbraceIO.shared.createSpan(name: "shipping_calculation", type: .performance)
+        try? span?.setAttribute(key: "cart.item_count", value: String(request.cartItems.count))
+        try? span?.setAttribute(key: "cart.total_weight", value: String(request.totalWeight))
+        try? span?.setAttribute(key: "cart.total_value", value: String(request.totalValue))
+        try? span?.setAttribute(key: "shipping.destination_state", value: request.shippingAddress.state)
+        try? span?.setAttribute(key: "shipping.destination_zip", value: request.shippingAddress.zipCode)
+        try? span?.setAttribute(key: "shipping.destination_city", value: request.shippingAddress.city)
 
         do {
             let quotes = try await performShippingCalculation(request, simulateError: simulateError)
             availableMethods = quotes
 
-            span?.setAttribute(key: "shipping.available_methods", value: String(quotes.count))
-            span?.setAttribute(key: "shipping.cheapest_cost", value: String(quotes.map { $0.adjustedCost }.min() ?? 0))
-            span?.setAttribute(key: "shipping.fastest_days", value: String(quotes.map { $0.method.estimatedDays }.min() ?? 0))
+            try? span?.setAttribute(key: "shipping.available_methods", value: String(quotes.count))
+            try? span?.setAttribute(key: "shipping.cheapest_cost", value: String(quotes.map { $0.adjustedCost }.min() ?? 0))
+            try? span?.setAttribute(key: "shipping.fastest_days", value: String(quotes.map { $0.method.estimatedDays }.min() ?? 0))
             span?.end()
 
             embraceService.logInfo(
@@ -131,8 +130,8 @@ class ShippingCalculationService: ObservableObject {
 
         } catch {
             calculationError = error.localizedDescription
-            span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
-            span?.setAttribute(key: "error.message", value: error.localizedDescription)
+            try? span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
+            try? span?.setAttribute(key: "error.message", value: error.localizedDescription)
             span?.end(errorCode: .failure)
 
             embraceService.logError(

@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 import EmbraceIO
-import OpenTelemetryApi
 
 @MainActor
 class UserProfileManager: ObservableObject {
@@ -21,16 +20,16 @@ class UserProfileManager: ObservableObject {
     // MARK: - Profile Management
     
     func updateUserProfile(firstName: String, lastName: String, email: String, phoneNumber: String?) async -> Bool {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "update_user_profile",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
         
-        span?.setAttribute(key: "profile.email", value: email)
-        span?.setAttribute(key: "profile.has_phone", value: String(phoneNumber != nil))
+        try? span?.setAttribute(key: "profile.email", value: email)
+        try? span?.setAttribute(key: "profile.has_phone", value: String(phoneNumber != nil))
         
         do {
             // Simulate network delay
@@ -40,10 +39,10 @@ class UserProfileManager: ObservableObject {
             let success = simulateAPICall(successRate: 0.9)
             
             if success {
-                span?.setAttribute(key: "update.success", value: "true")
+                try? span?.setAttribute(key: "update.success", value: "true")
                 span?.end()
                 
-                Embrace.client?.log(
+                EmbraceIO.shared.log(
                     "User profile updated successfully",
                     severity: .info,
                     attributes: [
@@ -68,10 +67,10 @@ class UserProfileManager: ObservableObject {
     // MARK: - Address Management
     
     func loadAddresses() async {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "load_addresses",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
@@ -82,10 +81,10 @@ class UserProfileManager: ObservableObject {
             let mockAddresses = generateMockAddresses()
             addresses = mockAddresses
             
-            span?.setAttribute(key: "addresses.count", value: String(mockAddresses.count))
+            try? span?.setAttribute(key: "addresses.count", value: String(mockAddresses.count))
             span?.end()
             
-            Embrace.client?.log(
+            EmbraceIO.shared.log(
                 "Addresses loaded successfully",
                 severity: .info,
                 attributes: [
@@ -101,17 +100,17 @@ class UserProfileManager: ObservableObject {
     }
     
     func addAddress(_ address: Address) async -> Bool {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "add_address",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
         
-        span?.setAttribute(key: "address.type", value: address.type.rawValue)
-        span?.setAttribute(key: "address.country", value: address.country)
-        span?.setAttribute(key: "address.is_default", value: String(address.isDefault))
+        try? span?.setAttribute(key: "address.type", value: address.type.rawValue)
+        try? span?.setAttribute(key: "address.country", value: address.country)
+        try? span?.setAttribute(key: "address.is_default", value: String(address.isDefault))
         
         do {
             try await Task.sleep(nanoseconds: UInt64.random(in: 1_000_000_000...2_000_000_000))
@@ -121,10 +120,10 @@ class UserProfileManager: ObservableObject {
             if success {
                 addresses.append(address)
                 
-                span?.setAttribute(key: "add_address.success", value: "true")
+                try? span?.setAttribute(key: "add_address.success", value: "true")
                 span?.end()
                 
-                Embrace.client?.log(
+                EmbraceIO.shared.log(
                     "Address added successfully",
                     severity: .info,
                     attributes: [
@@ -147,16 +146,16 @@ class UserProfileManager: ObservableObject {
     }
     
     func updateAddress(_ address: Address) async -> Bool {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "update_address",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
         
-        span?.setAttribute(key: "address.id", value: address.id)
-        span?.setAttribute(key: "address.type", value: address.type.rawValue)
+        try? span?.setAttribute(key: "address.id", value: address.id)
+        try? span?.setAttribute(key: "address.type", value: address.type.rawValue)
         
         do {
             try await Task.sleep(nanoseconds: UInt64.random(in: 1_000_000_000...2_000_000_000))
@@ -168,10 +167,10 @@ class UserProfileManager: ObservableObject {
                     addresses[index] = address
                 }
                 
-                span?.setAttribute(key: "update_address.success", value: "true")
+                try? span?.setAttribute(key: "update_address.success", value: "true")
                 span?.end()
                 
-                Embrace.client?.log(
+                EmbraceIO.shared.log(
                     "Address updated successfully",
                     severity: .info,
                     attributes: [
@@ -194,15 +193,15 @@ class UserProfileManager: ObservableObject {
     }
     
     func deleteAddress(id: String) async -> Bool {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "delete_address",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
         
-        span?.setAttribute(key: "address.id", value: id)
+        try? span?.setAttribute(key: "address.id", value: id)
         
         do {
             try await Task.sleep(nanoseconds: UInt64.random(in: 500_000_000...1_500_000_000))
@@ -212,10 +211,10 @@ class UserProfileManager: ObservableObject {
             if success {
                 addresses.removeAll { $0.id == id }
                 
-                span?.setAttribute(key: "delete_address.success", value: "true")
+                try? span?.setAttribute(key: "delete_address.success", value: "true")
                 span?.end()
                 
-                Embrace.client?.log(
+                EmbraceIO.shared.log(
                     "Address deleted successfully",
                     severity: .info,
                     attributes: [
@@ -239,10 +238,10 @@ class UserProfileManager: ObservableObject {
     // MARK: - Payment Methods Management
     
     func loadPaymentMethods() async {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "load_payment_methods",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
@@ -253,10 +252,10 @@ class UserProfileManager: ObservableObject {
             let mockPaymentMethods = generateMockPaymentMethods()
             paymentMethods = mockPaymentMethods
             
-            span?.setAttribute(key: "payment_methods.count", value: String(mockPaymentMethods.count))
+            try? span?.setAttribute(key: "payment_methods.count", value: String(mockPaymentMethods.count))
             span?.end()
             
-            Embrace.client?.log(
+            EmbraceIO.shared.log(
                 "Payment methods loaded successfully",
                 severity: .info,
                 attributes: [
@@ -272,15 +271,15 @@ class UserProfileManager: ObservableObject {
     }
     
     func deletePaymentMethod(id: String) async -> Bool {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "delete_payment_method",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
         
-        span?.setAttribute(key: "payment_method.id", value: id)
+        try? span?.setAttribute(key: "payment_method.id", value: id)
         
         do {
             try await Task.sleep(nanoseconds: UInt64.random(in: 500_000_000...1_500_000_000))
@@ -290,10 +289,10 @@ class UserProfileManager: ObservableObject {
             if success {
                 paymentMethods.removeAll { $0.id == id }
                 
-                span?.setAttribute(key: "delete_payment_method.success", value: "true")
+                try? span?.setAttribute(key: "delete_payment_method.success", value: "true")
                 span?.end()
                 
-                Embrace.client?.log(
+                EmbraceIO.shared.log(
                     "Payment method deleted successfully",
                     severity: .info,
                     attributes: [
@@ -317,10 +316,10 @@ class UserProfileManager: ObservableObject {
     // MARK: - Order History Management
     
     func loadOrderHistory() async {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "load_order_history",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
@@ -334,10 +333,10 @@ class UserProfileManager: ObservableObject {
                 let mockOrders = generateMockOrders()
                 orders = mockOrders.sorted { $0.createdAt > $1.createdAt }
                 
-                span?.setAttribute(key: "orders.count", value: String(mockOrders.count))
+                try? span?.setAttribute(key: "orders.count", value: String(mockOrders.count))
                 span?.end()
                 
-                Embrace.client?.log(
+                EmbraceIO.shared.log(
                     "Order history loaded successfully",
                     severity: .info,
                     attributes: [
@@ -356,15 +355,15 @@ class UserProfileManager: ObservableObject {
     }
     
     func cancelOrder(id: String) async -> Bool {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "cancel_order",
             type: .performance
-        ).startSpan()
+        )
         
         isLoading = true
         errorMessage = nil
         
-        span?.setAttribute(key: "order.id", value: id)
+        try? span?.setAttribute(key: "order.id", value: id)
         
         do {
             try await Task.sleep(nanoseconds: UInt64.random(in: 1_000_000_000...2_000_000_000))
@@ -396,10 +395,10 @@ class UserProfileManager: ObservableObject {
                     orders[index] = cancelledOrder
                 }
                 
-                span?.setAttribute(key: "cancel_order.success", value: "true")
+                try? span?.setAttribute(key: "cancel_order.success", value: "true")
                 span?.end()
                 
-                Embrace.client?.log(
+                EmbraceIO.shared.log(
                     "Order cancelled successfully",
                     severity: .info,
                     attributes: [
@@ -422,15 +421,15 @@ class UserProfileManager: ObservableObject {
     
     // MARK: - Helper Methods
     
-    private func handleError(_ error: Error, span: Span?, operation: String) {
+    private func handleError(_ error: Error, span: EmbraceSpan?, operation: String) {
         let errorMessage = error.localizedDescription
         self.errorMessage = errorMessage
         
-        span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
-        span?.setAttribute(key: "error.description", value: errorMessage)
+        try? span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
+        try? span?.setAttribute(key: "error.description", value: errorMessage)
         span?.end()
         
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Profile operation failed",
             severity: .error,
             attributes: [

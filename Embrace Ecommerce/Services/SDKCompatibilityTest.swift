@@ -43,10 +43,10 @@ final class SDKCompatibilityTest {
         // Test concurrent logging
         EmbraceService.shared.logDebug("Testing concurrent logging with Firebase")
         
-        span?.setAttribute(key: "test_result", value: "passed")
+        try? span?.setAttribute(key: "test_result", value: "passed")
         span?.end()
     }
-    
+
     private func testEmbraceAndMixpanelCompatibility() {
         let span = EmbraceService.shared.startSpan(name: "mixpanel_compatibility_test")
         
@@ -61,8 +61,8 @@ final class SDKCompatibilityTest {
         // Test concurrent event tracking
         EmbraceService.shared.addBreadcrumb(message: "Concurrent event tracking test")
         
-        span?.setAttribute(key: "mixpanel_distinct_id", value: mixpanelInstance.distinctId)
-        span?.setAttribute(key: "test_result", value: "passed")
+        try? span?.setAttribute(key: "mixpanel_distinct_id", value: mixpanelInstance.distinctId)
+        try? span?.setAttribute(key: "test_result", value: "passed")
         span?.end()
     }
     
@@ -78,18 +78,18 @@ final class SDKCompatibilityTest {
         // Simulate network requests that would be captured by Embrace
         for i in 1...3 {
             let requestSpan = EmbraceService.shared.startSpan(name: "test_request_\(i)")
-            requestSpan?.setAttribute(key: "http.url", value: "https://api.test.com/endpoint/\(i)")
-            requestSpan?.setAttribute(key: "http.method", value: "GET")
-            requestSpan?.setAttribute(key: "test_type", value: "concurrent_network")
-            
+            try? requestSpan?.setAttribute(key: "http.url", value: "https://api.test.com/endpoint/\(i)")
+            try? requestSpan?.setAttribute(key: "http.method", value: "GET")
+            try? requestSpan?.setAttribute(key: "test_type", value: "concurrent_network")
+
             // Simulate response time
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1 * Double(i)) {
-                requestSpan?.setAttribute(key: "http.status_code", value: "200")
+                try? requestSpan?.setAttribute(key: "http.status_code", value: "200")
                 requestSpan?.end()
             }
         }
-        
-        span?.setAttribute(key: "test_result", value: "passed")
+
+        try? span?.setAttribute(key: "test_result", value: "passed")
         span?.end()
     }
     
@@ -110,9 +110,9 @@ final class SDKCompatibilityTest {
         EmbraceService.shared.addSessionProperty(key: "test_concurrent_logging", value: "true")
         EmbraceService.shared.addSessionProperty(key: "test_timestamp", value: "\(Date().timeIntervalSince1970)")
         
-        span?.setAttribute(key: "test_result", value: "passed")
-        span?.setAttribute(key: "logs_generated", value: "8")
-        span?.setAttribute(key: "breadcrumbs_generated", value: "5")
+        try? span?.setAttribute(key: "test_result", value: "passed")
+        try? span?.setAttribute(key: "logs_generated", value: "8")
+        try? span?.setAttribute(key: "breadcrumbs_generated", value: "5")
         span?.end()
         
         EmbraceService.shared.logInfo("Concurrent logging test completed", properties: [

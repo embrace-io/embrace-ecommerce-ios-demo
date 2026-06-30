@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 import EmbraceIO
-import OpenTelemetryApi
 
 @MainActor
 class APIService: ObservableObject {
@@ -18,17 +17,17 @@ class APIService: ObservableObject {
     private init() {}
     
     func fetchProducts(category: String? = nil, limit: Int? = nil, offset: Int? = nil) async throws -> [Product] {
-        let span = Embrace.client?.buildSpan(name: "api_fetch_products", type: .performance).startSpan()
-        span?.setAttribute(key: "api.method", value: "fetchProducts")
-        span?.setAttribute(key: "api.use_real_api", value: String(useRealAPI))
+        let span = EmbraceIO.shared.createSpan(name: "api_fetch_products", type: .performance)
+        try? span?.setAttribute(key: "api.method", value: "fetchProducts")
+        try? span?.setAttribute(key: "api.use_real_api", value: String(useRealAPI))
         if let category = category {
-            span?.setAttribute(key: "api.category", value: category)
+            try? span?.setAttribute(key: "api.category", value: category)
         }
         if let limit = limit {
-            span?.setAttribute(key: "api.limit", value: String(limit))
+            try? span?.setAttribute(key: "api.limit", value: String(limit))
         }
         if let offset = offset {
-            span?.setAttribute(key: "api.offset", value: String(offset))
+            try? span?.setAttribute(key: "api.offset", value: String(offset))
         }
 
         let startTime = Date()
@@ -47,8 +46,8 @@ class APIService: ObservableObject {
             }
 
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "api.result_count", value: String(products.count))
-            span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "api.result_count", value: String(products.count))
+            try? span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
             span?.end()
 
             embraceService.logInfo("Products fetched successfully", properties: [
@@ -62,9 +61,9 @@ class APIService: ObservableObject {
             return products
         } catch {
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
-            span?.setAttribute(key: "error.message", value: error.localizedDescription)
-            span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
+            try? span?.setAttribute(key: "error.message", value: error.localizedDescription)
+            try? span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
             span?.end(errorCode: .failure)
 
             embraceService.logError("Failed to fetch products", properties: [
@@ -81,10 +80,10 @@ class APIService: ObservableObject {
     }
     
     func fetchProduct(id: String) async throws -> Product {
-        let span = Embrace.client?.buildSpan(name: "api_fetch_product_detail", type: .performance).startSpan()
-        span?.setAttribute(key: "api.method", value: "fetchProduct")
-        span?.setAttribute(key: "api.use_real_api", value: String(useRealAPI))
-        span?.setAttribute(key: "api.product_id", value: id)
+        let span = EmbraceIO.shared.createSpan(name: "api_fetch_product_detail", type: .performance)
+        try? span?.setAttribute(key: "api.method", value: "fetchProduct")
+        try? span?.setAttribute(key: "api.use_real_api", value: String(useRealAPI))
+        try? span?.setAttribute(key: "api.product_id", value: id)
 
         let startTime = Date()
 
@@ -102,9 +101,9 @@ class APIService: ObservableObject {
             }
 
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "api.product_name", value: product.name)
-            span?.setAttribute(key: "api.product_category", value: product.category)
-            span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "api.product_name", value: product.name)
+            try? span?.setAttribute(key: "api.product_category", value: product.category)
+            try? span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
             span?.end()
 
             embraceService.logInfo("Product detail fetched successfully", properties: [
@@ -118,9 +117,9 @@ class APIService: ObservableObject {
             return product
         } catch {
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
-            span?.setAttribute(key: "error.message", value: error.localizedDescription)
-            span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
+            try? span?.setAttribute(key: "error.message", value: error.localizedDescription)
+            try? span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
             span?.end(errorCode: .failure)
 
             embraceService.logError("Failed to fetch product detail", properties: [
@@ -137,15 +136,15 @@ class APIService: ObservableObject {
     }
 
     func searchProducts(query: String, category: String? = nil, limit: Int? = nil) async throws -> [Product] {
-        let span = Embrace.client?.buildSpan(name: "api_search_products", type: .performance).startSpan()
-        span?.setAttribute(key: "api.method", value: "searchProducts")
-        span?.setAttribute(key: "api.use_real_api", value: String(useRealAPI))
-        span?.setAttribute(key: "api.search_query", value: query)
+        let span = EmbraceIO.shared.createSpan(name: "api_search_products", type: .performance)
+        try? span?.setAttribute(key: "api.method", value: "searchProducts")
+        try? span?.setAttribute(key: "api.use_real_api", value: String(useRealAPI))
+        try? span?.setAttribute(key: "api.search_query", value: query)
         if let category = category {
-            span?.setAttribute(key: "api.category", value: category)
+            try? span?.setAttribute(key: "api.category", value: category)
         }
         if let limit = limit {
-            span?.setAttribute(key: "api.limit", value: String(limit))
+            try? span?.setAttribute(key: "api.limit", value: String(limit))
         }
 
         let startTime = Date()
@@ -164,8 +163,8 @@ class APIService: ObservableObject {
             }
 
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "api.result_count", value: String(products.count))
-            span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "api.result_count", value: String(products.count))
+            try? span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
             span?.end()
 
             embraceService.logInfo("Product search completed successfully", properties: [
@@ -180,9 +179,9 @@ class APIService: ObservableObject {
             return products
         } catch {
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
-            span?.setAttribute(key: "error.message", value: error.localizedDescription)
-            span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "error.type", value: String(describing: type(of: error)))
+            try? span?.setAttribute(key: "error.message", value: error.localizedDescription)
+            try? span?.setAttribute(key: "api.duration_ms", value: String(Int(duration * 1000)))
             span?.end(errorCode: .failure)
 
             embraceService.logError("Product search failed", properties: [

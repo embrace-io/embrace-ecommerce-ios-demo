@@ -1,7 +1,6 @@
 import Foundation
 import LocalAuthentication
 import EmbraceIO
-import OpenTelemetryApi
 
 @MainActor
 class BiometricAuthenticationManager: ObservableObject {
@@ -18,10 +17,10 @@ class BiometricAuthenticationManager: ObservableObject {
     // MARK: - Availability Checks
     
     func checkBiometricAvailability() {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "biometric_availability_check",
             type: .system
-        ).startSpan()
+        )
         
         var error: NSError?
         let isAvailable = context.canEvaluatePolicy(.deviceOwnerAuthenticationWithBiometrics, error: &error)
@@ -30,18 +29,18 @@ class BiometricAuthenticationManager: ObservableObject {
         self.biometricType = getBiometricType()
         self.isEnrolled = isAvailable && error == nil
         
-        span?.setAttribute(key: "biometric.available", value: String(isAvailable))
-        span?.setAttribute(key: "biometric.type", value: biometricType.displayName)
-        span?.setAttribute(key: "biometric.enrolled", value: String(isEnrolled))
+        try? span?.setAttribute(key: "biometric.available", value: String(isAvailable))
+        try? span?.setAttribute(key: "biometric.type", value: biometricType.displayName)
+        try? span?.setAttribute(key: "biometric.enrolled", value: String(isEnrolled))
         
         if let error = error {
-            span?.setAttribute(key: "error.code", value: String(error.code))
-            span?.setAttribute(key: "error.description", value: error.localizedDescription)
+            try? span?.setAttribute(key: "error.code", value: String(error.code))
+            try? span?.setAttribute(key: "error.description", value: error.localizedDescription)
         }
         
         span?.end()
         
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Biometric availability checked",
             severity: .info,
             attributes: [
@@ -85,19 +84,19 @@ class BiometricAuthenticationManager: ObservableObject {
     // MARK: - Authentication
     
     func authenticateWithBiometrics(reason: String = "Authenticate to access your account") async -> Result<Bool, AuthenticationError> {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "biometric_authentication",
             type: .performance
-        ).startSpan()
+        )
         
-        span?.setAttribute(key: "biometric.type", value: biometricType.displayName)
-        span?.setAttribute(key: "authentication.method", value: "biometric")
+        try? span?.setAttribute(key: "biometric.type", value: biometricType.displayName)
+        try? span?.setAttribute(key: "authentication.method", value: "biometric")
         
         guard isAvailable else {
-            span?.setAttribute(key: "error.type", value: "not_available")
+            try? span?.setAttribute(key: "error.type", value: "not_available")
             span?.end()
             
-            Embrace.client?.log(
+            EmbraceIO.shared.log(
                 "Biometric authentication failed - not available",
                 severity: .warn,
                 attributes: [
@@ -115,10 +114,10 @@ class BiometricAuthenticationManager: ObservableObject {
                 localizedReason: reason
             )
             
-            span?.setAttribute(key: "authentication.success", value: String(success))
+            try? span?.setAttribute(key: "authentication.success", value: String(success))
             span?.end()
             
-            Embrace.client?.log(
+            EmbraceIO.shared.log(
                 "Biometric authentication completed",
                 severity: success ? .info : .warn,
                 attributes: [
@@ -132,12 +131,12 @@ class BiometricAuthenticationManager: ObservableObject {
         } catch let error as LAError {
             let authError = mapLAError(error)
             
-            span?.setAttribute(key: "error.code", value: String(error.code.rawValue))
-            span?.setAttribute(key: "error.description", value: error.localizedDescription)
-            span?.setAttribute(key: "authentication.success", value: "false")
+            try? span?.setAttribute(key: "error.code", value: String(error.code.rawValue))
+            try? span?.setAttribute(key: "error.description", value: error.localizedDescription)
+            try? span?.setAttribute(key: "authentication.success", value: "false")
             span?.end()
             
-            Embrace.client?.log(
+            EmbraceIO.shared.log(
                 "Biometric authentication failed",
                 severity: .error,
                 attributes: [
@@ -150,11 +149,11 @@ class BiometricAuthenticationManager: ObservableObject {
             return .failure(authError)
             
         } catch {
-            span?.setAttribute(key: "error.description", value: error.localizedDescription)
-            span?.setAttribute(key: "authentication.success", value: "false")
+            try? span?.setAttribute(key: "error.description", value: error.localizedDescription)
+            try? span?.setAttribute(key: "authentication.success", value: "false")
             span?.end()
             
-            Embrace.client?.log(
+            EmbraceIO.shared.log(
                 "Biometric authentication failed with unknown error",
                 severity: .error,
                 attributes: [
@@ -170,23 +169,23 @@ class BiometricAuthenticationManager: ObservableObject {
     // MARK: - Mock Biometric for Testing
     
     func mockBiometricAuthentication(shouldSucceed: Bool = true, delay: TimeInterval = 1.0) async -> Result<Bool, AuthenticationError> {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "mock_biometric_authentication",
             type: .performance
-        ).startSpan()
+        )
         
-        span?.setAttribute(key: "authentication.method", value: "mock_biometric")
-        span?.setAttribute(key: "mock.should_succeed", value: String(shouldSucceed))
-        span?.setAttribute(key: "mock.delay", value: String(delay))
+        try? span?.setAttribute(key: "authentication.method", value: "mock_biometric")
+        try? span?.setAttribute(key: "mock.should_succeed", value: String(shouldSucceed))
+        try? span?.setAttribute(key: "mock.delay", value: String(delay))
         
         // Simulate authentication delay
         try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
         
         if shouldSucceed {
-            span?.setAttribute(key: "authentication.success", value: "true")
+            try? span?.setAttribute(key: "authentication.success", value: "true")
             span?.end()
             
-            Embrace.client?.log(
+            EmbraceIO.shared.log(
                 "Mock biometric authentication succeeded",
                 severity: .info,
                 attributes: [
@@ -197,11 +196,11 @@ class BiometricAuthenticationManager: ObservableObject {
             
             return .success(true)
         } else {
-            span?.setAttribute(key: "authentication.success", value: "false")
-            span?.setAttribute(key: "error.type", value: "mock_failure")
+            try? span?.setAttribute(key: "authentication.success", value: "false")
+            try? span?.setAttribute(key: "error.type", value: "mock_failure")
             span?.end()
             
-            Embrace.client?.log(
+            EmbraceIO.shared.log(
                 "Mock biometric authentication failed",
                 severity: .warn,
                 attributes: [
@@ -232,19 +231,19 @@ class BiometricAuthenticationManager: ObservableObject {
     // MARK: - Settings & Preferences
     
     func enableBiometric(for userId: String) {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "enable_biometric_auth",
             type: .system
-        ).startSpan()
+        )
         
-        span?.setAttribute(key: "user.id", value: userId)
-        span?.setAttribute(key: "biometric.type", value: biometricType.displayName)
+        try? span?.setAttribute(key: "user.id", value: userId)
+        try? span?.setAttribute(key: "biometric.type", value: biometricType.displayName)
         
         UserDefaults.standard.set(true, forKey: "biometric_enabled_\(userId)")
         
         span?.end()
         
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Biometric authentication enabled",
             severity: .info,
             attributes: [
@@ -255,18 +254,18 @@ class BiometricAuthenticationManager: ObservableObject {
     }
     
     func disableBiometric(for userId: String) {
-        let span = Embrace.client?.buildSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "disable_biometric_auth",
             type: .system
-        ).startSpan()
+        )
         
-        span?.setAttribute(key: "user.id", value: userId)
+        try? span?.setAttribute(key: "user.id", value: userId)
         
         UserDefaults.standard.removeObject(forKey: "biometric_enabled_\(userId)")
         
         span?.end()
         
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Biometric authentication disabled",
             severity: .info,
             attributes: [

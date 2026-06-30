@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 import EmbraceIO
-import OpenTelemetryApi
 
 protocol NetworkServiceProtocol {
     func execute<T: NetworkRequest>(_ request: T) async throws -> APIResponse<T.ResponseType>
@@ -65,13 +64,13 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
         let startTime = Date()
 
         // Create Embrace span for network request
-        let span = Embrace.client?.buildSpan(name: "network_request", type: .networkRequest).startSpan()
-        span?.setAttribute(key: "http.method", value: request.method.rawValue)
-        span?.setAttribute(key: "http.path", value: request.path)
-        span?.setAttribute(key: "request.id", value: requestId.uuidString)
+        let span = EmbraceIO.shared.createSpan(name: "network_request", type: .networkRequest)
+        try? span?.setAttribute(key: "http.method", value: request.method.rawValue)
+        try? span?.setAttribute(key: "http.path", value: request.path)
+        try? span?.setAttribute(key: "request.id", value: requestId.uuidString)
 
         guard reachability.isConnected else {
-            span?.setAttribute(key: "error.type", value: "network_unavailable")
+            try? span?.setAttribute(key: "error.type", value: "network_unavailable")
             span?.end(errorCode: .failure)
             embraceService.logError("Network request failed - No internet connection", properties: [
                 "request.id": requestId.uuidString,
@@ -82,7 +81,7 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
         }
 
         guard let urlRequest = request.urlRequest else {
-            span?.setAttribute(key: "error.type", value: "invalid_url")
+            try? span?.setAttribute(key: "error.type", value: "invalid_url")
             span?.end(errorCode: .failure)
             embraceService.logError("Network request failed - Invalid URL", properties: [
                 "request.id": requestId.uuidString,
@@ -91,7 +90,7 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
             throw NetworkError.invalidURL
         }
 
-        span?.setAttribute(key: "http.url", value: urlRequest.url?.absoluteString ?? "unknown")
+        try? span?.setAttribute(key: "http.url", value: urlRequest.url?.absoluteString ?? "unknown")
 
         let metrics = RequestMetrics(
             id: requestId,
@@ -121,8 +120,8 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
                 requestMetrics[requestId]?.error = error
                 requestMetrics[requestId]?.endTime = endTime
 
-                span?.setAttribute(key: "error.type", value: "invalid_response")
-                span?.setAttribute(key: "duration_ms", value: String(Int(duration * 1000)))
+                try? span?.setAttribute(key: "error.type", value: "invalid_response")
+                try? span?.setAttribute(key: "duration_ms", value: String(Int(duration * 1000)))
                 span?.end(errorCode: .failure)
 
                 embraceService.logError("Network request failed - Invalid response", properties: [
@@ -137,9 +136,9 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
             requestMetrics[requestId]?.statusCode = httpResponse.statusCode
             requestMetrics[requestId]?.endTime = endTime
 
-            span?.setAttribute(key: "http.status_code", value: String(httpResponse.statusCode))
-            span?.setAttribute(key: "http.response_size_bytes", value: String(data.count))
-            span?.setAttribute(key: "duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "http.status_code", value: String(httpResponse.statusCode))
+            try? span?.setAttribute(key: "http.response_size_bytes", value: String(data.count))
+            try? span?.setAttribute(key: "duration_ms", value: String(Int(duration * 1000)))
 
             logResponse(httpResponse, data: data, id: requestId)
 
@@ -169,8 +168,8 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
                 let error = NetworkError.httpError(statusCode: httpResponse.statusCode, data: data)
                 requestMetrics[requestId]?.error = error
 
-                span?.setAttribute(key: "error.type", value: "http_error")
-                span?.setAttribute(key: "error.status_code", value: String(httpResponse.statusCode))
+                try? span?.setAttribute(key: "error.type", value: "http_error")
+                try? span?.setAttribute(key: "error.status_code", value: String(httpResponse.statusCode))
                 span?.end(errorCode: .failure)
 
                 embraceService.logError("Network request failed - HTTP error", properties: [
@@ -190,9 +189,9 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
             requestMetrics[requestId]?.endTime = Date()
 
             let duration = Date().timeIntervalSince(startTime)
-            span?.setAttribute(key: "error.type", value: String(describing: type(of: networkError)))
-            span?.setAttribute(key: "error.message", value: networkError.localizedDescription)
-            span?.setAttribute(key: "duration_ms", value: String(Int(duration * 1000)))
+            try? span?.setAttribute(key: "error.type", value: String(describing: type(of: networkError)))
+            try? span?.setAttribute(key: "error.message", value: networkError.localizedDescription)
+            try? span?.setAttribute(key: "duration_ms", value: String(Int(duration * 1000)))
             span?.end(errorCode: .failure)
 
             logError(networkError, id: requestId)
@@ -217,18 +216,18 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
     ) async throws -> APIResponse<T.ResponseType> {
         var lastError: NetworkError?
 
-        let retrySpan = Embrace.client?.buildSpan(name: "network_request_with_retry", type: .performance).startSpan()
-        retrySpan?.setAttribute(key: "http.method", value: request.method.rawValue)
-        retrySpan?.setAttribute(key: "http.path", value: request.path)
-        retrySpan?.setAttribute(key: "retry.max_attempts", value: String(maxRetries + 1))
+        let retrySpan = EmbraceIO.shared.createSpan(name: "network_request_with_retry", type: .performance)
+        try? retrySpan?.setAttribute(key: "http.method", value: request.method.rawValue)
+        try? retrySpan?.setAttribute(key: "http.path", value: request.path)
+        try? retrySpan?.setAttribute(key: "retry.max_attempts", value: String(maxRetries + 1))
 
         for attempt in 0...maxRetries {
-            retrySpan?.setAttribute(key: "retry.current_attempt", value: String(attempt + 1))
+            try? retrySpan?.setAttribute(key: "retry.current_attempt", value: String(attempt + 1))
 
             do {
                 let response = try await execute(request)
-                retrySpan?.setAttribute(key: "retry.succeeded", value: "true")
-                retrySpan?.setAttribute(key: "retry.attempts_used", value: String(attempt + 1))
+                try? retrySpan?.setAttribute(key: "retry.succeeded", value: "true")
+                try? retrySpan?.setAttribute(key: "retry.attempts_used", value: String(attempt + 1))
                 retrySpan?.end()
 
                 if attempt > 0 {
@@ -246,7 +245,7 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
 
                 if attempt < maxRetries && error.isRetryable {
                     let backoffDelay = delay * pow(2.0, Double(attempt))
-                    retrySpan?.setAttribute(key: "retry.delay_ms", value: String(Int(backoffDelay * 1000)))
+                    try? retrySpan?.setAttribute(key: "retry.delay_ms", value: String(Int(backoffDelay * 1000)))
 
                     embraceService.logWarning("Network request failed, retrying", properties: [
                         "http.path": request.path,
@@ -260,9 +259,9 @@ class NetworkService: NetworkServiceProtocol, ObservableObject {
                     try await Task.sleep(nanoseconds: UInt64(backoffDelay * 1_000_000_000))
                     continue
                 } else {
-                    retrySpan?.setAttribute(key: "retry.succeeded", value: "false")
-                    retrySpan?.setAttribute(key: "retry.attempts_used", value: String(attempt + 1))
-                    retrySpan?.setAttribute(key: "error.message", value: error.localizedDescription)
+                    try? retrySpan?.setAttribute(key: "retry.succeeded", value: "false")
+                    try? retrySpan?.setAttribute(key: "retry.attempts_used", value: String(attempt + 1))
+                    try? retrySpan?.setAttribute(key: "error.message", value: error.localizedDescription)
                     retrySpan?.end(errorCode: .failure)
 
                     embraceService.logError("Network request failed after all retries", properties: [

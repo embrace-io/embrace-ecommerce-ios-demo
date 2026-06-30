@@ -7,8 +7,6 @@
 
 import Foundation
 import EmbraceIO
-import EmbraceSemantics
-import OpenTelemetryApi
 
 // MARK: - Public Surface
 
@@ -22,15 +20,15 @@ protocol TelemetryService {
     func logDebug(_ message: String, properties: [String: String]?)
 
     // Spans
-    func startSpan(name: String) -> OpenTelemetryApi.Span?
+    func startSpan(name: String) -> EmbraceSpan?
     func recordCompletedSpan(
         name: String,
         startTime: Date,
         endTime: Date,
         attributes: [String: String]?,
-        errorCode: SpanErrorCode?
+        errorCode: EmbraceSpanErrorCode?
     )
-    func recordSpan<T>(name: String, attributes: [String: String], block: (Span?) throws -> T) rethrows -> T
+    func recordSpan<T>(name: String, attributes: [String: String], block: (EmbraceSpan?) throws -> T) rethrows -> T
 
     // Events
     func addBreadcrumb(message: String)
@@ -60,26 +58,26 @@ final class EmbraceService: TelemetryService {
     // MARK: - Logs
 
     func logInfo(_ message: String, properties: [String: String]? = nil) {
-        Embrace.client?.log(message, severity: .info, attributes: properties ?? [:])
+        EmbraceIO.shared.log(message, severity: .info, attributes: properties ?? [:])
     }
 
     func logWarning(_ message: String, properties: [String: String]? = nil) {
-        Embrace.client?.log(message, severity: .warn, attributes: properties ?? [:])
+        EmbraceIO.shared.log(message, severity: .warn, attributes: properties ?? [:])
     }
 
     func logError(_ message: String, properties: [String: String]? = nil) {
-        Embrace.client?.log(message, severity: .error, attributes: properties ?? [:])
+        EmbraceIO.shared.log(message, severity: .error, attributes: properties ?? [:])
     }
 
     func logDebug(_ message: String, properties: [String: String]? = nil) {
-        Embrace.client?.log(message, severity: .debug, attributes: properties ?? [:])
+        EmbraceIO.shared.log(message, severity: .debug, attributes: properties ?? [:])
     }
 
     // MARK: - Spans
 
     /// Returns a started span. Caller owns calling `.end()` (or `.end(errorCode:)`).
-    func startSpan(name: String) -> OpenTelemetryApi.Span? {
-        Embrace.client?.buildSpan(name: name, type: .performance).startSpan()
+    func startSpan(name: String) -> EmbraceSpan? {
+        EmbraceIO.shared.createSpan(name: name, type: .performance)
     }
 
     /// Records a span that already happened. Honors real start/end times and
@@ -89,18 +87,17 @@ final class EmbraceService: TelemetryService {
         startTime: Date,
         endTime: Date,
         attributes: [String: String]? = nil,
-        errorCode: SpanErrorCode? = nil
+        errorCode: EmbraceSpanErrorCode? = nil
     ) {
-        Embrace.client?.recordCompletedSpan(
+        // 7.0: createSpan(endTime:) cannot carry an errorCode, so create the span
+        // (started) and end it with the code to preserve failure/userAbandon semantics.
+        let span = EmbraceIO.shared.createSpan(
             name: name,
             type: .performance,
-            parent: nil,
             startTime: startTime,
-            endTime: endTime,
-            attributes: attributes ?? [:],
-            events: [],
-            errorCode: errorCode
+            attributes: attributes ?? [:]
         )
+        span?.end(errorCode: errorCode, endTime: endTime)
     }
 
     /// Block-based span. Preferred for short synchronous work — auto-ends,
@@ -109,21 +106,26 @@ final class EmbraceService: TelemetryService {
     func recordSpan<T>(
         name: String,
         attributes: [String: String] = [:],
-        block: (Span?) throws -> T
+        block: (EmbraceSpan?) throws -> T
     ) rethrows -> T {
-        try Embrace.recordSpan(name: name, type: .performance, attributes: attributes, block: block)
+        // 7.0 removed the block-based `Embrace.recordSpan` helper with no
+        // replacement. Recreate it: start a span, run the block, end the span.
+        // `createSpan` returns nil if the SDK isn't started — the block still runs.
+        let span = EmbraceIO.shared.createSpan(name: name, type: .performance, attributes: attributes)
+        defer { span?.end() }
+        return try block(span)
     }
 
     // MARK: - Breadcrumbs
 
     func addBreadcrumb(message: String) {
-        Embrace.client?.add(event: .breadcrumb(message))
+        EmbraceIO.shared.addBreadcrumb(message)
     }
 
     // MARK: - Session Properties
 
     func addSessionProperty(key: String, value: String, permanent: Bool = false) {
-        try? Embrace.client?.metadata.addProperty(
+        EmbraceIO.shared.setProperty(
             key: key,
             value: value,
             lifespan: permanent ? .permanent : .session
@@ -131,7 +133,7 @@ final class EmbraceService: TelemetryService {
     }
 
     func removeSessionProperty(key: String) {
-        try? Embrace.client?.metadata.removeProperty(key: key)
+        EmbraceIO.shared.setProperty(key: key, value: nil, lifespan: .session)
     }
 
     // MARK: - User Identity
@@ -139,24 +141,33 @@ final class EmbraceService: TelemetryService {
     /// Sets built-in user fields (id/email/name). Persists across sessions
     /// until `clearUser()` is called. Pass `nil` to leave a field unchanged.
     func setUser(id: String?, email: String? = nil, name: String? = nil) {
-        guard let metadata = Embrace.client?.metadata else { return }
-        if let id = id { metadata.userIdentifier = id }
-        if let email = email { metadata.userEmail = email }
-        if let name = name { metadata.userName = name }
+        if let id = id { EmbraceIO.shared.userIdentifier = id }
+        // 7.0 removed metadata.userEmail / userName. Documented workaround:
+        // store them as permanent session properties.
+        if let email = email {
+            EmbraceIO.shared.setProperty(key: "user_email", value: email, lifespan: .permanent)
+        }
+        if let name = name {
+            EmbraceIO.shared.setProperty(key: "user_name", value: name, lifespan: .permanent)
+        }
     }
 
     func clearUser() {
-        Embrace.client?.metadata.clearUserProperties()
+        // 7.0 removed clearUserProperties(); clear the identifier and the
+        // email/name properties we set above.
+        EmbraceIO.shared.userIdentifier = nil
+        EmbraceIO.shared.setProperty(key: "user_email", value: nil, lifespan: .permanent)
+        EmbraceIO.shared.setProperty(key: "user_name", value: nil, lifespan: .permanent)
     }
 
     // MARK: - Personas
 
     func addPersona(_ tag: String, permanent: Bool = false) {
-        try? Embrace.client?.metadata.add(persona: tag, lifespan: permanent ? .permanent : .session)
+        EmbraceIO.shared.addPersona(tag, lifespan: permanent ? .permanent : .session)
     }
 
     func removePersona(_ tag: String, permanent: Bool = false) {
-        try? Embrace.client?.metadata.remove(persona: tag, lifespan: permanent ? .permanent : .session)
+        EmbraceIO.shared.removePersona(tag, lifespan: permanent ? .permanent : .session)
     }
 
     // MARK: - Network Monitoring
@@ -180,16 +191,13 @@ final class EmbraceService: TelemetryService {
         if let traceId = traceId { attributes["http.trace_id"] = traceId }
         if let errorMessage = errorMessage { attributes["error.message"] = errorMessage }
 
-        Embrace.client?.recordCompletedSpan(
+        let span = EmbraceIO.shared.createSpan(
             name: "network_request",
             type: .networkRequest,
-            parent: nil,
             startTime: startTime,
-            endTime: endTime,
-            attributes: attributes,
-            events: [],
-            errorCode: errorMessage == nil ? nil : .failure
+            attributes: attributes
         )
+        span?.end(errorCode: errorMessage == nil ? nil : .failure, endTime: endTime)
     }
 
     // MARK: - Push Notifications
@@ -198,11 +206,7 @@ final class EmbraceService: TelemetryService {
     /// `didReceiveRemoteNotification` / `UNUserNotificationCenterDelegate`.
     /// The SDK parses the `aps` payload (title/body/category/badge) for you.
     func recordPushNotification(userInfo: [AnyHashable: Any]) {
-        do {
-            if let event = try? PushNotificationEvent.push(userInfo: userInfo) {
-                Embrace.client?.add(event: event)
-            }
-        }
+        EmbraceIO.shared.addPushNotificationEvent(userInfo: userInfo, captureData: true)
         addBreadcrumb(message: "Push notification received")
     }
 
@@ -368,7 +372,7 @@ final class EmbraceService: TelemetryService {
 
     /// Randomly dispatches to one of 5 distinct crash functions so they
     /// appear as separate crash groups on the Embrace dashboard.
-    /// Each function uses Embrace.client?.crash() to ensure session association.
+    /// Each function uses EmbraceCrashHelper.crash() to ensure session association.
     func forceEmbraceCrash() {
         let selection = Int.random(in: 0...4)
         switch selection {
@@ -382,56 +386,56 @@ final class EmbraceService: TelemetryService {
 
     @inline(never)
     private func simulateCartUpdateCrash() {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Cart update failed: quantity sync error",
             severity: .error,
             attributes: ["crash_type": "cart_update", "trigger": "manual_crash_button"]
         )
         addBreadcrumb(message: "Crash in cart quantity update flow")
-        Embrace.client?.crash()
+        EmbraceCrashHelper.crash()
     }
 
     @inline(never)
     private func simulatePaymentProcessingCrash() {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Payment processing failed: unexpected nil response",
             severity: .error,
             attributes: ["crash_type": "payment_processing", "trigger": "manual_crash_button"]
         )
         addBreadcrumb(message: "Crash in payment processing flow")
-        Embrace.client?.crash()
+        EmbraceCrashHelper.crash()
     }
 
     @inline(never)
     private func simulateProductRecommendationCrash() {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Product recommendations failed: index out of range",
             severity: .error,
             attributes: ["crash_type": "product_recommendation", "trigger": "manual_crash_button"]
         )
         addBreadcrumb(message: "Crash in product recommendation engine")
-        Embrace.client?.crash()
+        EmbraceCrashHelper.crash()
     }
 
     @inline(never)
     private func simulateSearchFilterCrash() {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Search filter failed: malformed predicate",
             severity: .error,
             attributes: ["crash_type": "search_filter", "trigger": "manual_crash_button"]
         )
         addBreadcrumb(message: "Crash in search filter application")
-        Embrace.client?.crash()
+        EmbraceCrashHelper.crash()
     }
 
     @inline(never)
     private func simulateAuthTokenRefreshCrash() {
-        Embrace.client?.log(
+        EmbraceIO.shared.log(
             "Auth token refresh failed: expired session",
             severity: .error,
             attributes: ["crash_type": "auth_token_refresh", "trigger": "manual_crash_button"]
         )
         addBreadcrumb(message: "Crash in auth token refresh")
-        Embrace.client?.crash()
+        EmbraceCrashHelper.crash()
     }
 }
