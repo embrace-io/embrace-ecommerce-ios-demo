@@ -83,6 +83,40 @@ each gets a distinct device identity — these are the **non-stitched** sessions
 Each job ends with a flush run (`testQuickBrowseAndLeave`) on the same simulator
 so any crash report from the main test gets shipped.
 
+**Multi-app fan-out.** This workflow also fans out across app IDs, so one repo
+can feed several Embrace apps — including apps in different organizations.
+
+The Embrace SDK takes a single `appId` per process
+(`Embrace.Options(appId:)` on a singleton client), so one app run cannot feed two
+app IDs. Instead each app ID gets its own job and its own build, since the ID is
+compiled into `SDKConfiguration.swift`. Separate jobs also keep the apps on
+separate simulators, which matters: they share a bundle ID, so a crash report
+persisted under one app ID could otherwise be shipped under the other's
+configuration on the next launch.
+
+Targets are resolved from repository variables by the `targets` job, so adding or
+retiring an app is a variables-only change with no workflow edit:
+
+| Target | App ID variable | dSYM token secret | RUN_SOURCE suffix |
+|---|---|---|---|
+| `primary` | `APP_ID` | `EMBRACE_API_TOKEN` | none |
+| `sandbox` | `APP_ID_SANDBOX` | `EMBRACE_API_TOKEN_SANDBOX` | `-sandbox` |
+
+A target whose app ID variable is unset is simply absent from the matrix, so a
+missing or retired sandbox app never turns the primary session stream red. With
+only `APP_ID` set the workflow runs 3 jobs; with both, 6.
+
+Tokens are org-scoped, so each app ID needs a token issued by *its own*
+organization — a token from the wrong org fails with
+`authorization failed. Check your token`.
+
+To add a second app:
+
+```
+gh variable set APP_ID_SANDBOX --body <new-app-id>
+gh secret set EMBRACE_API_TOKEN_SANDBOX
+```
+
 ---
 
 ### `one-simulator.yml` — One Simulator (Session Stitching)

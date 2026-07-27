@@ -10,6 +10,14 @@ name: Scheduled Tests (Lightweight)
 # build tagged every session "UITest" and defeated the point of the per-suite
 # tags below. Actions minutes are free on this public repo, so building per job
 # is the cheaper trade.
+#
+# Fans out across app IDs as well as test suites. The Embrace SDK takes a single
+# appId per process (Embrace.Options(appId:) on a singleton client), so one app
+# run cannot feed two app IDs — instead each app ID gets its own build, because
+# the ID is compiled into SDKConfiguration.swift. Separate jobs also keep the two
+# apps on separate simulators, which matters: they share a bundle ID, so a crash
+# report persisted under one app ID could otherwise be shipped under the other's
+# configuration on the next launch.
 on:
   schedule:
     - cron: '0 */2 * * *'
@@ -34,8 +42,54 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Builds the app-ID target list from repository variables, so adding or
+  # removing a second app is a variables-only change with no workflow edit. A
+  # target whose variable is unset is simply absent, which keeps a missing or
+  # retired sandbox app from turning the primary session stream red.
+  targets:
+    name: Resolve app targets
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.resolve.outputs.targets }}
+    steps:
+      - name: Resolve configured app IDs
+        id: resolve
+        env:
+          APP_ID: ${{ vars.APP_ID }}
+          APP_ID_SANDBOX: ${{ vars.APP_ID_SANDBOX }}
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json, os
+
+          candidates = [
+              # (name, app id variable, dSYM token secret, RUN_SOURCE suffix)
+              ("primary", "APP_ID", "EMBRACE_API_TOKEN", ""),
+              ("sandbox", "APP_ID_SANDBOX", "EMBRACE_API_TOKEN_SANDBOX", "-sandbox"),
+          ]
+
+          targets = [
+              {"name": name, "app_id_var": var, "token_secret": secret, "suffix": suffix}
+              for name, var, secret, suffix in candidates
+              if os.environ.get(var)
+          ]
+          print("targets=" + json.dumps(targets))
+          PY
+
+          echo "Resolved targets:"
+          grep '^targets=' "$GITHUB_OUTPUT" | tail -1
+
+      - name: Fail if no app IDs are configured
+        env:
+          APP_ID: ${{ vars.APP_ID }}
+        run: |
+          if [[ -z "$APP_ID" ]]; then
+            echo "::error::APP_ID is not set — no sessions can be generated." >&2
+            exit 1
+          fi
+
   run-tests:
-    name: "${{ matrix.test_suite.name }}"
+    name: "${{ matrix.test_suite.name }} (${{ matrix.target.name }})"
+    needs: targets
     runs-on: macos-15
     # Covers a from-source build (~10-20 min) plus the test and flush runs.
     timeout-minutes: 60
@@ -43,6 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        target: ${{ fromJSON(needs.targets.outputs.targets) }}
         test_suite:
           - name: "Browse Products"
             target: "Embrace EcommerceUITests/Embrace_EcommerceUITests/testBrowseFlow"
@@ -61,15 +116,17 @@ jobs:
       - name: Select Xcode version
         run: bash scripts/select-xcode.sh
 
+      # Indexed off the matrix so each target compiles in its own app ID.
       - name: Configure Embrace app ID
         env:
-          APP_ID: ${{ vars.APP_ID }}
+          APP_ID: ${{ vars[matrix.target.app_id_var] }}
         run: bash scripts/configure-app-id.sh
 
-      # Must precede the build: RUN_SOURCE is a compile-time literal.
+      # Must precede the build: RUN_SOURCE is a compile-time literal. The target
+      # suffix keeps the two apps' session streams distinguishable side by side.
       - name: Configure RUN_SOURCE
         env:
-          RUN_SOURCE: ${{ matrix.test_suite.run_source }}
+          RUN_SOURCE: "${{ matrix.test_suite.run_source }}${{ matrix.target.suffix }}"
         run: bash scripts/configure-run-source.sh
 
       - name: Cache Swift Package Manager dependencies
@@ -112,15 +169,17 @@ jobs:
         id: dsyms
         continue-on-error: true
         env:
-          EMBRACE_APP: ${{ vars.APP_ID }}
-          EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
+          # Tokens are org-scoped, so each app ID needs the token from its own
+          # organization.
+          EMBRACE_APP: ${{ vars[matrix.target.app_id_var] }}
+          EMBRACE_API_TOKEN: ${{ secrets[matrix.target.token_secret] }}
         run: bash scripts/upload-dsyms.sh DerivedData/Build/Products
 
       - name: Run test
         env:
           SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
           TEST_TARGET: ${{ matrix.test_suite.target }}
-          RESULT_BUNDLE: "TestResults-${{ matrix.test_suite.run_source }}.xcresult"
+          RESULT_BUNDLE: "TestResults-${{ matrix.test_suite.run_source }}${{ matrix.target.suffix }}.xcresult"
         run: |
           # The exit code is intentionally ignored: these flows call
           # calculateAndCreateCrash(), which crashes the app on purpose in ~35% of
@@ -151,17 +210,19 @@ jobs:
 
       - name: Verify the test actually ran
         env:
-          RESULT_BUNDLE: "TestResults-${{ matrix.test_suite.run_source }}.xcresult"
-          SUITE_NAME: ${{ matrix.test_suite.name }}
+          RESULT_BUNDLE: "TestResults-${{ matrix.test_suite.run_source }}${{ matrix.target.suffix }}.xcresult"
+          SUITE_NAME: "${{ matrix.test_suite.name }} (${{ matrix.target.name }})"
         run: python3 scripts/check-test-run.py "$RESULT_BUNDLE" "$SUITE_NAME"
 
+      # The artifact name must include the target suffix: upload-artifact@v4
+      # errors on duplicate names, and both targets share a run_source.
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.test_suite.run_source }}
+          name: test-results-${{ matrix.test_suite.run_source }}${{ matrix.target.suffix }}
           path: |
-            TestResults-${{ matrix.test_suite.run_source }}.xcresult
+            TestResults-${{ matrix.test_suite.run_source }}${{ matrix.target.suffix }}.xcresult
             TestResults-flush.xcresult
           retention-days: 3
           if-no-files-found: ignore
@@ -181,6 +242,6 @@ jobs:
       - name: Fail if dSYM upload failed
         if: always() && steps.dsyms.outcome == 'failure'
         run: |
-          echo "::error::dSYM upload failed — crashes from this build will not symbolicate."
-          echo "Check the EMBRACE_API_TOKEN secret and that APP_ID still exists." >&2
+          echo "::error::dSYM upload failed for target '${{ matrix.target.name }}' — crashes will not symbolicate."
+          echo "Check the ${{ matrix.target.token_secret }} secret and that ${{ matrix.target.app_id_var }} still exists." >&2
           exit 1
