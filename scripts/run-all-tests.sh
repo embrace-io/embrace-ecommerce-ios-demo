@@ -1,21 +1,32 @@
-#!/bin/bash
-# run-all-tests.sh
-# Runs ALL UI tests sequentially on the SAME simulator to create multiple sessions
-# for the same device (IDFV), which enables session stitching in Embrace dashboard.
+#!/usr/bin/env bash
+# Runs ALL UI tests sequentially on the SAME simulator to create multiple
+# sessions for one device identity (IDFV), which is what enables session
+# stitching in the Embrace dashboard.
 #
-# This is the iOS equivalent of Android's run-variants.sh
-
-set -e
+# The iOS equivalent of Android's run-variants.sh.
+#
+# Pass/fail accounting notes:
+#   * The old version wrapped xcodebuild in `if xcodebuild ... | tee ... | grep`,
+#     so the `if` tested grep's exit status rather than xcodebuild's, and the
+#     grep-based "Test case ... passed" detection depended on a log format that
+#     varies by Xcode version.
+#   * A nonzero xcodebuild exit does NOT mean breakage here: the flow tests call
+#     calculateAndCreateCrash(), which crashes the app on purpose in ~35% of
+#     runs. So this reports crashes as expected and only fails the run when a
+#     test never executed at all — see scripts/check-test-run.py.
+#   * `set -e` is deliberately not used: one bad test must not abort the
+#     remaining sessions.
+set -uo pipefail
 
 PROJECT_NAME="${PROJECT_NAME:-Embrace Ecommerce}"
 SCHEME="${SCHEME:-Embrace Ecommerce}"
 SIMULATOR_UDID="${SIMULATOR_UDID:-}"
 DERIVED_DATA_PATH="${DERIVED_DATA_PATH:-DerivedData}"
 
-# Define all test methods to run sequentially
-# Each test will create a new session on the same device
-# This mirrors Android's approach with multiple test classes:
-# - CheckoutFlowTestsSuccess, CheckoutFlowTestsFailure, etc.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Each test creates a new session on the same device. Mirrors Android's approach
+# of multiple test classes (CheckoutFlowTestsSuccess, ...Failure, etc).
 TESTS=(
     "testAuthenticationGuestFlow"
     "testBrowseFlow"
@@ -30,89 +41,85 @@ TESTS=(
     "testMultiSessionTimeline"
 )
 
-echo "================================================"
-echo "🧪 Running All Tests Sequentially on One Simulator"
-echo "================================================"
-echo ""
-echo "This creates multiple sessions for the same device,"
-echo "which will appear as stitched sessions in Embrace dashboard."
-echo ""
-
-# Verify simulator UDID is provided
 if [[ -z "$SIMULATOR_UDID" ]]; then
-    echo "❌ Error: SIMULATOR_UDID environment variable is required"
-    echo "Usage: SIMULATOR_UDID=<udid> ./run-all-tests.sh"
+    echo "ERROR: SIMULATOR_UDID is required." >&2
+    echo "Usage: SIMULATOR_UDID=<udid> scripts/run-all-tests.sh" >&2
     exit 1
 fi
 
-echo "📱 Simulator UDID: $SIMULATOR_UDID"
-echo "📂 Project: $PROJECT_NAME"
-echo "🔧 Scheme: $SCHEME"
-echo "📁 Derived Data: $DERIVED_DATA_PATH"
-echo "🧪 Tests to run: ${#TESTS[@]}"
-echo ""
-
-# Track results
-PASSED=0
-FAILED=0
 TOTAL=${#TESTS[@]}
 
-# Run each test sequentially on the same simulator
+echo "================================================"
+echo "Running all tests sequentially on one simulator"
+echo "================================================"
+echo "Simulator:    ${SIMULATOR_UDID}"
+echo "Project:      ${PROJECT_NAME}"
+echo "Scheme:       ${SCHEME}"
+echo "Derived data: ${DERIVED_DATA_PATH}"
+echo "Tests:        ${TOTAL}"
+echo ""
+echo "Multiple sessions on one device identity appear as stitched sessions."
+echo ""
+
+executed=0
+never_ran=0
+failed_tests=()
+
 for i in "${!TESTS[@]}"; do
     test_method="${TESTS[$i]}"
     test_num=$((i + 1))
+    result_bundle="result-${test_method}.xcresult"
+    log_file="result-${test_method}.txt"
 
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo "🧪 Test $test_num of $TOTAL: $test_method"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo "------------------------------------------------"
+    echo "Test ${test_num} of ${TOTAL}: ${test_method}"
+    echo "------------------------------------------------"
 
-    # Run the test
-    if xcodebuild test-without-building \
-        -project "$PROJECT_NAME.xcodeproj" \
-        -scheme "$SCHEME" \
-        -destination "platform=iOS Simulator,id=$SIMULATOR_UDID" \
-        -derivedDataPath "$DERIVED_DATA_PATH" \
-        -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/$test_method" \
-        -resultBundlePath "result-$test_method.xcresult" \
-        2>&1 | tee "result-$test_method.txt" | grep --line-buffered -E "(Test Suite|Test Case|passed|failed|Testing started)" || true; then
+    # Stale bundles make xcodebuild fail before it runs anything.
+    rm -rf "$result_bundle"
 
-        # Check if test actually passed by looking at the log
-        if grep -q "Test case.*$test_method.*passed" "result-$test_method.txt" 2>/dev/null; then
-            echo "✅ $test_method PASSED"
-            PASSED=$((PASSED + 1))
-        elif grep -q "Test case.*$test_method.*failed" "result-$test_method.txt" 2>/dev/null; then
-            echo "❌ $test_method FAILED"
-            FAILED=$((FAILED + 1))
-        else
-            echo "⚠️  $test_method completed with unknown status"
-            FAILED=$((FAILED + 1))
-        fi
+    # Full output goes to the log; progress lines stay on stdout so the CI job
+    # is not silent for minutes. PIPESTATUS[0] is xcodebuild's status — plain $?
+    # would report grep's, which was the original bug here.
+    xcodebuild test-without-building \
+        -project "${PROJECT_NAME}.xcodeproj" \
+        -scheme "${SCHEME}" \
+        -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+        -derivedDataPath "${DERIVED_DATA_PATH}" \
+        -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/${test_method}" \
+        -resultBundlePath "${result_bundle}" 2>&1 \
+        | tee "$log_file" \
+        | grep --line-buffered -E "Test Suite|Test [Cc]ase|Testing started|error:" || true
+    xcodebuild_status=${PIPESTATUS[0]}
+
+    echo "xcodebuild exit status: ${xcodebuild_status} (nonzero is expected when the app crashes on purpose)"
+
+    if python3 "${SCRIPT_DIR}/check-test-run.py" "$result_bundle" "$test_method"; then
+        executed=$((executed + 1))
     else
-        echo "❌ $test_method FAILED"
-        FAILED=$((FAILED + 1))
+        echo "ERROR: ${test_method} produced no executed tests" >&2
+        tail -30 "$log_file" >&2
+        never_ran=$((never_ran + 1))
+        failed_tests+=("$test_method")
     fi
 
-    # Brief pause between tests to allow SDK to flush data
-    echo "⏳ Waiting 5 seconds for SDK to upload session data..."
+    # Give the SDK a moment to upload the session before the next launch.
+    echo "Waiting 5s for session upload..."
     sleep 5
-
     echo ""
 done
 
 echo "================================================"
-echo "📊 Final Results"
+echo "Results"
 echo "================================================"
-echo ""
-echo "✅ Passed: $PASSED"
-echo "❌ Failed: $FAILED"
-echo "📊 Total:  $TOTAL"
-echo ""
+echo "Executed:  ${executed} / ${TOTAL}"
+echo "Never ran: ${never_ran}"
 
-if [[ $FAILED -eq 0 ]]; then
-    echo "🎉 All tests passed! Multiple sessions created on the same device."
-    echo "Check the Embrace dashboard to see stitched sessions."
-    exit 0
-else
-    echo "⚠️  Some tests failed. Check result-*.txt for details."
+if (( never_ran > 0 )); then
+    echo "Tests that never executed: ${failed_tests[*]}" >&2
+    echo "This indicates real breakage (missing test, stale build, wedged simulator)." >&2
     exit 1
 fi
+
+echo ""
+echo "All ${TOTAL} tests executed. Check the Embrace dashboard for stitched sessions."

@@ -1,17 +1,20 @@
 name: Crash Tests
 
-# Dedicated workflow that deterministically triggers crashes and flushes
-# the crash reports on the same simulator. Runs 5 crash+flush cycles to
-# populate all 5 crash types on the Embrace dashboard.
-
+# Deterministically triggers crashes and flushes the reports on the same
+# simulator. Runs 5 crash+flush cycles to populate the crash types on the
+# Embrace dashboard.
 on:
   schedule:
     - cron: '15 */3 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PROJECT_NAME: "Embrace Ecommerce"
   SCHEME_NAME: "Embrace Ecommerce"
+  # Pinned image: macos-latest moved to macOS 26, which does not ship Xcode 16.x.
   XCODE_VERSION: "16.4"
   DEVICE_NAME: "iPhone 16"
 
@@ -22,68 +25,63 @@ concurrency:
 jobs:
   crash-and-flush:
     name: "Crash Tests (5 cycles)"
-    runs-on: macos-latest
-    timeout-minutes: 60
+    runs-on: macos-15
+    timeout-minutes: 75
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
       - name: Select Xcode version
-        run: |
-          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
-          xcodebuild -version
+        run: bash scripts/select-xcode.sh
 
-      - name: Configure Embrace App ID
-        run: |
-          if [[ -n "${{ vars.APP_ID }}" ]]; then
-            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
-            echo "Embrace APP_ID configured"
-          else
-            echo "ERROR: APP_ID variable not found"
-            exit 1
-          fi
+      - name: Configure Embrace app ID
+        env:
+          APP_ID: ${{ vars.APP_ID }}
+        run: bash scripts/configure-app-id.sh
 
+      # Must precede the build: RUN_SOURCE is a compile-time literal.
       - name: Configure RUN_SOURCE
-        run: |
-          sed -i '' 's/"RUN_SOURCE": "[^"]*"/"RUN_SOURCE": "crash-test"/' "${{ env.PROJECT_NAME }}UITests/Embrace_EcommerceUITests.swift"
-          echo "RUN_SOURCE set to crash-test"
+        env:
+          RUN_SOURCE: "crash-test"
+        run: bash scripts/configure-run-source.sh
 
       - name: Enable Embrace debug logging for crash diagnostics
         run: |
-          sed -i '' 's/logLevel: .info/logLevel: .debug/' "${{ env.PROJECT_NAME }}/Embrace_EcommerceApp.swift"
+          app_file="${PROJECT_NAME}/Embrace_EcommerceApp.swift"
+          sed -i '' 's/logLevel: \.info/logLevel: .debug/' "$app_file"
+          grep -q "logLevel: .debug" "$app_file" || {
+            echo "ERROR: failed to raise Embrace log level in ${app_file}" >&2
+            grep -n "logLevel" "$app_file" >&2 || true
+            exit 1
+          }
           echo "Embrace logLevel set to .debug"
 
-      - name: Cache SPM dependencies
+      - name: Cache Swift Package Manager dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            DerivedData/SourcePackages
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          path: DerivedData/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-spm-
 
       - name: Setup simulator
-        id: setup_simulator
+        id: simulator
         run: |
-          SIMULATOR_UDID=$(xcrun simctl list devices available | grep -w "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro\|16e" | head -1 | grep -o '[A-F0-9-]\{36\}')
-          if [[ -z "$SIMULATOR_UDID" ]]; then
-            SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
-          fi
-          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
-          echo "Found simulator: $SIMULATOR_UDID"
-
-          xcrun simctl boot "$SIMULATOR_UDID" 2>/dev/null || true
-          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
-          echo "Simulator booted"
+          # Assign first: `echo "udid=$(...)"` would mask a nonzero exit from the
+          # script and hand the next step an empty UDID.
+          udid="$(bash scripts/find-simulator.sh "$DEVICE_NAME" --boot)"
+          echo "udid=${udid}" >> "$GITHUB_OUTPUT"
 
       - name: Build for testing
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
           xcodebuild build-for-testing \
-            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
-            -scheme "${{ env.SCHEME_NAME }}" \
-            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
-            -derivedDataPath "DerivedData" \
+            -project "${PROJECT_NAME}.xcodeproj" \
+            -scheme "${SCHEME_NAME}" \
+            -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -derivedDataPath DerivedData \
             -configuration Debug \
             -skipMacroValidation \
             -allowProvisioningUpdates \
@@ -96,22 +94,12 @@ jobs:
         env:
           EMBRACE_APP: ${{ vars.APP_ID }}
           EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
-        run: |
-          curl -sL -o embrace_support.zip https://downloads.embrace.io/embrace_support.zip
-          unzip -o embrace_support.zip
-          chmod +x embrace_symbol_upload.darwin
-
-          find "DerivedData/Build/Products" -type d -name "*.dSYM" -print0 | while IFS= read -r -d '' dsym_dir; do
-            find "${dsym_dir}/Contents/Resources/DWARF" -type f -print0 2>/dev/null | while IFS= read -r -d '' dwarf_file; do
-              echo "Uploading dSYM: ${dwarf_file}"
-              ./embrace_symbol_upload.darwin --dsym "${dwarf_file}" || echo "Warning: upload failed for ${dwarf_file}"
-            done
-          done
+        run: bash scripts/upload-dsyms.sh DerivedData/Build/Products
 
       - name: Start host log capture
         run: |
-          # SDK uses os_log with subsystem "com.embrace.logger".
-          # Debug-level os_log requires explicit --level debug to capture.
+          # The SDK logs via os_log with subsystem "com.embrace.logger".
+          # Debug-level os_log requires an explicit --level debug to capture.
           log stream --level debug --style compact \
             --predicate 'subsystem == "com.embrace.logger"' \
             > host_embrace.log 2>&1 &
@@ -119,67 +107,106 @@ jobs:
           echo "Started host log stream (PID: $(cat /tmp/host_log_pid))"
 
       - name: "Run 5 crash+flush cycles"
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
-          SIM_DEST="platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}"
+          set -uo pipefail
+
+          SIM_DEST="platform=iOS Simulator,id=${SIMULATOR_UDID}"
           CRASH_TEST="Embrace EcommerceUITests/Embrace_EcommerceUITests/testCrashA_Force"
           FLUSH_TEST="Embrace EcommerceUITests/Embrace_EcommerceUITests/testCrashB_Flush"
-          PASSED=0
-          FAILED=0
+
+          mkdir -p Results
+          flushed=0
+          broken=0
 
           # Two-phase pattern (mirrors Android's two-am-instrument approach):
           # Phase A runs only the crash test; xcodebuild exits, leaving the
           # KSCrash payload on disk. Phase B is a fresh xcodebuild invocation
           # (fresh xctest runner, fresh app cold-start) so the SDK reads and
           # ships the pending crash tied to the persisted session.
-          # Do NOT uninstall, erase, or shutdown the simulator between phases —
+          # Do NOT uninstall, erase, or shut down the simulator between phases —
           # the on-disk payload must survive.
           for i in 1 2 3 4 5; do
             echo ""
             echo "========================================"
-            echo "  Crash cycle $i of 5"
+            echo "  Crash cycle ${i} of 5"
             echo "========================================"
 
-            echo "--- Phase A: trigger crash ---"
+            echo "--- Phase A: trigger crash (nonzero exit expected) ---"
+            rm -rf "Results/cycle-${i}-crash.xcresult"
             xcodebuild test-without-building \
-              -project "${{ env.PROJECT_NAME }}.xcodeproj" \
-              -scheme "${{ env.SCHEME_NAME }}" \
+              -project "${PROJECT_NAME}.xcodeproj" \
+              -scheme "${SCHEME_NAME}" \
               -destination "$SIM_DEST" \
-              -derivedDataPath "DerivedData" \
+              -derivedDataPath DerivedData \
               -only-testing:"$CRASH_TEST" \
-              -resultBundlePath "Results/cycle-$i-crash" 2>&1 || true
+              -resultBundlePath "Results/cycle-${i}-crash.xcresult" 2>&1 || true
 
-            # Let KSCrash finish flushing the payload to disk before we
-            # cold-start a new test runner.
+            # Let KSCrash finish writing the payload before a new runner
+            # cold-starts the app.
             sleep 15
 
-            echo "--- Phase B: cold-start to flush pending crash ---"
+            echo "--- Phase B: cold-start to flush the pending crash ---"
+            rm -rf "Results/cycle-${i}-flush.xcresult"
             xcodebuild test-without-building \
-              -project "${{ env.PROJECT_NAME }}.xcodeproj" \
-              -scheme "${{ env.SCHEME_NAME }}" \
+              -project "${PROJECT_NAME}.xcodeproj" \
+              -scheme "${SCHEME_NAME}" \
               -destination "$SIM_DEST" \
-              -derivedDataPath "DerivedData" \
+              -derivedDataPath DerivedData \
               -only-testing:"$FLUSH_TEST" \
-              -resultBundlePath "Results/cycle-$i-flush" 2>&1 || true
+              -resultBundlePath "Results/cycle-${i}-flush.xcresult" 2>&1 || true
 
-            echo "Cycle $i: completed"
-            PASSED=$((PASSED + 1))
+            # Phase B is the real health signal: it must not crash, so if it
+            # executed, the cycle did its job. The old version incremented
+            # PASSED unconditionally and never assigned FAILED, so it always
+            # reported "5 completed, 0 failed" even when nothing ran.
+            if python3 scripts/check-test-run.py \
+                "Results/cycle-${i}-flush.xcresult" "cycle ${i} flush"; then
+              flushed=$((flushed + 1))
+            else
+              echo "::warning::Cycle ${i} flush phase did not execute"
+              broken=$((broken + 1))
+            fi
+
             sleep 5
           done
 
           echo ""
           echo "========================================"
-          echo "  Results: $PASSED completed, $FAILED failed"
+          echo "  Cycles flushed: ${flushed} / 5 (broken: ${broken})"
           echo "========================================"
+
+          {
+            echo "## Crash Test Results"
+            echo ""
+            echo "- **Cycles with a completed flush phase:** ${flushed} / 5"
+            echo "- **Cycles that failed to run:** ${broken}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if (( flushed == 0 )); then
+            echo "ERROR: no cycle completed its flush phase — crashes were not shipped." >&2
+            exit 1
+          fi
 
       - name: Analyze logs
         if: always()
         run: |
-          kill $(cat /tmp/host_log_pid) 2>/dev/null || true
+          if [[ -f /tmp/host_log_pid ]]; then
+            kill "$(cat /tmp/host_log_pid)" 2>/dev/null || true
+          fi
           sleep 2
+
+          if [[ ! -f host_embrace.log ]]; then
+            echo "No host log was captured."
+            exit 0
+          fi
+
           echo "=== Host log lines: $(wc -l < host_embrace.log) ==="
           echo ""
           echo "=== Upload / session / crash related ==="
-          grep -i -E "upload|session|crash|unsent|span|Status:|error|warn" host_embrace.log | tail -200 || echo "No matching lines"
+          grep -i -E "upload|session|crash|unsent|span|Status:|error|warn" host_embrace.log \
+            | tail -200 || echo "No matching lines"
           echo ""
           echo "=== First 50 lines ==="
           head -50 host_embrace.log || true
@@ -197,6 +224,10 @@ jobs:
 
       - name: Cleanup
         if: always()
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
           killall Simulator 2>/dev/null || true
-          xcrun simctl shutdown "${{ steps.setup_simulator.outputs.simulator_udid }}" 2>/dev/null || true
+          if [[ -n "$SIMULATOR_UDID" ]]; then
+            xcrun simctl shutdown "$SIMULATOR_UDID" 2>/dev/null || true
+          fi

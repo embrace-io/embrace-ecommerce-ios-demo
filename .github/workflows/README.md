@@ -1,185 +1,232 @@
 # GitHub Workflows Documentation
 
-This directory contains CI/CD workflows for the Embrace Ecommerce iOS application, designed to generate diverse sessions for the Embrace dashboard.
+CI/CD workflows for the Embrace Ecommerce iOS demo app. Their job is to generate
+diverse, realistic sessions — including crashes — for the Embrace dashboard.
 
 ## Architecture Overview
 
+Each workflow is self-contained: it builds from source, uploads its own dSYMs,
+then runs its tests.
+
 ```
-Push to main
-     |
-     v
-+------------+
-| build.yml  |  Build once, upload artifacts
-+------------+
-     |
-     +----------------+----------------+
-     |                                 |
-     v                                 v
-+-----------------+          +-------------------+
-| ci-scheduled.yml|          | ci-full-matrix.yml|
-| Every 3 hours   |          | Manual trigger    |
-| 1 device        |          | 3+ devices        |
-| 3 tests         |          | 5 tests           |
-+-----------------+          +-------------------+
+build.yml            ci-scheduled.yml     one-simulator.yml    ci-crash-tests.yml   ci-full-matrix.yml
+push to main         every 2h (:00)       every 2h (:30)       every 3h (:15)       manual
+     |                    |                    |                    |                    |
+     v                    v                    v                    v                    v
+build + dSYMs        3 parallel jobs      11 tests, ONE        5 crash+flush        18 jobs
+(compile check)      1 test each          simulator            cycles               (3 devices x 6 tests)
+                     non-stitched         stitched             crash reports        per-device tagging
 ```
+
+There is deliberately **no shared prebuilt bundle** between workflows.
+`RUN_SOURCE` is compiled into the UI test binary, so reusing one build would tag
+every session identically and defeat the per-workflow attribution below. This
+repo is public, so Actions minutes are free; the cost of building per job is wall
+clock, not money.
+
+## Pass/fail semantics — read this before debugging a red job
+
+The flow tests call `calculateAndCreateCrash()`, which **crashes the app on
+purpose in roughly 35% of runs**. XCTest reports that as a test failure, so a
+nonzero `xcodebuild` exit is expected and is deliberately ignored.
+
+`scripts/check-test-run.py` draws the real line:
+
+| Situation | Job result |
+|---|---|
+| Test executed, app crashed intentionally | green (crash count noted in the run summary) |
+| Test executed, unexpected assertion/timeout failure | green, plus a `::warning` in the run summary |
+| Test never executed (missing test, stale build, wedged simulator) | **red** |
+| Build failure, no simulator, or zero dSYMs uploaded | **red** |
+
+So: red means the pipeline is broken, not that the app crashed. Every job writes
+an executed/passed/failed/skipped line to its run summary.
 
 ## Workflows
 
-### 1. `build.yml` - Build Artifacts
+### `build.yml` — Build and Upload Symbols
 
-**Purpose**: Builds the app and uploads test artifacts for reuse by other workflows.
+**Purpose**: compile check on every push, and keep dSYMs uploaded so crashes from
+that commit symbolicate.
 
-**Triggers**:
-- Push to `main` branch
-- Manual dispatch
+**Triggers**: push to `main`, manual dispatch.
 
-**What it does**:
-1. Configures Embrace APP_ID
-2. Builds using `xcodebuild build-for-testing`
-3. Uploads build artifacts (retained for 7 days)
-
-**Artifacts produced**:
-- `test-build-artifacts` - Full build products
-- `xctestrun-file` - Test configuration
+It no longer publishes `test-build-artifacts` / `xctestrun-file`. Those were
+consumed by the scheduled workflows, but the scheme never worked: `build.yml`
+only ran on push, artifacts expire after 7 days, and the last push preceded the
+scheduled runs by months — so the consumers always fell back to building from
+source anyway.
 
 ---
 
-### 2. `ci-scheduled.yml` - Scheduled Tests (Lightweight)
+### `ci-scheduled.yml` — Scheduled Tests (Lightweight)
 
-**Purpose**: Maintains steady flow of diverse sessions to the Embrace dashboard.
+**Purpose**: steady session flow to the dashboard.
 
-**Triggers**:
-- Every 3 hours (cron: `0 */3 * * *`)
-- Manual dispatch
+**Triggers**: every 2 hours (`0 */2 * * *`), manual dispatch.
 
-**Configuration**:
+**Device**: iPhone 16. Each suite runs as its own job on its own simulator, so
+each gets a distinct device identity — these are the **non-stitched** sessions.
+
 | Test | RUN_SOURCE |
-|------|------------|
-| Guest Auth | `scheduled-auth` |
-| Browse Products | `scheduled-browse` |
-| Search | `scheduled-search` |
+|---|---|
+| `testBrowseFlow` | `scheduled-browse` |
+| `testAuthenticationGuestFlow` | `scheduled-auth` |
+| `testCheckoutFlow` | `scheduled-checkout` |
 
-**Device**: iPhone 16 (single device for efficiency)
-
-**Session output**: ~24 sessions/day (8 runs x 3 tests)
-
-**Key feature**: Downloads pre-built artifacts from `build.yml` when available, falls back to building from source if not.
+Each job ends with a flush run (`testQuickBrowseAndLeave`) on the same simulator
+so any crash report from the main test gets shipped.
 
 ---
 
-### 3. `ci-full-matrix.yml` - Full Matrix Tests
+### `one-simulator.yml` — One Simulator (Session Stitching)
 
-**Purpose**: Comprehensive testing across multiple devices and all test suites. Use before demos or for thorough validation.
+**Purpose**: multiple sessions sharing one device identity (IDFV), which is what
+produces **stitched** sessions. The iOS counterpart to Android's
+`one-emulator.yml`.
 
-**Triggers**:
-- Manual dispatch only
-- Optional input: `include_ipad` (adds iPad tests)
+**Triggers**: every 2 hours at `:30` (`30 */2 * * *`), offset from
+`ci-scheduled.yml` so the dashboard sees a mix of stitched and non-stitched
+traffic.
 
-**Device Matrix**:
-| Device | Type |
-|--------|------|
-| iPhone 16 | Standard |
-| iPhone 16 Pro | Pro tier |
-| iPhone SE (3rd generation) | Compact |
-| iPad (optional) | Tablet |
+Runs all 11 tests sequentially via `scripts/run-all-tests.sh`, all tagged
+`one-simulator-stitched`.
 
-**Test Matrix**:
-| Test | RUN_SOURCE Pattern |
-|------|-------------------|
+---
+
+### `ci-crash-tests.yml` — Crash Tests
+
+**Purpose**: deterministically populate crash data.
+
+**Triggers**: every 3 hours at `:15` (`15 */3 * * *`), manual dispatch.
+
+Runs 5 crash+flush cycles, tagged `crash-test`, with Embrace log level raised to
+`.debug` and host `os_log` capture (subsystem `com.embrace.logger`) attached as
+an artifact.
+
+Each cycle is two phases, mirroring Android's two-`am instrument` approach:
+
+1. **Phase A** runs only `testCrashA_Force`; xcodebuild exits leaving the KSCrash
+   payload on disk.
+2. **Phase B** is a *fresh* xcodebuild invocation running `testCrashB_Flush`, so
+   the app cold-starts and the SDK ships the pending crash against the persisted
+   session.
+
+Do not uninstall, erase, or shut down the simulator between phases — the on-disk
+payload has to survive. Phase B is the health signal, since it must not crash.
+
+---
+
+### `ci-full-matrix.yml` — Full Matrix Tests
+
+**Purpose**: broad device/test coverage before demos or releases.
+
+**Triggers**: manual dispatch only. Optional `include_ipad` input.
+
+A `symbols` job builds once and uploads dSYMs (also failing fast if the build is
+broken); the 18 test jobs then each build from source so they can carry their own
+tag.
+
+**Devices**: iPhone 16, iPhone 16 Pro, iPhone SE (3rd generation), plus iPad Pro
+when `include_ipad` is set.
+
+| Test | RUN_SOURCE pattern |
+|---|---|
 | Guest Auth | `matrix-auth-{device}` |
 | Browse Flow | `matrix-browse-{device}` |
 | Add to Cart | `matrix-cart-{device}` |
 | Search Flow | `matrix-search-{device}` |
-| Main Flow | `matrix-main-{device}` |
+| Checkout Flow | `matrix-checkout-{device}` |
+| Multi-Session Timeline | `matrix-timeline-{device}` |
 
-**Session output**: 15 unique sessions per run (3 devices x 5 tests), or 18 with iPad enabled.
-
----
-
-## Setup Instructions
-
-### Required Repository Variables
-
-1. Go to repository **Settings**
-2. Navigate to: **Secrets and variables > Actions > Variables**
-3. Add:
-   - `APP_ID`: Your Embrace App ID
-
-### Running Workflows
-
-**Scheduled (automatic)**:
-- `ci-scheduled.yml` runs every 3 hours automatically
-
-**Manual trigger**:
-1. Go to **Actions** tab
-2. Select the workflow
-3. Click **Run workflow**
-4. For `ci-full-matrix.yml`, optionally check "Include iPad"
+**Output**: 18 tagged sessions per run (3 devices x 6 tests), 21 with iPad.
 
 ---
 
-## Available Test Methods
+## Shared scripts
 
-| Test Method | Description | User Journey |
-|-------------|-------------|--------------|
-| `testAuthenticationGuestFlow` | Guest login flow | Auth -> Guest -> Home |
-| `testBrowseFlow` | Product browsing | Home -> Products -> Detail |
-| `testAddToCartFlow` | Shopping cart | Home -> Product -> Cart |
-| `testSearchFlow` | Search functionality | Home -> Search -> Results |
-| `testFlow` | Adaptive main flow | Detects screen, performs action |
+Workflow logic lives in `scripts/` so a fix lands once instead of five times.
 
----
+| Script | Responsibility |
+|---|---|
+| `select-xcode.sh` | Selects `XCODE_VERSION`, falling back to the newest installed Xcode |
+| `find-simulator.sh` | Resolves a UDID by exact device name, optionally boots it, fails loudly when absent |
+| `configure-app-id.sh` | Writes the `APP_ID` variable into `SDKConfiguration.swift` and verifies it |
+| `configure-run-source.sh` | Stamps `RUN_SOURCE` into the UI test source and verifies it |
+| `upload-dsyms.sh` | Uploads every dSYM; fails if none were uploaded |
+| `check-test-run.py` | Decides whether a run was actually broken (see semantics above) |
+| `run-all-tests.sh` | Sequential all-test run for session stitching |
 
-## Session Diversity
+## Runner and Xcode pinning
 
-Each workflow generates sessions with unique `RUN_SOURCE` values for easy filtering in the Embrace dashboard:
+All macOS jobs pin `runs-on: macos-15` with `XCODE_VERSION: "16.4"`.
 
-**Scheduled sessions**:
-- `scheduled-auth`
-- `scheduled-browse`
-- `scheduled-search`
+Every workflow previously used `macos-latest` and hardcoded
+`sudo xcode-select -s /Applications/Xcode_16.4.app`. When `macos-latest` moved to
+macOS 26 — which ships only Xcode 26.x — every scheduled run died within 30
+seconds on `invalid developer directory`. `select-xcode.sh` now degrades to the
+newest available Xcode instead of hard-failing, but the pin is the primary
+defense. When `macos-15` is eventually retired, bump both values together and
+confirm the app still builds on the newer Xcode.
 
-**Full matrix sessions** (examples):
-- `matrix-auth-16`
-- `matrix-browse-16-pro`
-- `matrix-cart-se-3rd-generation`
-- `matrix-search-ipad`
+## Setup
 
----
+**Repository variable** (Settings > Secrets and variables > Actions > Variables):
+
+- `APP_ID` — the Embrace app ID.
+
+**Repository secret** (same page, Secrets tab):
+
+- `EMBRACE_API_TOKEN` — required for dSYM upload. Jobs fail if it is missing,
+  rather than silently shipping unsymbolicated crashes.
+
+## Available test methods
+
+| Test method | User journey |
+|---|---|
+| `testAuthenticationGuestFlow` | Auth -> Guest -> Home |
+| `testBrowseFlow` | Home -> Products -> Detail |
+| `testAddToCartFlow` | Home -> Product -> Cart |
+| `testCheckoutFlow` | Cart -> Checkout -> Confirmation |
+| `testSearchFlow` | Home -> Search -> Results |
+| `testQuickBrowseAndLeave` | Short session, also used as the crash flush |
+| `testAbandonedCartFlow` | Adds to cart, leaves |
+| `testProfileViewFlow` | Profile screen |
+| `testRepeatProductBrowsing` | Repeated product views |
+| `testHomeToSearchToCartFlow` | Multi-screen journey |
+| `testMultiSessionTimeline` | Several background/foreground sessions |
+| `testCrashA_Force` / `testCrashB_Flush` | Deterministic crash + flush pair |
+| `testFlow` | Adaptive: detects the current screen and acts |
 
 ## Troubleshooting
 
-### Build Failures
+**`xcode-select: error: invalid developer directory`**
+The pinned runner image no longer ships `XCODE_VERSION`. See *Runner and Xcode
+pinning* above.
 
-**Simulator Not Found**:
-- Verify device names match available simulators in Xcode
-- Check `xcrun simctl list devices available`
+**Job red with "executed 0 tests"**
+The test never ran. Check the test name against the target's methods, and check
+the build step and simulator boot above it.
 
-**APP_ID Not Configured**:
-- Ensure `APP_ID` is set in repository variables
-- Check Settings > Secrets and variables > Actions > Variables
+**"no dSYMs were uploaded"**
+The build lost `DEBUG_INFORMATION_FORMAT=dwarf-with-dsym`, or
+`EMBRACE_API_TOKEN` is missing or invalid.
 
-### Test Failures
+**"no available simulator matching ..."**
+The device name is not on the runner image. The failing step prints the full
+available device list; match a name from it exactly.
 
-**Artifacts Not Found** (ci-scheduled.yml):
-- Workflow falls back to building from source
-- Ensure `build.yml` has run successfully at least once
+**Sessions all tagged `UITest` on the dashboard**
+`RUN_SOURCE` was not stamped before the build. It is a compile-time literal, so
+`configure-run-source.sh` must run *before* `build-for-testing`.
 
-**RUN_SOURCE Issues**:
-- Verify `RUN_SOURCE` exists in test file launch environment
-- Check sed command paths match project structure
+## Cost
 
----
-
-## Cost Considerations
-
-This repository is **public**, so GitHub Actions minutes are unlimited. The architecture is still optimized for efficiency:
-
-- **build.yml**: Runs once per push, artifacts shared
-- **ci-scheduled.yml**: Lightweight, reuses artifacts
-- **ci-full-matrix.yml**: Manual only, avoids unnecessary runs
-
----
+The repository is public, so GitHub Actions minutes are unlimited. That is what
+makes building per job the right trade over sharing a fragile prebuilt bundle. If
+wall-clock time ever becomes the constraint, the fix is to read `RUN_SOURCE` at
+runtime (via `ProcessInfo` in the UI test) instead of compiling it in — that
+would make one shared build safe to reuse across all jobs.
 
 ## Links
 

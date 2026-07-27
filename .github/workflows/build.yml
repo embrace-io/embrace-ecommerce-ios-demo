@@ -1,77 +1,82 @@
-name: Build Test Artifacts
+name: Build and Upload Symbols
 
-# Triggers on push to main or manual dispatch
+# Verifies the app and UI test bundle compile on every push to main, and keeps
+# dSYMs uploaded to Embrace so crashes from that commit symbolicate.
+#
+# This workflow used to publish test-build-artifacts / xctestrun-file for the
+# scheduled workflows to reuse. That never worked in practice: it only ran on
+# push, artifacts expire after 7 days, and the last push was months before the
+# schedules ran — so the consumers always fell back to building from source.
+# Worse, reusing a prebuilt bundle silently defeated the per-workflow RUN_SOURCE
+# tagging, because RUN_SOURCE is compiled into the UI test binary. The consumers
+# now build from source (Actions minutes are free on this public repo), so the
+# artifacts are gone.
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PROJECT_NAME: "Embrace Ecommerce"
   SCHEME_NAME: "Embrace Ecommerce"
+  # Pinned image: macos-latest moved to macOS 26, which does not ship Xcode 16.x.
+  # scripts/select-xcode.sh falls back to the newest available Xcode if this
+  # version disappears from the image.
   XCODE_VERSION: "16.4"
-  DERIVED_DATA_PATH: "DerivedData"
+  DEVICE_NAME: "iPhone 16"
 
-# Prevent multiple builds from running simultaneously
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   build:
-    name: Build for Testing
-    runs-on: macos-latest
-    timeout-minutes: 30
+    name: Build and Upload Symbols
+    runs-on: macos-15
+    timeout-minutes: 40
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
       - name: Select Xcode version
-        run: |
-          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
-          xcodebuild -version
-          swift --version
+        run: bash scripts/select-xcode.sh
 
-      - name: Configure Embrace App ID
-        run: |
-          if [[ -n "${{ vars.APP_ID }}" ]]; then
-            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
-            echo "Embrace APP_ID configured"
-          else
-            echo "ERROR: APP_ID variable not found in repository variables"
-            echo "Please add APP_ID to your repository variables at: Settings > Secrets and variables > Actions > Variables"
-            exit 1
-          fi
+      - name: Configure Embrace app ID
+        env:
+          APP_ID: ${{ vars.APP_ID }}
+        run: bash scripts/configure-app-id.sh
 
       - name: Cache Swift Package Manager dependencies
         uses: actions/cache@v4
         with:
-          path: |
-            ~/Library/Developer/Xcode/DerivedData/*/SourcePackages/checkouts
-            .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('${{ env.PROJECT_NAME }}.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved') }}
+          # SPM checkouts land under the -derivedDataPath, not the default
+          # DerivedData location the old config cached.
+          path: DerivedData/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
           restore-keys: |
             ${{ runner.os }}-spm-
 
       - name: Find simulator
-        id: find_simulator
+        id: simulator
         run: |
-          SIMULATOR_UDID=$(xcrun simctl list devices available | grep -w "iPhone 16" | grep -v "Plus\|Pro\|16e" | head -1 | grep -o '[A-F0-9-]\{36\}')
-          if [[ -z "$SIMULATOR_UDID" ]]; then
-            echo "iPhone 16 simulator not found, trying any iPhone"
-            SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
-          fi
-          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
-          echo "Found simulator: $SIMULATOR_UDID"
+          # Assign first: `echo "udid=$(...)"` would mask a nonzero exit from the
+          # script and hand the next step an empty UDID.
+          udid="$(bash scripts/find-simulator.sh "$DEVICE_NAME")"
+          echo "udid=${udid}" >> "$GITHUB_OUTPUT"
 
       - name: Build for testing
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
           xcodebuild build-for-testing \
-            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
-            -scheme "${{ env.SCHEME_NAME }}" \
-            -destination "platform=iOS Simulator,id=${{ steps.find_simulator.outputs.simulator_udid }}" \
-            -derivedDataPath "${{ env.DERIVED_DATA_PATH }}" \
+            -project "${PROJECT_NAME}.xcodeproj" \
+            -scheme "${SCHEME_NAME}" \
+            -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -derivedDataPath DerivedData \
             -configuration Debug \
             -skipMacroValidation \
             -allowProvisioningUpdates \
@@ -84,57 +89,16 @@ jobs:
         env:
           EMBRACE_APP: ${{ vars.APP_ID }}
           EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
-        run: |
-          # Download and extract the Embrace upload tool
-          curl -sL -o embrace_support.zip https://downloads.embrace.io/embrace_support.zip
-          unzip -o embrace_support.zip
-          chmod +x embrace_symbol_upload.darwin
-
-          # Find and upload all dSYM bundles (handles spaces in paths)
-          find "${{ env.DERIVED_DATA_PATH }}/Build/Products" -type d -name "*.dSYM" -print0 | while IFS= read -r -d '' dsym_dir; do
-            echo "Working on: ${dsym_dir}"
-            find "${dsym_dir}/Contents/Resources/DWARF" -type f -print0 2>/dev/null | while IFS= read -r -d '' dwarf_file; do
-              echo "Uploading: ${dwarf_file}"
-              ./embrace_symbol_upload.darwin --dsym "${dwarf_file}" || echo "Warning: upload failed for ${dwarf_file}, continuing..."
-            done
-          done
-
-      - name: Prepare artifacts
-        id: prepare_artifacts
-        run: |
-          # Find the xctestrun file
-          XCTESTRUN_FILE=$(find "${{ env.DERIVED_DATA_PATH }}/Build/Products" -name "*.xctestrun" | head -1)
-          echo "Found xctestrun: $XCTESTRUN_FILE"
-          echo "xctestrun_file=$XCTESTRUN_FILE" >> $GITHUB_OUTPUT
-
-          # List build products for verification
-          echo "Build products:"
-          ls -la "${{ env.DERIVED_DATA_PATH }}/Build/Products/"
-
-      - name: Upload test artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-build-artifacts
-          path: |
-            ${{ env.DERIVED_DATA_PATH }}/Build/Products/
-          retention-days: 7
-          if-no-files-found: error
-
-      - name: Upload xctestrun file
-        uses: actions/upload-artifact@v4
-        with:
-          name: xctestrun-file
-          path: ${{ env.DERIVED_DATA_PATH }}/Build/Products/*.xctestrun
-          retention-days: 7
-          if-no-files-found: error
+        run: bash scripts/upload-dsyms.sh DerivedData/Build/Products
 
       - name: Build summary
+        if: always()
         run: |
-          echo "## Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- **Project:** ${{ env.PROJECT_NAME }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Xcode:** ${{ env.XCODE_VERSION }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Artifacts:** test-build-artifacts, xctestrun-file" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Artifacts are available for 7 days for use by scheduled test workflows." >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Build Summary"
+            echo ""
+            echo "- **Project:** ${PROJECT_NAME}"
+            echo "- **Xcode:** $(xcodebuild -version | head -1)"
+            echo "- **Runner:** ${RUNNER_OS} (macos-15)"
+            echo "- **Commit:** ${GITHUB_SHA}"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,16 +1,27 @@
 name: Scheduled Tests (Lightweight)
 
-# Runs every 2 hours to maintain steady session flow to dashboard
-# Creates non-stitched sessions (1 session per device) to complement
-# one-simulator.yml which creates stitched sessions
+# Runs every 2 hours to maintain steady session flow to the dashboard.
+# Each test suite runs as its own job on its own simulator, so each produces a
+# distinct device identity — non-stitched sessions, complementing
+# one-simulator.yml which produces stitched ones.
+#
+# Each job builds from source. It previously tried to reuse artifacts from
+# build.yml, but RUN_SOURCE is compiled into the UI test binary, so a reused
+# build tagged every session "UITest" and defeated the point of the per-suite
+# tags below. Actions minutes are free on this public repo, so building per job
+# is the cheaper trade.
 on:
   schedule:
     - cron: '0 */2 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
   PROJECT_NAME: "Embrace Ecommerce"
   SCHEME_NAME: "Embrace Ecommerce"
+  # Pinned image: macos-latest moved to macOS 26, which does not ship Xcode 16.x.
   XCODE_VERSION: "16.4"
   DEVICE_NAME: "iPhone 16"
 
@@ -21,8 +32,9 @@ concurrency:
 jobs:
   run-tests:
     name: "${{ matrix.test_suite.name }}"
-    runs-on: macos-latest
-    timeout-minutes: 35
+    runs-on: macos-15
+    # Covers a from-source build (~10-20 min) plus the test and flush runs.
+    timeout-minutes: 60
 
     strategy:
       fail-fast: false
@@ -43,75 +55,44 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Select Xcode version
-        run: |
-          sudo xcode-select -s /Applications/Xcode_${{ env.XCODE_VERSION }}.app
-          xcodebuild -version
+        run: bash scripts/select-xcode.sh
 
-      - name: Download build artifacts
-        id: check_artifacts
+      - name: Configure Embrace app ID
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "Attempting to download artifacts from build.yml workflow..."
+          APP_ID: ${{ vars.APP_ID }}
+        run: bash scripts/configure-app-id.sh
 
-          # Get the latest successful build.yml run
-          RUN_ID=$(gh run list --workflow=build.yml --status=success --limit=1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || echo "")
-
-          if [[ -n "$RUN_ID" ]]; then
-            echo "Found successful build run: $RUN_ID"
-            mkdir -p DerivedData/Build/Products
-            gh run download "$RUN_ID" --name test-build-artifacts --dir DerivedData/Build/Products 2>/dev/null || true
-          fi
-
-          # Check if artifacts were downloaded
-          if [[ -d "DerivedData/Build/Products" ]] && [[ -n "$(ls -A DerivedData/Build/Products 2>/dev/null)" ]]; then
-            echo "artifacts_found=true" >> $GITHUB_OUTPUT
-            echo "Artifacts downloaded successfully"
-            ls -la DerivedData/Build/Products/
-          else
-            echo "artifacts_found=false" >> $GITHUB_OUTPUT
-            echo "No artifacts found, will build from source"
-          fi
-
-      - name: Configure Embrace App ID
-        run: |
-          if [[ -n "${{ vars.APP_ID }}" ]]; then
-            sed -i '' 's/static let appId = "YOUR_EMBRACE_APP_ID"/static let appId = "${{ vars.APP_ID }}"/' "${{ env.PROJECT_NAME }}/Services/SDKConfiguration.swift"
-            echo "Embrace APP_ID configured"
-          else
-            echo "ERROR: APP_ID variable not found"
-            exit 1
-          fi
-
+      # Must precede the build: RUN_SOURCE is a compile-time literal.
       - name: Configure RUN_SOURCE
-        run: |
-          sed -i '' 's/"RUN_SOURCE": "[^"]*"/"RUN_SOURCE": "${{ matrix.test_suite.run_source }}"/' "${{ env.PROJECT_NAME }}UITests/Embrace_EcommerceUITests.swift"
-          echo "RUN_SOURCE set to ${{ matrix.test_suite.run_source }}"
+        env:
+          RUN_SOURCE: ${{ matrix.test_suite.run_source }}
+        run: bash scripts/configure-run-source.sh
+
+      - name: Cache Swift Package Manager dependencies
+        uses: actions/cache@v4
+        with:
+          path: DerivedData/SourcePackages
+          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          restore-keys: |
+            ${{ runner.os }}-spm-
 
       - name: Setup simulator
-        id: setup_simulator
+        id: simulator
         run: |
-          SIMULATOR_UDID=$(xcrun simctl list devices available | grep -w "${{ env.DEVICE_NAME }}" | grep -v "Plus\|Pro\|16e" | head -1 | grep -o '[A-F0-9-]\{36\}')
-          if [[ -z "$SIMULATOR_UDID" ]]; then
-            echo "Simulator not found, trying any iPhone"
-            SIMULATOR_UDID=$(xcrun simctl list devices available | grep "iPhone" | head -1 | grep -o '[A-F0-9-]\{36\}')
-          fi
-          echo "simulator_udid=$SIMULATOR_UDID" >> $GITHUB_OUTPUT
-          echo "Found simulator: $SIMULATOR_UDID"
+          # Assign first: `echo "udid=$(...)"` would mask a nonzero exit from the
+          # script and hand the next step an empty UDID.
+          udid="$(bash scripts/find-simulator.sh "$DEVICE_NAME" --boot)"
+          echo "udid=${udid}" >> "$GITHUB_OUTPUT"
 
-          xcrun simctl boot "$SIMULATOR_UDID" 2>/dev/null || true
-          xcrun simctl bootstatus "$SIMULATOR_UDID" -b
-          echo "Simulator booted"
-
-      - name: Build for testing (fallback if no artifacts)
-        if: steps.check_artifacts.outputs.artifacts_found != 'true'
+      - name: Build for testing
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
-          echo "Building from source (no cached artifacts available)"
           xcodebuild build-for-testing \
-            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
-            -scheme "${{ env.SCHEME_NAME }}" \
-            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
-            -derivedDataPath "DerivedData" \
+            -project "${PROJECT_NAME}.xcodeproj" \
+            -scheme "${SCHEME_NAME}" \
+            -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -derivedDataPath DerivedData \
             -configuration Debug \
             -skipMacroValidation \
             -allowProvisioningUpdates \
@@ -120,59 +101,68 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             DEBUG_INFORMATION_FORMAT=dwarf-with-dsym
 
-      - name: Upload dSYMs to Embrace (fallback build only)
-        if: steps.check_artifacts.outputs.artifacts_found != 'true'
+      - name: Upload dSYMs to Embrace
         env:
           EMBRACE_APP: ${{ vars.APP_ID }}
           EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
-        run: |
-          curl -sL -o embrace_support.zip https://downloads.embrace.io/embrace_support.zip
-          unzip -o embrace_support.zip
-          chmod +x embrace_symbol_upload.darwin
+        run: bash scripts/upload-dsyms.sh DerivedData/Build/Products
 
-          find "DerivedData/Build/Products" -type d -name "*.dSYM" -print0 | while IFS= read -r -d '' dsym_dir; do
-            echo "Working on: ${dsym_dir}"
-            find "${dsym_dir}/Contents/Resources/DWARF" -type f -print0 2>/dev/null | while IFS= read -r -d '' dwarf_file; do
-              echo "Uploading: ${dwarf_file}"
-              ./embrace_symbol_upload.darwin --dsym "${dwarf_file}" || echo "Warning: upload failed for ${dwarf_file}, continuing..."
-            done
-          done
-
-      - name: Run test - ${{ matrix.test_suite.name }}
+      - name: Run test
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
+          TEST_TARGET: ${{ matrix.test_suite.target }}
+          RESULT_BUNDLE: "TestResults-${{ matrix.test_suite.run_source }}.xcresult"
         run: |
+          # The exit code is intentionally ignored: these flows call
+          # calculateAndCreateCrash(), which crashes the app on purpose in ~35% of
+          # runs, and XCTest reports that as a failure. The verification step
+          # below decides whether the run was actually broken.
           xcodebuild test-without-building \
-            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
-            -scheme "${{ env.SCHEME_NAME }}" \
-            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
-            -derivedDataPath "DerivedData" \
-            -only-testing:"${{ matrix.test_suite.target }}" \
-            -resultBundlePath "TestResults-${{ matrix.test_suite.run_source }}" || true
+            -project "${PROJECT_NAME}.xcodeproj" \
+            -scheme "${SCHEME_NAME}" \
+            -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -derivedDataPath DerivedData \
+            -only-testing:"${TEST_TARGET}" \
+            -resultBundlePath "${RESULT_BUNDLE}" || true
 
-      - name: Flush crash report (relaunch app on same simulator)
+      - name: Flush pending crash report
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
-          # If the previous test crashed, the crash report is stored on disk
-          # but not yet sent. Run a quick non-crashing test on the same
-          # simulator so the app relaunches and sends the pending report.
-          echo "Running follow-up test to flush any pending crash reports..."
+          # If the test above crashed, the report is on disk but unsent. Relaunch
+          # the app on the SAME simulator so the SDK ships it. Do not erase or
+          # reinstall between the two runs — the payload must survive.
           xcodebuild test-without-building \
-            -project "${{ env.PROJECT_NAME }}.xcodeproj" \
-            -scheme "${{ env.SCHEME_NAME }}" \
-            -destination "platform=iOS Simulator,id=${{ steps.setup_simulator.outputs.simulator_udid }}" \
-            -derivedDataPath "DerivedData" \
+            -project "${PROJECT_NAME}.xcodeproj" \
+            -scheme "${SCHEME_NAME}" \
+            -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -derivedDataPath DerivedData \
             -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/testQuickBrowseAndLeave" \
-            -resultBundlePath "TestResults-flush" || true
+            -resultBundlePath "TestResults-flush.xcresult" || true
+
+      - name: Verify the test actually ran
+        env:
+          RESULT_BUNDLE: "TestResults-${{ matrix.test_suite.run_source }}.xcresult"
+          SUITE_NAME: ${{ matrix.test_suite.name }}
+        run: python3 scripts/check-test-run.py "$RESULT_BUNDLE" "$SUITE_NAME"
 
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.test_suite.run_source }}
-          path: TestResults-${{ matrix.test_suite.run_source }}.xcresult
+          path: |
+            TestResults-${{ matrix.test_suite.run_source }}.xcresult
+            TestResults-flush.xcresult
           retention-days: 3
           if-no-files-found: ignore
 
       - name: Cleanup
         if: always()
+        env:
+          SIMULATOR_UDID: ${{ steps.simulator.outputs.udid }}
         run: |
           killall Simulator 2>/dev/null || true
-          xcrun simctl shutdown "${{ steps.setup_simulator.outputs.simulator_udid }}" 2>/dev/null || true
+          if [[ -n "$SIMULATOR_UDID" ]]; then
+            xcrun simctl shutdown "$SIMULATOR_UDID" 2>/dev/null || true
+          fi
