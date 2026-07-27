@@ -20,7 +20,10 @@ env:
 
 concurrency:
   group: crash-tests
-  cancel-in-progress: true
+  # Do not cancel a run in progress: a cancelled run loses its crash reports, and
+  # the two-phase crash+flush cycles cannot be resumed. ~45 min against a 3h
+  # cadence, so queueing is cheaper than cancelling.
+  cancel-in-progress: false
 
 jobs:
   crash-and-flush:

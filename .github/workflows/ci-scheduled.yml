@@ -27,7 +27,11 @@ env:
 
 concurrency:
   group: scheduled-tests
-  cancel-in-progress: true
+  # Do not cancel a run in progress. These runs exist to produce sessions, so
+  # killing one mid-test throws away both the build and the traffic it was about
+  # to generate. A run takes ~30 min against a 2h cadence, so overlap is rare and
+  # queueing is cheaper than cancelling.
+  cancel-in-progress: false
 
 jobs:
   run-tests:
