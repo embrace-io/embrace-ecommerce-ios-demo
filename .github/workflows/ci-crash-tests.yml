@@ -90,7 +90,12 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             DEBUG_INFORMATION_FORMAT=dwarf-with-dsym
 
+      # continue-on-error so a bad EMBRACE_API_TOKEN cannot stop the crash cycles.
+      # Unsymbolicated crashes still beat no crashes at all on the dashboard, and
+      # the gate at the end of the job still turns the run red.
       - name: Upload dSYMs to Embrace
+        id: dsyms
+        continue-on-error: true
         env:
           EMBRACE_APP: ${{ vars.APP_ID }}
           EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
@@ -231,3 +236,12 @@ jobs:
           if [[ -n "$SIMULATOR_UDID" ]]; then
             xcrun simctl shutdown "$SIMULATOR_UDID" 2>/dev/null || true
           fi
+
+      # Runs after the crash cycles so a symbol failure is reported without
+      # costing a run's worth of crash reports.
+      - name: Fail if dSYM upload failed
+        if: always() && steps.dsyms.outcome == 'failure'
+        run: |
+          echo "::error::dSYM upload failed — these crashes will not symbolicate."
+          echo "Check the EMBRACE_API_TOKEN secret and that APP_ID still exists." >&2
+          exit 1

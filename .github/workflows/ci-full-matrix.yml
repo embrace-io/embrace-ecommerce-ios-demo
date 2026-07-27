@@ -40,6 +40,9 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 40
 
+    outputs:
+      dsyms_outcome: ${{ steps.dsyms.outcome }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -85,7 +88,11 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             DEBUG_INFORMATION_FORMAT=dwarf-with-dsym
 
+      # continue-on-error so a bad EMBRACE_API_TOKEN does not fail this job and
+      # skip all 18 test jobs through `needs`. The summary job reports it instead.
       - name: Upload dSYMs to Embrace
+        id: dsyms
+        continue-on-error: true
         env:
           EMBRACE_APP: ${{ vars.APP_ID }}
           EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
@@ -338,3 +345,10 @@ jobs:
             echo "executed; an intentional app crash keeps the job green and is"
             echo "reported in that job's summary."
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Fail if dSYM upload failed
+        if: needs.symbols.outputs.dsyms_outcome == 'failure'
+        run: |
+          echo "::error::dSYM upload failed — crashes from this matrix will not symbolicate."
+          echo "Check the EMBRACE_API_TOKEN secret and that APP_ID still exists." >&2
+          exit 1

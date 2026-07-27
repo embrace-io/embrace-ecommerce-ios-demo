@@ -37,7 +37,13 @@ nonzero `xcodebuild` exit is expected and is deliberately ignored.
 | Test executed, app crashed intentionally | green (crash count noted in the run summary) |
 | Test executed, unexpected assertion/timeout failure | green, plus a `::warning` in the run summary |
 | Test never executed (missing test, stale build, wedged simulator) | **red** |
-| Build failure, no simulator, or zero dSYMs uploaded | **red** |
+| Build failure or no simulator | **red** (nothing useful can follow) |
+| Zero dSYMs uploaded | **red**, but only *after* the tests run |
+
+That last row matters: a dead `EMBRACE_API_TOKEN` must not cost a run's worth of
+sessions. The upload step is `continue-on-error` and a gate at the end of the job
+turns the run red, so traffic keeps flowing while the failure stays loud.
+Unsymbolicated sessions beat no sessions.
 
 So: red means the pipeline is broken, not that the app crashed. Every job writes
 an executed/passed/failed/skipped line to its run summary.

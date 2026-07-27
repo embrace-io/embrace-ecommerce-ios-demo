@@ -88,7 +88,12 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             DEBUG_INFORMATION_FORMAT=dwarf-with-dsym
 
+      # continue-on-error so a bad EMBRACE_API_TOKEN cannot stop session traffic:
+      # generating stitched sessions is this workflow's primary job, and
+      # symbolication is secondary. The gate at the end still turns the run red.
       - name: Upload dSYMs to Embrace
+        id: dsyms
+        continue-on-error: true
         env:
           EMBRACE_APP: ${{ vars.APP_ID }}
           EMBRACE_API_TOKEN: ${{ secrets.EMBRACE_API_TOKEN }}
@@ -121,3 +126,12 @@ jobs:
           if [[ -n "$SIMULATOR_UDID" ]]; then
             xcrun simctl shutdown "$SIMULATOR_UDID" 2>/dev/null || true
           fi
+
+      # Runs after the tests so a symbol failure is reported without costing a
+      # run's worth of sessions.
+      - name: Fail if dSYM upload failed
+        if: always() && steps.dsyms.outcome == 'failure'
+        run: |
+          echo "::error::dSYM upload failed — crashes from this build will not symbolicate."
+          echo "Check the EMBRACE_API_TOKEN secret and that APP_ID still exists." >&2
+          exit 1
