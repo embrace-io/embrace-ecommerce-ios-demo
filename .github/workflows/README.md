@@ -48,6 +48,44 @@ Unsymbolicated sessions beat no sessions.
 So: red means the pipeline is broken, not that the app crashed. Every job writes
 an executed/passed/failed/skipped line to its run summary.
 
+## Simulator cloning breaks everything — keep parallel testing off
+
+Two of this repo's core behaviors depend on consecutive `xcodebuild` invocations
+hitting **the same simulator with its data container intact**:
+
+- **Crash flushing.** A crash writes a KSCrash payload to disk; a later cold start
+  is what ships it. Different simulator, no payload.
+- **Session stitching.** Sessions stitch because they share a device identity.
+  Different simulator, different identity, no stitching.
+
+Xcode's parallel testing defeats both. When the test target is marked
+`parallelizable`, `xcodebuild` runs tests on ephemeral *clones*
+(`Clone 1 of iPhone 16`) rather than the simulator the workflow booted, and the
+clones change between invocations.
+
+This was the real reason crashes were absent from the dashboard even when the
+crash tests ran: across one crash-test run, phase A crashed inside one clone and
+phase B cold-started in another, so there was never a payload to flush. Session
+stitching in `one-simulator.yml` was defeated the same way — 11 invocations, up to
+11 clones, 11 device identities.
+
+Two defenses, both required:
+
+1. `parallelizable = "NO"` on the testable in
+   `Embrace Ecommerce.xcodeproj/xcshareddata/xcschemes/Embrace Ecommerce.xcscheme`.
+2. `-parallel-testing-enabled NO` on **every** `xcodebuild test-without-building`
+   invocation, so a scheme edit cannot silently reintroduce it.
+
+If you add a new test invocation anywhere, include that flag. A quick audit:
+
+```
+grep -rn "test-without-building" -A6 .github/workflows/ scripts/ | grep -c parallel-testing-enabled
+```
+
+should match the number of `test-without-building` calls.
+
+---
+
 ## Workflows
 
 ### `build.yml` — Build and Upload Symbols

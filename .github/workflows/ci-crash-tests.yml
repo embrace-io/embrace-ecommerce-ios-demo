@@ -151,6 +151,7 @@ jobs:
               -project "${PROJECT_NAME}.xcodeproj" \
               -scheme "${SCHEME_NAME}" \
               -destination "$SIM_DEST" \
+              -parallel-testing-enabled NO \
               -derivedDataPath DerivedData \
               -only-testing:"$CRASH_TEST" \
               -resultBundlePath "Results/cycle-${i}-crash.xcresult" 2>&1 || true
@@ -165,6 +166,7 @@ jobs:
               -project "${PROJECT_NAME}.xcodeproj" \
               -scheme "${SCHEME_NAME}" \
               -destination "$SIM_DEST" \
+              -parallel-testing-enabled NO \
               -derivedDataPath DerivedData \
               -only-testing:"$FLUSH_TEST" \
               -resultBundlePath "Results/cycle-${i}-flush.xcresult" 2>&1 || true

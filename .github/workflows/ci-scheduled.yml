@@ -189,6 +189,7 @@ jobs:
             -project "${PROJECT_NAME}.xcodeproj" \
             -scheme "${SCHEME_NAME}" \
             -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -parallel-testing-enabled NO \
             -derivedDataPath DerivedData \
             -only-testing:"${TEST_TARGET}" \
             -resultBundlePath "${RESULT_BUNDLE}" || true
@@ -204,6 +205,7 @@ jobs:
             -project "${PROJECT_NAME}.xcodeproj" \
             -scheme "${SCHEME_NAME}" \
             -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -parallel-testing-enabled NO \
             -derivedDataPath DerivedData \
             -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/testQuickBrowseAndLeave" \
             -resultBundlePath "TestResults-flush.xcresult" || true

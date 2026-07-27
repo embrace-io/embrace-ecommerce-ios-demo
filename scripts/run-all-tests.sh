@@ -85,6 +85,7 @@ for i in "${!TESTS[@]}"; do
         -project "${PROJECT_NAME}.xcodeproj" \
         -scheme "${SCHEME}" \
         -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+        -parallel-testing-enabled NO \
         -derivedDataPath "${DERIVED_DATA_PATH}" \
         -only-testing:"Embrace EcommerceUITests/Embrace_EcommerceUITests/${test_method}" \
         -resultBundlePath "${result_bundle}" 2>&1 \

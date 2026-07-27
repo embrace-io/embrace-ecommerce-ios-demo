@@ -202,6 +202,7 @@ jobs:
             -project "${PROJECT_NAME}.xcodeproj" \
             -scheme "${SCHEME_NAME}" \
             -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -parallel-testing-enabled NO \
             -derivedDataPath DerivedData \
             -only-testing:"${TEST_TARGET}" \
             -resultBundlePath "TestResults.xcresult" || true
@@ -302,6 +303,7 @@ jobs:
             -project "${PROJECT_NAME}.xcodeproj" \
             -scheme "${SCHEME_NAME}" \
             -destination "platform=iOS Simulator,id=${SIMULATOR_UDID}" \
+            -parallel-testing-enabled NO \
             -derivedDataPath DerivedData \
             -only-testing:"${TEST_TARGET}" \
             -resultBundlePath "TestResults.xcresult" || true
