@@ -29,7 +29,11 @@ jobs:
   crash-and-flush:
     name: "Crash Tests (5 cycles)"
     runs-on: macos-15
-    timeout-minutes: 75
+    # Measured: ~13 min per crash+flush cycle (~65 min for 5) plus ~10 min of
+    # build and setup. A cycle is slow because xcodebuild waits out the crashed
+    # test runner in phase A before reporting the failure. A 75 min limit killed
+    # a run mid-cycles, so this leaves real headroom; a 3h cadence still fits.
+    timeout-minutes: 120
 
     steps:
       - name: Checkout code
