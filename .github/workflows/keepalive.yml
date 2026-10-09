@@ -1,0 +1,29 @@
+name: Keepalive
+
+# GitHub disables scheduled workflows in a public repo after 60 days without
+# repository activity. That silently stopped all session generation on
+# 2026-09-25, 60 days after the last commit. Re-enabling a workflow through the
+# API resets that timer, so this re-enables every scheduled workflow, itself
+# included, once a week. No dummy commits.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  actions: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Re-enable scheduled workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          for wf in keepalive.yml ci-scheduled.yml one-simulator.yml ci-crash-tests.yml; do
+            gh api -X PUT "repos/${REPO}/actions/workflows/${wf}/enable"
+            echo "enabled ${wf}"
+          done
